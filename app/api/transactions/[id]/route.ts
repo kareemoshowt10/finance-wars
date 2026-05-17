@@ -35,6 +35,8 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     data: { balance: { increment: newDelta } },
   });
 
+  const { upsertTodaySnapshot } = await import("@/lib/snapshots");
+  await upsertTodaySnapshot(user.id);
   return ok(updated);
 }
 
@@ -49,5 +51,7 @@ export async function DELETE(_req: NextRequest, { params }: { params: { id: stri
     data: { balance: { increment: -delta } },
   });
   await prisma.transaction.delete({ where: { id: params.id } });
+  const { upsertTodaySnapshot } = await import("@/lib/snapshots");
+  await upsertTodaySnapshot(user.id);
   return ok({ success: true });
 }

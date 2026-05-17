@@ -13,24 +13,30 @@ model User {
   passwordHash String
   name         String
   currency     String   @default("USD")
+  theme        String   @default("dark")
+  onboarded    Boolean  @default(false)
   createdAt    DateTime @default(now())
 
-  accounts     Account[]
-  transactions Transaction[]
-  budgets      Budget[]
-  goals        Goal[]
+  accounts          Account[]
+  transactions      Transaction[]
+  budgets           Budget[]
+  goals             Goal[]
+  snapshots         NetWorthSnapshot[]
+  recurring         RecurringTransaction[]
+  categories        Category[]
 }
 
 model Account {
   id        String   @id @default(cuid())
   userId    String
   name      String
-  type      String   // checking | savings | credit | investment
+  type      String
   balance   Float    @default(0)
   createdAt DateTime @default(now())
 
   user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   transactions Transaction[]
+  recurring    RecurringTransaction[]
 }
 
 model Transaction {
@@ -38,7 +44,7 @@ model Transaction {
   userId      String
   accountId   String
   amount      Float
-  type        String   // income | expense
+  type        String
   category    String
   description String
   date        DateTime
@@ -53,7 +59,7 @@ model Budget {
   userId    String
   category  String
   limit     Float
-  month     String   // YYYY-MM
+  month     String
   createdAt DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -71,4 +77,45 @@ model Goal {
   createdAt     DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model NetWorthSnapshot {
+  id     String   @id @default(cuid())
+  userId String
+  date   DateTime
+  value  Float
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, date])
+}
+
+model RecurringTransaction {
+  id            String   @id @default(cuid())
+  userId        String
+  accountId     String
+  amount        Float
+  type          String
+  category      String
+  description   String
+  frequency     String
+  nextRunDate   DateTime
+  active        Boolean  @default(true)
+  createdAt     DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  account Account @relation(fields: [accountId], references: [id], onDelete: Cascade)
+}
+
+model Category {
+  id     String @id @default(cuid())
+  userId String
+  name   String
+  color  String
+  icon   String
+  kind   String
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, name])
 }

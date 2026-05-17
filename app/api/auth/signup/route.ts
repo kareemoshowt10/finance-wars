@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { signToken, setSessionCookie } from "@/lib/auth";
 import { bad, ok } from "@/lib/api";
+import { seedDefaultCategories } from "@/lib/defaults";
 
 export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => null);
@@ -21,6 +22,7 @@ export async function POST(req: NextRequest) {
     data: { email: email.toLowerCase(), passwordHash, name },
   });
 
+  await seedDefaultCategories(user.id);
   const token = await signToken({ uid: user.id, email: user.email });
   await setSessionCookie(token);
   return ok({ id: user.id, email: user.email, name: user.name });

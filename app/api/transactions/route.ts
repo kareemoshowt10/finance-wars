@@ -63,5 +63,7 @@ export async function POST(req: NextRequest) {
     where: { id: accountId },
     data: { balance: { increment: delta } },
   });
+  const { upsertTodaySnapshot } = await import("@/lib/snapshots");
+  await upsertTodaySnapshot(user.id);
   return ok(tx);
 }

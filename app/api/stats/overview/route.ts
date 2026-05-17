@@ -2,13 +2,19 @@ import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/auth";
 import { bad, ok } from "@/lib/api";
 import { monthKey } from "@/lib/utils";
+import { backfillSnapshots, upsertTodaySnapshot, dayKey, computeNetWorth } from "@/lib/snapshots";
+import { runDue } from "@/lib/recurring";
 
 export async function GET() {
   const user = await requireUser();
   if (!user) return bad("Unauthorized", 401);
 
+  await runDue(user.id);
+  await backfillSnapshots(user.id);
+  await upsertTodaySnapshot(user.id);
+
+  const netWorth = await computeNetWorth(user.id);
   const accounts = await prisma.account.findMany({ where: { userId: user.id } });
-  const netWorth = accounts.reduce((s, a) => s + (a.type === "credit" ? -a.balance : a.balance), 0);
 
   const now = new Date();
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -43,23 +49,27 @@ export async function GET() {
     include: { account: { select: { name: true } } },
   });
 
-  // Net worth over last 6 months: walk back from current netWorth removing per-month net flow
+  // Real 6-month trend from snapshots (sample monthly from the last 180 days)
+  const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 5, 1);
+  const snaps = await prisma.netWorthSnapshot.findMany({
+    where: { userId: user.id, date: { gte: sixMonthsAgo } },
+    orderBy: { date: "asc" },
+  });
+  // build months: pick last snapshot in each month
   const trend: { month: string; netWorth: number }[] = [];
-  let runningNet = netWorth;
-  // Most recent point first; we will reverse later
-  for (let i = 0; i < 6; i++) {
-    const periodStart = new Date(now.getFullYear(), now.getMonth() - i, 1);
-    const periodEnd = new Date(now.getFullYear(), now.getMonth() - i + 1, 1);
-    const periodTx = await prisma.transaction.findMany({
-      where: { userId: user.id, date: { gte: periodStart, lt: periodEnd } },
+  let lastValue = 0;
+  for (let i = 5; i >= 0; i--) {
+    const monthStart = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const monthEnd = new Date(now.getFullYear(), now.getMonth() - i + 1, 1);
+    const inMonth = snaps.filter((s) => s.date >= monthStart && s.date < monthEnd);
+    let v = inMonth.length ? inMonth[inMonth.length - 1].value : lastValue;
+    if (v) lastValue = v;
+    else v = lastValue;
+    trend.push({
+      month: monthStart.toLocaleDateString("en-US", { month: "short" }),
+      netWorth: Math.round(v),
     });
-    let periodNet = 0;
-    for (const t of periodTx) periodNet += t.type === "income" ? t.amount : -t.amount;
-    const label = periodStart.toLocaleDateString("en-US", { month: "short" });
-    trend.push({ month: label, netWorth: Math.round(runningNet) });
-    runningNet -= periodNet;
   }
-  trend.reverse();
 
   return ok({
     netWorth,
