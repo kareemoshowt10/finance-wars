@@ -22,7 +22,7 @@ function dayKey(d: Date): Date {
   return x;
 }
 
-async function main() {
+export async function runSeed() {
   const email = "demo@financewars.app";
   const password = "demo1234";
   const passwordHash = await bcrypt.hash(password, 10);
@@ -144,6 +144,8 @@ async function main() {
   console.log(`Seeded demo user: ${email} / ${password}`);
 }
 
-main()
-  .catch((e) => { console.error(e); process.exit(1); })
-  .finally(async () => { await prisma.$disconnect(); });
+if (require.main === module) {
+  runSeed()
+    .catch((e) => { console.error(e); process.exit(1); })
+    .finally(async () => { await prisma.$disconnect(); });
+}
