@@ -9,10 +9,24 @@ export const metadata: Metadata = {
   description: "A premium personal finance dashboard. Track net worth, budgets, and goals in one beautiful place.",
 };
 
+const themeScript = `
+(function() {
+  try {
+    var t = localStorage.getItem('fw-theme');
+    if (!t) t = 'dark';
+    if (t === 'dark') document.documentElement.classList.add('dark');
+    else document.documentElement.classList.remove('dark');
+  } catch (e) { document.documentElement.classList.add('dark'); }
+})();
+`;
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={inter.variable}>
-      <body className="font-sans bg-black text-white antialiased">{children}</body>
+    <html lang="en" className={`${inter.variable} dark`} suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+      </head>
+      <body className="font-sans antialiased">{children}</body>
     </html>
   );
 }

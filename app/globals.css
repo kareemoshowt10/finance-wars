@@ -3,26 +3,29 @@
 @tailwind utilities;
 
 :root {
-  color-scheme: dark;
+  color-scheme: light dark;
 }
 
 html, body {
-  background: #000;
-  color: #fff;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   letter-spacing: -0.02em;
 }
 
+html.dark { color-scheme: dark; }
+html.dark body { background: #000; color: #fff; }
+html:not(.dark) body { background: #fff; color: #0a0a0a; }
+
 * {
   border-color: rgba(255, 255, 255, 0.08);
 }
+html:not(.dark) * { border-color: rgba(0, 0, 0, 0.08); }
 
-/* Custom scrollbar */
 ::-webkit-scrollbar { width: 8px; height: 8px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
 ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
+html:not(.dark) ::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.15); }
 
 .glow-radial {
   background: radial-gradient(circle at 50% 30%, rgba(99, 102, 241, 0.35) 0%, rgba(168, 85, 247, 0.15) 30%, transparent 70%);
@@ -35,11 +38,20 @@ html, body {
   background-size: 60px 60px;
   mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
 }
+html:not(.dark) .hero-grid {
+  background-image:
+    linear-gradient(rgba(0,0,0,0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,0,0,0.05) 1px, transparent 1px);
+}
 
 .card {
   background: rgba(255, 255, 255, 0.02);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 16px;
+}
+html:not(.dark) .card {
+  background: rgba(0, 0, 0, 0.02);
+  border: 1px solid rgba(0, 0, 0, 0.08);
 }
 
 .input {
@@ -47,15 +59,23 @@ html, body {
   border: 1px solid rgba(255, 255, 255, 0.10);
   border-radius: 10px;
   padding: 0.65rem 0.9rem;
-  color: white;
+  color: inherit;
   width: 100%;
   font-size: 0.9rem;
   transition: border 0.15s, background 0.15s;
+}
+html:not(.dark) .input {
+  background: rgba(0, 0, 0, 0.03);
+  border: 1px solid rgba(0, 0, 0, 0.10);
 }
 .input:focus {
   outline: none;
   border-color: rgba(255,255,255,0.25);
   background: rgba(255,255,255,0.06);
+}
+html:not(.dark) .input:focus {
+  border-color: rgba(0,0,0,0.25);
+  background: rgba(0,0,0,0.05);
 }
 
 .btn-primary {
@@ -70,12 +90,13 @@ html, body {
   align-items: center;
   gap: 0.5rem;
 }
+html:not(.dark) .btn-primary { background: black; color: white; }
 .btn-primary:hover { transform: scale(1.03); }
 .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
 
 .btn-secondary {
   background: rgba(255, 255, 255, 0.06);
-  color: white;
+  color: inherit;
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 999px;
   padding: 0.7rem 1.5rem;
@@ -86,7 +107,12 @@ html, body {
   align-items: center;
   gap: 0.5rem;
 }
+html:not(.dark) .btn-secondary {
+  background: rgba(0, 0, 0, 0.04);
+  border: 1px solid rgba(0, 0, 0, 0.12);
+}
 .btn-secondary:hover { background: rgba(255,255,255,0.10); }
+html:not(.dark) .btn-secondary:hover { background: rgba(0,0,0,0.07); }
 
 .btn-ghost {
   color: rgba(255,255,255,0.7);
@@ -95,11 +121,13 @@ html, body {
   font-size: 0.85rem;
   transition: color 0.15s, background 0.15s;
 }
+html:not(.dark) .btn-ghost { color: rgba(0,0,0,0.65); }
 .btn-ghost:hover { color: white; background: rgba(255,255,255,0.05); }
+html:not(.dark) .btn-ghost:hover { color: black; background: rgba(0,0,0,0.04); }
 
 .btn-danger {
   background: rgba(239, 68, 68, 0.15);
-  color: rgb(248, 113, 113);
+  color: rgb(220, 38, 38);
   border: 1px solid rgba(239, 68, 68, 0.3);
   border-radius: 999px;
   padding: 0.5rem 1rem;
