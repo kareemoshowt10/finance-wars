@@ -39,7 +39,7 @@ export default function BudgetsPage() {
       <header className="flex items-center justify-between flex-wrap gap-4">
         <div>
           <h1 className="text-4xl font-semibold tracking-[-0.03em]">Budgets</h1>
-          <p className="text-white/50 mt-1 text-sm">
+          <p className="text-black/50 dark:text-white/50 mt-1 text-sm">
             {month} · {formatCurrency(totalSpent, currency)} of {formatCurrency(totalLimit, currency)}
           </p>
         </div>
@@ -47,10 +47,10 @@ export default function BudgetsPage() {
       </header>
 
       {loading ? (
-        <div className="text-white/40 text-sm">Loading…</div>
+        <div className="text-black/40 dark:text-white/40 text-sm">Loading…</div>
       ) : items.length === 0 ? (
         <div className="card p-12 text-center">
-          <div className="text-white/60">No budgets set for this month.</div>
+          <div className="text-black/60 dark:text-white/60">No budgets set for this month.</div>
           <button onClick={() => setOpen("new")} className="btn-secondary mt-4">Create your first budget</button>
         </div>
       ) : (
@@ -64,15 +64,15 @@ export default function BudgetsPage() {
                 <div className="flex items-center justify-between">
                   <div>
                     <div className="text-sm font-medium">{b.category}</div>
-                    <div className="text-xs text-white/40 mt-0.5">{formatCurrency(b.spent, currency)} of {formatCurrency(b.limit, currency)}</div>
+                    <div className="text-xs text-black/40 dark:text-white/40 mt-0.5">{formatCurrency(b.spent, currency)} of {formatCurrency(b.limit, currency)}</div>
                   </div>
                   <div className="flex items-center gap-3">
-                    <div className={`text-sm ${over ? "text-rose-400" : "text-white/70"}`}>{Math.round(pct)}%</div>
-                    <button onClick={() => setOpen(b)} className="p-1.5 text-white/40 hover:text-white"><Pencil className="w-4 h-4" /></button>
-                    <button onClick={() => remove(b.id)} className="p-1.5 text-white/40 hover:text-rose-400"><Trash2 className="w-4 h-4" /></button>
+                    <div className={`text-sm ${over ? "text-rose-400" : "text-black/70 dark:text-white/70"}`}>{Math.round(pct)}%</div>
+                    <button onClick={() => setOpen(b)} className="p-1.5 text-black/40 dark:text-white/40 hover:text-black dark:hover:text-white"><Pencil className="w-4 h-4" /></button>
+                    <button onClick={() => remove(b.id)} className="p-1.5 text-black/40 dark:text-white/40 hover:text-rose-400"><Trash2 className="w-4 h-4" /></button>
                   </div>
                 </div>
-                <div className="mt-3 h-2 rounded-full bg-white/10 overflow-hidden">
+                <div className="mt-3 h-2 rounded-full bg-black/10 dark:bg-white/10 overflow-hidden">
                   <div className={`h-full ${color} transition-all`} style={{ width: `${pct}%` }} />
                 </div>
               </div>
@@ -117,13 +117,13 @@ function BudgetModal({ budget, month, onClose, onSaved }: { budget: Budget | nul
     <Modal onClose={onClose} title={budget ? "Edit budget" : "New budget"}>
       <form onSubmit={submit} className="space-y-3">
         <div>
-          <label className="text-xs text-white/50">Category</label>
+          <label className="text-xs text-black/50 dark:text-white/50">Category</label>
           <select className="input mt-1" value={category} onChange={(e) => setCategory(e.target.value)} disabled={!!budget}>
             {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
           </select>
         </div>
         <div>
-          <label className="text-xs text-white/50">Monthly limit</label>
+          <label className="text-xs text-black/50 dark:text-white/50">Monthly limit</label>
           <input className="input mt-1" type="number" step="0.01" value={limit} onChange={(e) => setLimit(e.target.value)} required />
         </div>
         {error && <div className="text-sm text-red-400">{error}</div>}

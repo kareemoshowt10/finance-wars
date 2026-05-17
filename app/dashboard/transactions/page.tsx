@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
-import { Plus, Search, Trash2, Pencil } from "lucide-react";
+import { Plus, Search, Trash2, Pencil, Download, Upload } from "lucide-react";
+import Papa from "papaparse";
 import { CATEGORIES, formatCurrency, formatDate } from "@/lib/utils";
 import Modal from "../_components/Modal";
 
@@ -10,13 +11,16 @@ type Tx = {
   account?: { name: string; type: string };
 };
 type Acct = { id: string; name: string; type: string };
+type Cat = { id: string; name: string; color: string; icon: string; kind: string };
 
 export default function TransactionsPage() {
   const [items, setItems] = useState<Tx[]>([]);
   const [accounts, setAccounts] = useState<Acct[]>([]);
+  const [cats, setCats] = useState<Cat[]>([]);
   const [currency, setCurrency] = useState("USD");
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState<Tx | null | "new">(null);
+  const [importOpen, setImportOpen] = useState(false);
   const [q, setQ] = useState("");
   const [cat, setCat] = useState("all");
   const [typeFilter, setTypeFilter] = useState("all");
@@ -31,13 +35,15 @@ export default function TransactionsPage() {
     if (q) params.set("q", q);
     params.set("sort", sort);
     params.set("order", order);
-    const [tx, ac, me] = await Promise.all([
+    const [tx, ac, me, ct] = await Promise.all([
       fetch("/api/transactions?" + params.toString()).then((r) => r.json()),
       fetch("/api/accounts").then((r) => r.json()),
       fetch("/api/auth/me").then((r) => r.json()),
+      fetch("/api/categories").then((r) => r.json()),
     ]);
     setItems(tx);
     setAccounts(ac);
+    setCats(ct);
     if (me?.currency) setCurrency(me.currency);
     setLoading(false);
   }
@@ -62,14 +68,18 @@ export default function TransactionsPage() {
       <header className="flex items-center justify-between gap-4 flex-wrap">
         <div>
           <h1 className="text-4xl font-semibold tracking-[-0.03em]">Transactions</h1>
-          <p className="text-white/50 mt-1 text-sm">{items.length} record{items.length !== 1 && "s"} · in {formatCurrency(totalIn, currency)} · out {formatCurrency(totalOut, currency)}</p>
+          <p className="text-black/50 dark:text-white/50 mt-1 text-sm">{items.length} record{items.length !== 1 && "s"} · in {formatCurrency(totalIn, currency)} · out {formatCurrency(totalOut, currency)}</p>
         </div>
-        <button onClick={() => setOpen("new")} className="btn-primary"><Plus className="w-4 h-4" />Add transaction</button>
+        <div className="flex items-center gap-2 flex-wrap">
+          <a href="/api/transactions/export" className="btn-secondary !py-2 !px-3 text-xs"><Download className="w-3.5 h-3.5" />Export</a>
+          <button onClick={() => setImportOpen(true)} className="btn-secondary !py-2 !px-3 text-xs"><Upload className="w-3.5 h-3.5" />Import</button>
+          <button onClick={() => setOpen("new")} className="btn-primary"><Plus className="w-4 h-4" />Add transaction</button>
+        </div>
       </header>
 
       <div className="card p-3 flex flex-wrap gap-2 items-center">
         <div className="relative flex-1 min-w-[200px]">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-black/40 dark:text-white/40" />
           <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search description…" className="input pl-9" />
         </div>
         <select value={cat} onChange={(e) => setCat(e.target.value)} className="input max-w-[180px]">
@@ -91,26 +101,26 @@ export default function TransactionsPage() {
 
       <div className="card overflow-hidden">
         {loading ? (
-          <div className="p-10 text-center text-white/40 text-sm">Loading…</div>
+          <div className="p-10 text-center text-black/40 dark:text-white/40 text-sm">Loading…</div>
         ) : items.length === 0 ? (
           <div className="p-12 text-center">
-            <div className="text-white/60">No transactions match your filters.</div>
+            <div className="text-black/60 dark:text-white/60">No transactions match your filters.</div>
             <button onClick={() => setOpen("new")} className="btn-secondary mt-4">Add your first transaction</button>
           </div>
         ) : (
-          <ul className="divide-y divide-white/5">
+          <ul className="divide-y divide-black/5 dark:divide-white/5">
             {items.map((t) => (
-              <li key={t.id} className="px-4 py-3 flex items-center gap-3 hover:bg-white/[0.02]">
-                <div className={`w-2 h-2 rounded-full ${t.type === "income" ? "bg-emerald-400" : "bg-rose-400"}`} />
+              <li key={t.id} className="px-4 py-3 flex items-center gap-3 hover:bg-black/[0.02] dark:hover:bg-white/[0.02]">
+                <div className="w-2.5 h-2.5 rounded-full" style={{ background: cats.find((c) => c.name === t.category)?.color || (t.type === "income" ? "#34d399" : "#f87171") }} />
                 <div className="flex-1 min-w-0">
                   <div className="text-sm truncate">{t.description}</div>
-                  <div className="text-xs text-white/40 truncate">{t.category} · {t.account?.name ?? "—"} · {formatDate(t.date)}</div>
+                  <div className="text-xs text-black/40 dark:text-white/40 truncate">{t.category} · {t.account?.name ?? "—"} · {formatDate(t.date)}</div>
                 </div>
-                <div className={`text-sm font-medium ${t.type === "income" ? "text-emerald-400" : "text-white"}`}>
+                <div className={`text-sm font-medium ${t.type === "income" ? "text-emerald-400" : ""}`}>
                   {t.type === "income" ? "+" : "−"}{formatCurrency(t.amount, currency)}
                 </div>
-                <button onClick={() => setOpen(t)} className="p-2 text-white/40 hover:text-white"><Pencil className="w-4 h-4" /></button>
-                <button onClick={() => remove(t.id)} className="p-2 text-white/40 hover:text-rose-400"><Trash2 className="w-4 h-4" /></button>
+                <button onClick={() => setOpen(t)} className="p-2 text-black/40 dark:text-white/40 hover:text-black dark:hover:text-white"><Pencil className="w-4 h-4" /></button>
+                <button onClick={() => remove(t.id)} className="p-2 text-black/40 dark:text-white/40 hover:text-rose-400"><Trash2 className="w-4 h-4" /></button>
               </li>
             ))}
           </ul>
@@ -125,7 +135,91 @@ export default function TransactionsPage() {
           onSaved={() => { setOpen(null); load(); }}
         />
       )}
+      {importOpen && <ImportModal onClose={() => setImportOpen(false)} onDone={() => { setImportOpen(false); load(); }} />}
     </div>
+  );
+}
+
+function ImportModal({ onClose, onDone }: { onClose: () => void; onDone: () => void }) {
+  const [rows, setRows] = useState<Record<string, string>[]>([]);
+  const [createMissing, setCreateMissing] = useState(true);
+  const [busy, setBusy] = useState(false);
+  const [result, setResult] = useState<{ success: number; failed: number; errors: string[] } | null>(null);
+  const [err, setErr] = useState<string | null>(null);
+
+  function handleFile(file: File) {
+    setErr(null);
+    Papa.parse(file, {
+      header: true,
+      skipEmptyLines: true,
+      complete: (res) => {
+        const data = (res.data as Record<string, string>[]).filter((r) => r.date && r.amount);
+        setRows(data);
+      },
+      error: (e) => setErr(e.message),
+    });
+  }
+  async function confirm() {
+    setBusy(true);
+    const res = await fetch("/api/transactions/import", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ rows, createMissingAccounts: createMissing }),
+    });
+    const d = await res.json();
+    setResult(d);
+    setBusy(false);
+  }
+
+  return (
+    <Modal onClose={onClose} title="Import transactions" wide>
+      {!result ? (
+        <div className="space-y-4">
+          <p className="text-xs text-black/60 dark:text-white/60">CSV columns: date, amount, type, category, description, account</p>
+          <input type="file" accept=".csv,text/csv" onChange={(e) => e.target.files && handleFile(e.target.files[0])}
+            className="block w-full text-sm file:mr-3 file:rounded-full file:border-0 file:bg-black/10 dark:file:bg-black/10 dark:bg-white/10 file:px-3 file:py-1.5 file:text-xs" />
+          {err && <div className="text-sm text-rose-500">{err}</div>}
+          {rows.length > 0 && (
+            <>
+              <div className="text-xs text-black/50 dark:text-white/50">{rows.length} rows · preview first 5:</div>
+              <div className="text-[11px] overflow-x-auto">
+                <table className="w-full">
+                  <thead><tr className="text-left opacity-60">
+                    <th>date</th><th>amount</th><th>type</th><th>category</th><th>description</th><th>account</th>
+                  </tr></thead>
+                  <tbody>
+                    {rows.slice(0, 5).map((r, i) => (
+                      <tr key={i} className="border-t border-black/5 dark:border-white/5">
+                        <td>{r.date}</td><td>{r.amount}</td><td>{r.type}</td><td>{r.category}</td><td className="truncate max-w-[100px]">{r.description}</td><td>{r.account}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <label className="flex items-center gap-2 text-xs">
+                <input type="checkbox" checked={createMissing} onChange={(e) => setCreateMissing(e.target.checked)} />
+                Create accounts that don&apos;t exist
+              </label>
+              <div className="flex justify-end gap-2 pt-2">
+                <button onClick={onClose} className="btn-ghost">Cancel</button>
+                <button onClick={confirm} disabled={busy} className="btn-primary">{busy ? "Importing…" : `Import ${rows.length}`}</button>
+              </div>
+            </>
+          )}
+        </div>
+      ) : (
+        <div className="space-y-3">
+          <div className="text-sm">Imported <b className="text-emerald-500">{result.success}</b> rows. <span className="text-rose-500">{result.failed}</span> failed.</div>
+          {result.errors.length > 0 && (
+            <ul className="text-xs text-rose-500 list-disc list-inside">
+              {result.errors.map((e, i) => <li key={i}>{e}</li>)}
+            </ul>
+          )}
+          <div className="flex justify-end pt-2">
+            <button onClick={onDone} className="btn-primary">Done</button>
+          </div>
+        </div>
+      )}
+    </Modal>
   );
 }
 
@@ -164,7 +258,7 @@ function TxModal({ tx, accounts, onClose, onSaved }:
   if (accounts.length === 0) {
     return (
       <Modal onClose={onClose} title="No accounts yet">
-        <p className="text-sm text-white/60">Create an account first to add transactions.</p>
+        <p className="text-sm text-black/60 dark:text-white/60">Create an account first to add transactions.</p>
         <a href="/dashboard/accounts" className="btn-primary mt-4 inline-flex">Go to accounts</a>
       </Modal>
     );
@@ -174,31 +268,31 @@ function TxModal({ tx, accounts, onClose, onSaved }:
     <Modal onClose={onClose} title={tx ? "Edit transaction" : "New transaction"}>
       <form onSubmit={submit} className="space-y-3">
         <div className="grid grid-cols-2 gap-3">
-          <button type="button" onClick={() => setType("expense")} className={`px-3 py-2 rounded-lg text-sm border ${type === "expense" ? "bg-white/10 border-white/30" : "border-white/10 text-white/60"}`}>Expense</button>
-          <button type="button" onClick={() => setType("income")} className={`px-3 py-2 rounded-lg text-sm border ${type === "income" ? "bg-white/10 border-white/30" : "border-white/10 text-white/60"}`}>Income</button>
+          <button type="button" onClick={() => setType("expense")} className={`px-3 py-2 rounded-lg text-sm border ${type === "expense" ? "bg-black/10 dark:bg-white/10 border-black/30 dark:border-white/30" : "border-black/10 dark:border-white/10 text-black/60 dark:text-white/60"}`}>Expense</button>
+          <button type="button" onClick={() => setType("income")} className={`px-3 py-2 rounded-lg text-sm border ${type === "income" ? "bg-black/10 dark:bg-white/10 border-black/30 dark:border-white/30" : "border-black/10 dark:border-white/10 text-black/60 dark:text-white/60"}`}>Income</button>
         </div>
         <div>
-          <label className="text-xs text-white/50">Amount</label>
+          <label className="text-xs text-black/50 dark:text-white/50">Amount</label>
           <input className="input mt-1" type="number" step="0.01" required value={amount} onChange={(e) => setAmount(e.target.value)} />
         </div>
         <div>
-          <label className="text-xs text-white/50">Account</label>
+          <label className="text-xs text-black/50 dark:text-white/50">Account</label>
           <select className="input mt-1" value={accountId} onChange={(e) => setAccountId(e.target.value)}>
             {accounts.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
           </select>
         </div>
         <div>
-          <label className="text-xs text-white/50">Category</label>
+          <label className="text-xs text-black/50 dark:text-white/50">Category</label>
           <select className="input mt-1" value={category} onChange={(e) => setCategory(e.target.value)}>
             {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
           </select>
         </div>
         <div>
-          <label className="text-xs text-white/50">Description</label>
+          <label className="text-xs text-black/50 dark:text-white/50">Description</label>
           <input className="input mt-1" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="What was it for?" />
         </div>
         <div>
-          <label className="text-xs text-white/50">Date</label>
+          <label className="text-xs text-black/50 dark:text-white/50">Date</label>
           <input className="input mt-1" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
         </div>
         {error && <div className="text-sm text-red-400">{error}</div>}

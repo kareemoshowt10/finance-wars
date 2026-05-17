@@ -1,7 +1,8 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { LogOut } from "lucide-react";
+import { LogOut, Download, Trash2 } from "lucide-react";
+import ThemeToggle from "../_components/ThemeToggle";
 
 const CURRENCIES = ["USD", "EUR", "GBP", "JPY", "CAD", "AUD", "CHF", "INR", "BRL"];
 
@@ -9,21 +10,27 @@ export default function SettingsPage() {
   const router = useRouter();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [origEmail, setOrigEmail] = useState("");
   const [currency, setCurrency] = useState("USD");
   const [loaded, setLoaded] = useState(false);
   const [profileMsg, setProfileMsg] = useState<{ type: "ok" | "err"; text: string } | null>(null);
   const [profileSaving, setProfileSaving] = useState(false);
+  const [profilePw, setProfilePw] = useState("");
 
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [pwMsg, setPwMsg] = useState<{ type: "ok" | "err"; text: string } | null>(null);
   const [pwSaving, setPwSaving] = useState(false);
 
+  const [delOpen, setDelOpen] = useState(false);
+  const [delPw, setDelPw] = useState("");
+  const [delConfirm, setDelConfirm] = useState("");
+  const [delErr, setDelErr] = useState<string | null>(null);
+
   useEffect(() => {
     (async () => {
       const me = await fetch("/api/auth/me").then((r) => r.json());
-      setName(me.name || "");
-      setEmail(me.email || "");
+      setName(me.name || ""); setEmail(me.email || ""); setOrigEmail(me.email || "");
       setCurrency(me.currency || "USD");
       setLoaded(true);
     })();
@@ -34,14 +41,18 @@ export default function SettingsPage() {
     setProfileMsg(null);
     setProfileSaving(true);
     try {
+      const body: Record<string, unknown> = { name, currency };
+      if (email !== origEmail) {
+        if (!profilePw) throw new Error("Enter current password to change email");
+        body.email = email; body.currentPassword = profilePw;
+      }
       const res = await fetch("/api/user", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, currency }),
+        method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Could not save");
       setProfileMsg({ type: "ok", text: "Profile saved." });
+      setOrigEmail(email); setProfilePw("");
     } catch (err) {
       setProfileMsg({ type: "err", text: err instanceof Error ? err.message : "Save failed" });
     } finally { setProfileSaving(false); }
@@ -50,12 +61,11 @@ export default function SettingsPage() {
   async function savePassword(e: React.FormEvent) {
     e.preventDefault();
     setPwMsg(null);
-    if (newPassword.length < 6) { setPwMsg({ type: "err", text: "New password must be 6+ characters" }); return; }
+    if (newPassword.length < 6) { setPwMsg({ type: "err", text: "6+ characters" }); return; }
     setPwSaving(true);
     try {
       const res = await fetch("/api/user", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        method: "PATCH", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ currentPassword, newPassword }),
       });
       const data = await res.json();
@@ -67,39 +77,65 @@ export default function SettingsPage() {
     } finally { setPwSaving(false); }
   }
 
-  async function logout() {
-    await fetch("/api/auth/logout", { method: "POST" });
-    router.push("/login");
+  async function deleteAccount() {
+    setDelErr(null);
+    if (delConfirm !== "DELETE") { setDelErr("Type DELETE to confirm"); return; }
+    const res = await fetch("/api/user/delete", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ password: delPw }),
+    });
+    const d = await res.json();
+    if (!res.ok) { setDelErr(d.error || "Failed"); return; }
+    router.push("/");
     router.refresh();
   }
 
-  if (!loaded) return <div className="text-white/40 text-sm">Loading…</div>;
+  async function logout() {
+    await fetch("/api/auth/logout", { method: "POST" });
+    router.push("/login"); router.refresh();
+  }
+
+  if (!loaded) return <div className="text-sm opacity-50">Loading…</div>;
 
   return (
     <div className="space-y-6 max-w-2xl">
       <header>
         <h1 className="text-4xl font-semibold tracking-[-0.03em]">Settings</h1>
-        <p className="text-white/50 mt-1 text-sm">Profile, preferences, security.</p>
+        <p className="text-black/50 dark:text-white/50 mt-1 text-sm">Profile, preferences, security.</p>
       </header>
 
+      <section className="card p-6 flex items-center justify-between">
+        <div>
+          <h2 className="text-sm font-semibold">Appearance</h2>
+          <p className="text-xs text-black/50 dark:text-white/50 mt-1">Switch between light and dark.</p>
+        </div>
+        <ThemeToggle />
+      </section>
+
       <section className="card p-6">
-        <h2 className="text-sm font-semibold uppercase tracking-wider text-white/60">Profile</h2>
+        <h2 className="text-sm font-semibold uppercase tracking-wider text-black/60 dark:text-white/60">Profile</h2>
         <form onSubmit={saveProfile} className="mt-4 space-y-3">
           <div>
-            <label className="text-xs text-white/50">Name</label>
+            <label className="text-xs text-black/50 dark:text-white/50">Name</label>
             <input className="input mt-1" value={name} onChange={(e) => setName(e.target.value)} required />
           </div>
           <div>
-            <label className="text-xs text-white/50">Email</label>
-            <input className="input mt-1 opacity-60" value={email} disabled />
+            <label className="text-xs text-black/50 dark:text-white/50">Email</label>
+            <input className="input mt-1" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
           </div>
+          {email !== origEmail && (
+            <div>
+              <label className="text-xs text-black/50 dark:text-white/50">Current password (required to change email)</label>
+              <input className="input mt-1" type="password" value={profilePw} onChange={(e) => setProfilePw(e.target.value)} />
+            </div>
+          )}
           <div>
-            <label className="text-xs text-white/50">Currency</label>
+            <label className="text-xs text-black/50 dark:text-white/50">Currency</label>
             <select className="input mt-1" value={currency} onChange={(e) => setCurrency(e.target.value)}>
               {CURRENCIES.map((c) => <option key={c} value={c}>{c}</option>)}
             </select>
           </div>
-          {profileMsg && <div className={`text-sm ${profileMsg.type === "ok" ? "text-emerald-400" : "text-rose-400"}`}>{profileMsg.text}</div>}
+          {profileMsg && <div className={`text-sm ${profileMsg.type === "ok" ? "text-emerald-500" : "text-rose-500"}`}>{profileMsg.text}</div>}
           <div className="flex justify-end">
             <button disabled={profileSaving} className="btn-primary">{profileSaving ? "Saving…" : "Save"}</button>
           </div>
@@ -107,17 +143,11 @@ export default function SettingsPage() {
       </section>
 
       <section className="card p-6">
-        <h2 className="text-sm font-semibold uppercase tracking-wider text-white/60">Change password</h2>
+        <h2 className="text-sm font-semibold uppercase tracking-wider text-black/60 dark:text-white/60">Change password</h2>
         <form onSubmit={savePassword} className="mt-4 space-y-3">
-          <div>
-            <label className="text-xs text-white/50">Current password</label>
-            <input className="input mt-1" type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} required />
-          </div>
-          <div>
-            <label className="text-xs text-white/50">New password</label>
-            <input className="input mt-1" type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} required minLength={6} />
-          </div>
-          {pwMsg && <div className={`text-sm ${pwMsg.type === "ok" ? "text-emerald-400" : "text-rose-400"}`}>{pwMsg.text}</div>}
+          <input className="input" type="password" placeholder="Current password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} required />
+          <input className="input" type="password" placeholder="New password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} required minLength={6} />
+          {pwMsg && <div className={`text-sm ${pwMsg.type === "ok" ? "text-emerald-500" : "text-rose-500"}`}>{pwMsg.text}</div>}
           <div className="flex justify-end">
             <button disabled={pwSaving} className="btn-primary">{pwSaving ? "Updating…" : "Update password"}</button>
           </div>
@@ -126,11 +156,41 @@ export default function SettingsPage() {
 
       <section className="card p-6 flex items-center justify-between">
         <div>
+          <h2 className="text-sm font-semibold">Export data</h2>
+          <p className="text-xs text-black/50 dark:text-white/50 mt-1">Download all your data as JSON.</p>
+        </div>
+        <a href="/api/user/export" className="btn-secondary"><Download className="w-4 h-4" />Export</a>
+      </section>
+
+      <section className="card p-6 flex items-center justify-between">
+        <div>
           <h2 className="text-sm font-semibold">Sign out</h2>
-          <p className="text-xs text-white/50 mt-1">End your session on this device.</p>
+          <p className="text-xs text-black/50 dark:text-white/50 mt-1">End your session on this device.</p>
         </div>
         <button onClick={logout} className="btn-danger inline-flex items-center gap-2"><LogOut className="w-4 h-4" />Log out</button>
       </section>
+
+      <section className="card p-6 border-rose-500/30">
+        <h2 className="text-sm font-semibold text-rose-500">Danger zone</h2>
+        <p className="text-xs text-black/50 dark:text-white/50 mt-1">Permanently delete your account and all data.</p>
+        <button onClick={() => setDelOpen(true)} className="btn-danger mt-3 inline-flex items-center gap-2"><Trash2 className="w-4 h-4" />Delete account</button>
+      </section>
+
+      {delOpen && (
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setDelOpen(false)}>
+          <div onClick={(e) => e.stopPropagation()} className="card p-6 max-w-md w-full bg-white dark:bg-[#0a0a0a]">
+            <h3 className="text-lg font-semibold text-rose-500">Delete account</h3>
+            <p className="text-sm mt-2 opacity-70">This permanently deletes all your accounts, transactions, budgets, goals, and history. This cannot be undone.</p>
+            <input className="input mt-4" type="password" placeholder="Your password" value={delPw} onChange={(e) => setDelPw(e.target.value)} />
+            <input className="input mt-2" placeholder='Type "DELETE" to confirm' value={delConfirm} onChange={(e) => setDelConfirm(e.target.value)} />
+            {delErr && <div className="text-sm text-rose-500 mt-2">{delErr}</div>}
+            <div className="flex justify-end gap-2 mt-4">
+              <button onClick={() => setDelOpen(false)} className="btn-ghost">Cancel</button>
+              <button onClick={deleteAccount} className="btn-danger">Permanently delete</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -35,16 +35,16 @@ export default function GoalsPage() {
       <header className="flex items-center justify-between flex-wrap gap-4">
         <div>
           <h1 className="text-4xl font-semibold tracking-[-0.03em]">Goals</h1>
-          <p className="text-white/50 mt-1 text-sm">Save for what matters.</p>
+          <p className="text-black/50 dark:text-white/50 mt-1 text-sm">Save for what matters.</p>
         </div>
         <button onClick={() => setOpen("new")} className="btn-primary"><Plus className="w-4 h-4" />Add goal</button>
       </header>
 
       {loading ? (
-        <div className="text-white/40 text-sm">Loading…</div>
+        <div className="text-black/40 dark:text-white/40 text-sm">Loading…</div>
       ) : items.length === 0 ? (
         <div className="card p-12 text-center">
-          <div className="text-white/60">No goals yet.</div>
+          <div className="text-black/60 dark:text-white/60">No goals yet.</div>
           <button onClick={() => setOpen("new")} className="btn-secondary mt-4">Set your first goal</button>
         </div>
       ) : (
@@ -54,13 +54,13 @@ export default function GoalsPage() {
             return (
               <div key={g.id} className="card p-5 flex items-center justify-between group">
                 <div className="flex-1 min-w-0">
-                  <div className="text-xs text-white/40">Deadline {formatDate(g.deadline)}</div>
+                  <div className="text-xs text-black/40 dark:text-white/40">Deadline {formatDate(g.deadline)}</div>
                   <div className="text-base font-medium mt-0.5 truncate">{g.name}</div>
                   <div className="mt-2 text-2xl font-semibold tracking-tight">{formatCurrency(g.currentAmount, currency)}</div>
-                  <div className="text-xs text-white/50">of {formatCurrency(g.targetAmount, currency)}</div>
+                  <div className="text-xs text-black/50 dark:text-white/50">of {formatCurrency(g.targetAmount, currency)}</div>
                   <div className="mt-2 opacity-0 group-hover:opacity-100 transition flex gap-1">
-                    <button onClick={() => setOpen(g)} className="p-1.5 text-white/40 hover:text-white"><Pencil className="w-4 h-4" /></button>
-                    <button onClick={() => remove(g.id)} className="p-1.5 text-white/40 hover:text-rose-400"><Trash2 className="w-4 h-4" /></button>
+                    <button onClick={() => setOpen(g)} className="p-1.5 text-black/40 dark:text-white/40 hover:text-black dark:hover:text-white"><Pencil className="w-4 h-4" /></button>
+                    <button onClick={() => remove(g.id)} className="p-1.5 text-black/40 dark:text-white/40 hover:text-rose-400"><Trash2 className="w-4 h-4" /></button>
                   </div>
                 </div>
                 <div className="relative w-24 h-24 shrink-0">
@@ -126,21 +126,21 @@ function GoalModal({ goal, onClose, onSaved }: { goal: Goal | null; onClose: () 
     <Modal onClose={onClose} title={goal ? "Edit goal" : "New goal"}>
       <form onSubmit={submit} className="space-y-3">
         <div>
-          <label className="text-xs text-white/50">Name</label>
+          <label className="text-xs text-black/50 dark:text-white/50">Name</label>
           <input className="input mt-1" required value={name} onChange={(e) => setName(e.target.value)} />
         </div>
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="text-xs text-white/50">Target</label>
+            <label className="text-xs text-black/50 dark:text-white/50">Target</label>
             <input className="input mt-1" type="number" step="0.01" required value={targetAmount} onChange={(e) => setTarget(e.target.value)} />
           </div>
           <div>
-            <label className="text-xs text-white/50">Current</label>
+            <label className="text-xs text-black/50 dark:text-white/50">Current</label>
             <input className="input mt-1" type="number" step="0.01" value={currentAmount} onChange={(e) => setCurrent(e.target.value)} />
           </div>
         </div>
         <div>
-          <label className="text-xs text-white/50">Deadline</label>
+          <label className="text-xs text-black/50 dark:text-white/50">Deadline</label>
           <input className="input mt-1" type="date" required value={deadline} onChange={(e) => setDeadline(e.target.value)} />
         </div>
         {error && <div className="text-sm text-red-400">{error}</div>}
