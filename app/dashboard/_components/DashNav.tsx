@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   LayoutDashboard, ArrowLeftRight, Wallet, Target, Trophy, Settings, LogOut, Menu, X,
-  Sparkles, Repeat, Tag, Bell, PieChart, Activity, CheckCheck, Filter, TrendingUp, FileText,
+  Sparkles, Repeat, Tag, Bell, PieChart, Activity, CheckCheck, Filter, TrendingUp, FileText, Swords,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import ThemeToggle from "./ThemeToggle";
@@ -17,6 +17,7 @@ const links = [
   { href: "/dashboard/portfolio", label: "Portfolio", icon: PieChart },
   { href: "/dashboard/budgets", label: "Budgets", icon: Target },
   { href: "/dashboard/goals", label: "Goals", icon: Trophy },
+  { href: "/dashboard/duels", label: "Duels", icon: Swords },
   { href: "/dashboard/insights", label: "Insights", icon: Sparkles },
   { href: "/dashboard/cashflow", label: "Cash Flow", icon: TrendingUp },
   { href: "/dashboard/recurring", label: "Recurring", icon: Repeat },
