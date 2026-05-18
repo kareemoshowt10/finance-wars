@@ -98,11 +98,42 @@ export async function runSeed() {
   }
 
   const inMonths = (n: number) => { const d = new Date(now); d.setMonth(d.getMonth() + n); return d; };
-  await prisma.goal.createMany({
+  const goalEmergency = await prisma.goal.create({ data: { userId: user.id, name: "Emergency Fund", targetAmount: 15000, currentAmount: 9200, deadline: inMonths(6) } });
+  const goalTesla = await prisma.goal.create({ data: { userId: user.id, name: "Tesla Model 3", targetAmount: 42000, currentAmount: 12500, deadline: inMonths(18) } });
+  const goalJapan = await prisma.goal.create({ data: { userId: user.id, name: "Japan Trip", targetAmount: 6000, currentAmount: 2100, deadline: inMonths(8) } });
+
+  // Goal contributions summing to currentAmount each
+  function splitInto(total: number, n: number): number[] {
+    const parts: number[] = [];
+    let left = total;
+    for (let i = 0; i < n - 1; i++) {
+      const p = Math.round((left / (n - i)) * (0.8 + Math.random() * 0.4) * 100) / 100;
+      parts.push(p);
+      left = Math.round((left - p) * 100) / 100;
+    }
+    parts.push(Math.round(left * 100) / 100);
+    return parts;
+  }
+  for (const g of [
+    { goal: goalEmergency, parts: splitInto(9200, 6) },
+    { goal: goalTesla, parts: splitInto(12500, 5) },
+    { goal: goalJapan, parts: splitInto(2100, 4) },
+  ]) {
+    const n = g.parts.length;
+    await prisma.goalContribution.createMany({
+      data: g.parts.map((amt, i) => {
+        const d = new Date(now); d.setMonth(d.getMonth() - (n - 1 - i));
+        return { userId: user.id, goalId: g.goal.id, amount: amt, date: d, note: i === 0 ? "Initial deposit" : null };
+      }),
+    });
+  }
+
+  // Rules
+  await prisma.rule.createMany({
     data: [
-      { userId: user.id, name: "Emergency Fund", targetAmount: 15000, currentAmount: 9200, deadline: inMonths(6) },
-      { userId: user.id, name: "Tesla Model 3", targetAmount: 42000, currentAmount: 12500, deadline: inMonths(18) },
-      { userId: user.id, name: "Japan Trip", targetAmount: 6000, currentAmount: 2100, deadline: inMonths(8) },
+      { userId: user.id, name: "Spotify → Subscriptions", pattern: "spotify", categoryOut: "Subscriptions", priority: 10, active: true },
+      { userId: user.id, name: "Uber → Transport", pattern: "uber", categoryOut: "Transport", priority: 8, active: true },
+      { userId: user.id, name: "Rent payments", pattern: "rent", categoryOut: "Rent", priority: 6, active: true },
     ],
   });
 

@@ -244,6 +244,7 @@ function ApiTokensSection() {
       </div>
       <p className="text-xs text-black/50 dark:text-white/50 mt-1">
         Use a token with <code>Authorization: Bearer fw_pat_…</code> to call any /api endpoint.
+        See <a href="/docs" className="underline">developer docs</a> for the full reference.
       </p>
 
       {newToken && (
