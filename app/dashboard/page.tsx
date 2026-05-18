@@ -14,6 +14,10 @@ type Stats = {
   recent: { id: string; amount: number; type: string; category: string; description: string; date: string; account: { name: string } }[];
   trend: { month: string; netWorth: number }[];
   accountCount: number;
+  netWorthBreakdown?: {
+    byType: { checking: number; savings: number; credit: number; investment: number };
+    byAccount: { id: string; name: string; type: string; balance: number; sparkline: number[] }[];
+  };
 };
 
 const CHART_COLORS = ["#a78bfa", "#60a5fa", "#34d399", "#fbbf24", "#f472b6", "#f87171"];
@@ -122,6 +126,8 @@ export default function OverviewPage() {
         </div>
       </div>
 
+      {stats.netWorthBreakdown && <NetWorthDrilldown breakdown={stats.netWorthBreakdown} currency={currency} />}
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
         <div className="card p-5">
           <div className="text-xs text-black/50 dark:text-white/50 mb-3">Spending by Category</div>
@@ -165,6 +171,88 @@ export default function OverviewPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+function NetWorthDrilldown({ breakdown, currency }: {
+  breakdown: NonNullable<Stats["netWorthBreakdown"]>;
+  currency: string;
+}) {
+  const { byType, byAccount } = breakdown;
+  const cash = byType.checking + byType.savings;
+  const invest = byType.investment;
+  const debt = byType.credit;
+  const total = Math.max(1, cash + invest + debt);
+  const donut = [
+    { name: "Cash", value: cash, color: "#60a5fa" },
+    { name: "Investments", value: invest, color: "#a78bfa" },
+    { name: "Debt", value: debt, color: "#f43f5e" },
+  ].filter((d) => d.value > 0);
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+      <div className="card p-5 lg:col-span-1">
+        <div className="text-xs text-black/50 dark:text-white/50 mb-2">Net Worth Composition</div>
+        <div className="h-44">
+          <ResponsiveContainer width="100%" height="100%">
+            <RPie>
+              <Pie data={donut} dataKey="value" nameKey="name" innerRadius={42} outerRadius={70} strokeWidth={0}>
+                {donut.map((d, i) => (<Cell key={i} fill={d.color} />))}
+              </Pie>
+              <Tooltip contentStyle={{ background: "#0a0a0a", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 12, fontSize: 12 }}
+                formatter={(v: number) => formatCurrencyFull(v, currency)} />
+            </RPie>
+          </ResponsiveContainer>
+        </div>
+        <div className="mt-3 space-y-2">
+          {donut.map((d) => (
+            <div key={d.name}>
+              <div className="flex items-center justify-between text-xs">
+                <span className="flex items-center gap-2"><span className="w-2 h-2 rounded-full" style={{ background: d.color }} />{d.name}</span>
+                <span className="text-black/60 dark:text-white/60">{formatCurrency(d.value, currency)}</span>
+              </div>
+              <div className="h-1.5 mt-1 rounded-full bg-black/5 dark:bg-white/5 overflow-hidden">
+                <div className="h-full rounded-full" style={{ width: `${Math.min(100, (d.value / total) * 100)}%`, background: d.color }} />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="card p-5 lg:col-span-2">
+        <div className="text-xs text-black/50 dark:text-white/50 mb-3">Accounts</div>
+        <ul className="divide-y divide-black/5 dark:divide-white/5">
+          {byAccount.map((a) => (
+            <li key={a.id} className="py-2.5">
+              <a href={`/dashboard/transactions?account=${a.id}`} className="flex items-center justify-between gap-3 hover:opacity-80">
+                <div className="min-w-0">
+                  <div className="text-sm truncate">{a.name}</div>
+                  <div className="text-[11px] text-black/40 dark:text-white/40 uppercase tracking-wide">{a.type}</div>
+                </div>
+                <Sparkline values={a.sparkline} />
+                <div className={`text-sm font-medium ${a.type === "credit" ? "text-rose-400" : ""}`}>{formatCurrency(a.balance, currency)}</div>
+              </a>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  );
+}
+
+function Sparkline({ values }: { values: number[] }) {
+  if (!values || values.length < 2) return <div className="w-20" />;
+  const max = Math.max(...values);
+  const min = Math.min(...values);
+  const range = max - min || 1;
+  const pts = values.map((v, i) => {
+    const x = (i / (values.length - 1)) * 80;
+    const y = 20 - ((v - min) / range) * 20;
+    return `${x.toFixed(1)},${y.toFixed(1)}`;
+  }).join(" ");
+  return (
+    <svg width="80" height="20" className="opacity-70">
+      <polyline points={pts} fill="none" stroke="#a78bfa" strokeWidth="1.5" />
+    </svg>
   );
 }
 

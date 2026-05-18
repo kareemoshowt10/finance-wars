@@ -55,7 +55,7 @@ export default function GoalsPage() {
               <div key={g.id} className="card p-5 flex items-center justify-between group">
                 <div className="flex-1 min-w-0">
                   <div className="text-xs text-black/40 dark:text-white/40">Deadline {formatDate(g.deadline)}</div>
-                  <div className="text-base font-medium mt-0.5 truncate">{g.name}</div>
+                  <a href={`/dashboard/goals/${g.id}`} className="text-base font-medium mt-0.5 truncate hover:underline block">{g.name}</a>
                   <div className="mt-2 text-2xl font-semibold tracking-tight">{formatCurrency(g.currentAmount, currency)}</div>
                   <div className="text-xs text-black/50 dark:text-white/50">of {formatCurrency(g.targetAmount, currency)}</div>
                   <Projection goalId={g.id} currency={currency} />

@@ -71,6 +71,24 @@ export async function GET() {
     });
   }
 
+  const byType = { checking: 0, savings: 0, credit: 0, investment: 0 };
+  for (const a of accounts) {
+    if (a.type in byType) byType[a.type as keyof typeof byType] += a.balance;
+  }
+  const thirtyAgo = new Date(now);
+  thirtyAgo.setDate(now.getDate() - 29);
+  const recentSnaps = await prisma.netWorthSnapshot.findMany({
+    where: { userId: user.id, date: { gte: thirtyAgo } },
+    orderBy: { date: "asc" },
+  });
+  const lastSnapValue = recentSnaps.length > 0 ? recentSnaps[recentSnaps.length - 1].value : netWorth || 1;
+  const byAccount = accounts.map((a) => {
+    const signed = a.type === "credit" ? -a.balance : a.balance;
+    const ratio = lastSnapValue !== 0 ? signed / lastSnapValue : 0;
+    const sparkline = recentSnaps.map((s) => Math.round(s.value * ratio * 100) / 100);
+    return { id: a.id, name: a.name, type: a.type, balance: a.balance, sparkline };
+  });
+
   return ok({
     netWorth,
     income,
@@ -81,5 +99,6 @@ export async function GET() {
     trend,
     accountCount: accounts.length,
     month: monthKey(),
+    netWorthBreakdown: { byType, byAccount },
   });
 }
