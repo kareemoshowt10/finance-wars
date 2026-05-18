@@ -1,45 +1,51 @@
 import { NextRequest } from "next/server";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
-import { requireUser } from "@/lib/auth";
+import { resolveRequestUser } from "@/lib/auth";
 import { bad, ok } from "@/lib/api";
+import { parseBody } from "@/lib/validate";
+import { userPatchSchema } from "@/lib/schemas";
+import { rateLimit, DEFAULT_MUTATION } from "@/lib/ratelimit";
+import { log } from "@/lib/audit";
 
 export async function PATCH(req: NextRequest) {
-  const user = await requireUser();
-  if (!user) return bad("Unauthorized", 401);
-  const body = await req.json().catch(() => null);
-  if (!body) return bad("Invalid JSON");
+  const rl = rateLimit(req, { key: "user:patch", ...DEFAULT_MUTATION });
+  if (rl) return rl;
+  const r = await resolveRequestUser(req);
+  if (!r) return bad("Unauthorized", 401);
+  const user = r.user;
+  const { data, error } = await parseBody(req, userPatchSchema);
+  if (error) return error;
 
-  const data: Record<string, unknown> = {};
-  if (typeof body.name === "string" && body.name.trim()) data.name = body.name.trim();
-  if (typeof body.currency === "string" && body.currency.trim()) data.currency = body.currency.trim().toUpperCase();
-  if (body.theme === "dark" || body.theme === "light") data.theme = body.theme;
-  if (typeof body.onboarded === "boolean") data.onboarded = body.onboarded;
+  const patch: Record<string, unknown> = {};
+  if (data.name !== undefined) patch.name = data.name.trim();
+  if (data.currency !== undefined) patch.currency = data.currency.toUpperCase();
+  if (data.theme !== undefined) patch.theme = data.theme;
+  if (data.onboarded !== undefined) patch.onboarded = data.onboarded;
 
-  if (typeof body.email === "string" && body.email !== user.email) {
-    if (!body.currentPassword) return bad("Current password required to change email");
-    const valid = await bcrypt.compare(body.currentPassword, user.passwordHash);
+  if (data.email && data.email !== user.email) {
+    if (!data.currentPassword) return bad("Current password required to change email");
+    const valid = await bcrypt.compare(data.currentPassword, user.passwordHash);
     if (!valid) return bad("Current password is incorrect", 401);
-    if (!/^\S+@\S+\.\S+$/.test(body.email)) return bad("Invalid email");
-    const existing = await prisma.user.findUnique({ where: { email: body.email.toLowerCase() } });
+    const existing = await prisma.user.findUnique({ where: { email: data.email } });
     if (existing) return bad("Email already in use", 409);
-    data.email = body.email.toLowerCase();
+    patch.email = data.email;
   }
 
-  if (body.newPassword) {
-    if (!body.currentPassword) return bad("Current password required");
-    const valid = await bcrypt.compare(body.currentPassword, user.passwordHash);
+  if (data.newPassword) {
+    if (!data.currentPassword) return bad("Current password required");
+    const valid = await bcrypt.compare(data.currentPassword, user.passwordHash);
     if (!valid) return bad("Current password is incorrect", 401);
-    if (String(body.newPassword).length < 6) return bad("New password must be at least 6 characters");
-    data.passwordHash = await bcrypt.hash(body.newPassword, 10);
+    patch.passwordHash = await bcrypt.hash(data.newPassword, 10);
   }
 
-  if (Object.keys(data).length === 0) return bad("Nothing to update");
+  if (Object.keys(patch).length === 0) return bad("Nothing to update");
 
   const updated = await prisma.user.update({
     where: { id: user.id },
-    data,
+    data: patch,
     select: { id: true, email: true, name: true, currency: true, theme: true, onboarded: true },
   });
+  await log(user.id, "user.update", { entity: "user", entityId: user.id, meta: { fields: Object.keys(patch) }, req });
   return ok(updated);
 }

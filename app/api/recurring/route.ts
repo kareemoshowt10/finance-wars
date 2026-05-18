@@ -1,15 +1,17 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireUser } from "@/lib/auth";
+import { resolveRequestUser } from "@/lib/auth";
 import { bad, ok } from "@/lib/api";
+import { parseBody } from "@/lib/validate";
+import { recurringSchema } from "@/lib/schemas";
+import { rateLimit, DEFAULT_MUTATION } from "@/lib/ratelimit";
+import { log } from "@/lib/audit";
 
-const FREQ = ["WEEKLY", "BIWEEKLY", "MONTHLY", "YEARLY"];
-
-export async function GET() {
-  const user = await requireUser();
-  if (!user) return bad("Unauthorized", 401);
+export async function GET(req: NextRequest) {
+  const r = await resolveRequestUser(req);
+  if (!r) return bad("Unauthorized", 401);
   const items = await prisma.recurringTransaction.findMany({
-    where: { userId: user.id },
+    where: { userId: r.user.id },
     orderBy: { nextRunDate: "asc" },
     include: { account: { select: { name: true } } },
   });
@@ -17,29 +19,27 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  const user = await requireUser();
-  if (!user) return bad("Unauthorized", 401);
-  const body = await req.json().catch(() => null);
-  if (!body) return bad("Invalid JSON");
-  const { accountId, amount, type, category, description, frequency, nextRunDate } = body;
-  if (!accountId || !amount || !type || !category || !frequency || !nextRunDate)
-    return bad("All fields required");
-  if (!FREQ.includes(frequency)) return bad("Invalid frequency");
-  if (type !== "income" && type !== "expense") return bad("Invalid type");
-  const acct = await prisma.account.findUnique({ where: { id: accountId } });
-  if (!acct || acct.userId !== user.id) return bad("Invalid account");
+  const rl = rateLimit(req, { key: "recurring", ...DEFAULT_MUTATION });
+  if (rl) return rl;
+  const r = await resolveRequestUser(req);
+  if (!r) return bad("Unauthorized", 401);
+  const { data, error } = await parseBody(req, recurringSchema);
+  if (error) return error;
+  const acct = await prisma.account.findUnique({ where: { id: data.accountId } });
+  if (!acct || acct.userId !== r.user.id) return bad("Invalid account");
   const item = await prisma.recurringTransaction.create({
     data: {
-      userId: user.id,
-      accountId,
-      amount: Math.abs(Number(amount)),
-      type,
-      category,
-      description: description || category,
-      frequency,
-      nextRunDate: new Date(nextRunDate),
+      userId: r.user.id,
+      accountId: data.accountId,
+      amount: Math.abs(data.amount),
+      type: data.type,
+      category: data.category,
+      description: data.description || data.category,
+      frequency: data.frequency,
+      nextRunDate: new Date(data.nextRunDate),
       active: true,
     },
   });
+  await log(r.user.id, "recurring.create", { entity: "recurring", entityId: item.id, meta: { amount: item.amount }, req });
   return ok(item);
 }

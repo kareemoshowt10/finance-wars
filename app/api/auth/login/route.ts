@@ -3,20 +3,25 @@ import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { signToken, setSessionCookie } from "@/lib/auth";
 import { bad, ok } from "@/lib/api";
+import { parseBody } from "@/lib/validate";
+import { loginSchema } from "@/lib/schemas";
+import { rateLimit } from "@/lib/ratelimit";
+import { log } from "@/lib/audit";
 
 export async function POST(req: NextRequest) {
-  const body = await req.json().catch(() => null);
-  if (!body) return bad("Invalid JSON");
-  const { email, password } = body as { email?: string; password?: string };
-  if (!email || !password) return bad("Email and password required");
+  const rl = rateLimit(req, { key: "auth/login", limit: 5, windowMs: 60_000 });
+  if (rl) return rl;
+  const { data, error } = await parseBody(req, loginSchema);
+  if (error) return error;
 
-  const user = await prisma.user.findUnique({ where: { email: email.toLowerCase() } });
+  const user = await prisma.user.findUnique({ where: { email: data.email } });
   if (!user) return bad("Invalid email or password", 401);
 
-  const valid = await bcrypt.compare(password, user.passwordHash);
+  const valid = await bcrypt.compare(data.password, user.passwordHash);
   if (!valid) return bad("Invalid email or password", 401);
 
   const token = await signToken({ uid: user.id, email: user.email });
   await setSessionCookie(token);
+  await log(user.id, "auth.login", { entity: "user", entityId: user.id, req });
   return ok({ id: user.id, email: user.email, name: user.name });
 }

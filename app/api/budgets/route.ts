@@ -1,46 +1,52 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireUser } from "@/lib/auth";
+import { resolveRequestUser } from "@/lib/auth";
 import { bad, ok } from "@/lib/api";
 import { monthKey } from "@/lib/utils";
+import { parseBody } from "@/lib/validate";
+import { budgetSchema } from "@/lib/schemas";
+import { rateLimit, DEFAULT_MUTATION } from "@/lib/ratelimit";
+import { log } from "@/lib/audit";
 
 export async function GET(req: NextRequest) {
-  const user = await requireUser();
-  if (!user) return bad("Unauthorized", 401);
+  const r = await resolveRequestUser(req);
+  if (!r) return bad("Unauthorized", 401);
   const { searchParams } = new URL(req.url);
   const month = searchParams.get("month") || monthKey();
   const budgets = await prisma.budget.findMany({
-    where: { userId: user.id, month },
+    where: { userId: r.user.id, month },
     orderBy: { category: "asc" },
   });
-  // compute spent per category for this month
   const [year, mon] = month.split("-").map(Number);
   const start = new Date(year, mon - 1, 1);
   const end = new Date(year, mon, 1);
   const txs = await prisma.transaction.findMany({
-    where: { userId: user.id, type: "expense", date: { gte: start, lt: end } },
+    where: { userId: r.user.id, type: "expense", date: { gte: start, lt: end } },
   });
   const spentByCat: Record<string, number> = {};
   for (const t of txs) spentByCat[t.category] = (spentByCat[t.category] || 0) + t.amount;
-
-  return ok(
-    budgets.map((b) => ({ ...b, spent: spentByCat[b.category] || 0 }))
-  );
+  return ok(budgets.map((b) => ({ ...b, spent: spentByCat[b.category] || 0 })));
 }
 
 export async function POST(req: NextRequest) {
-  const user = await requireUser();
-  if (!user) return bad("Unauthorized", 401);
-  const body = await req.json().catch(() => null);
-  if (!body) return bad("Invalid JSON");
-  const { category, limit, month } = body as { category?: string; limit?: number; month?: string };
-  if (!category || limit === undefined) return bad("Category and limit required");
-  const m = month || monthKey();
+  const rl = rateLimit(req, { key: "budgets", ...DEFAULT_MUTATION });
+  if (rl) return rl;
+  const r = await resolveRequestUser(req);
+  if (!r) return bad("Unauthorized", 401);
+  const { data, error } = await parseBody(req, budgetSchema);
+  if (error) return error;
+  const m = data.month || monthKey();
   try {
     const budget = await prisma.budget.upsert({
-      where: { userId_category_month: { userId: user.id, category, month: m } },
-      update: { limit: Number(limit) },
-      create: { userId: user.id, category, limit: Number(limit), month: m },
+      where: { userId_category_month: { userId: r.user.id, category: data.category, month: m } },
+      update: { limit: data.limit },
+      create: { userId: r.user.id, category: data.category, limit: data.limit, month: m },
+    });
+    await log(r.user.id, "budget.upsert", {
+      entity: "budget",
+      entityId: budget.id,
+      meta: { category: data.category, limit: data.limit, month: m },
+      req,
     });
     return ok(budget);
   } catch {

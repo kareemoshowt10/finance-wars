@@ -24,6 +24,77 @@ model User {
   snapshots         NetWorthSnapshot[]
   recurring         RecurringTransaction[]
   categories        Category[]
+  notifications     Notification[]
+  holdings          Holding[]
+  auditLogs         AuditLog[]
+  apiTokens         ApiToken[]
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  kind      String
+  title     String
+  body      String
+  link      String?
+  key       String?
+  readAt    DateTime?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@unique([userId, key])
+}
+
+model Holding {
+  id         String   @id @default(cuid())
+  userId     String
+  accountId  String
+  symbol     String
+  shares     Float
+  costBasis  Float
+  createdAt  DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  account Account @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model PriceQuote {
+  symbol String   @id
+  price  Float
+  asOf   DateTime
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String
+  action    String
+  entity    String
+  entityId  String?
+  meta      Json?
+  ip        String?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+}
+
+model ApiToken {
+  id         String    @id @default(cuid())
+  userId     String
+  name       String
+  tokenHash  String    @unique
+  lastUsedAt DateTime?
+  createdAt  DateTime  @default(now())
+  revokedAt  DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 model Account {
@@ -37,6 +108,7 @@ model Account {
   user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   transactions Transaction[]
   recurring    RecurringTransaction[]
+  holdings     Holding[]
 }
 
 model Transaction {

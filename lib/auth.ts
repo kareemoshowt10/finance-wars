@@ -1,5 +1,6 @@
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
+import { createHash, randomBytes } from "crypto";
 import { prisma } from "./prisma";
 
 const SECRET = new TextEncoder().encode(
@@ -47,11 +48,70 @@ export async function getSession(): Promise<JwtPayload | null> {
   return verifyToken(token);
 }
 
-export async function requireUser() {
+export function hashApiToken(token: string): string {
+  return createHash("sha256").update(token).digest("hex");
+}
+
+export function generateApiToken(): string {
+  const bytes = randomBytes(20);
+  const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+  let bits = 0, value = 0, out = "";
+  for (const b of bytes) {
+    value = (value << 8) | b;
+    bits += 8;
+    while (bits >= 5) {
+      out += alphabet[(value >>> (bits - 5)) & 31];
+      bits -= 5;
+    }
+  }
+  if (bits > 0) out += alphabet[(value << (5 - bits)) & 31];
+  return "fw_pat_" + out.slice(0, 32);
+}
+
+const tokenTouches = new Map<string, number>();
+
+export async function resolveRequestUser(
+  req?: Request
+): Promise<{ user: NonNullable<Awaited<ReturnType<typeof prisma.user.findUnique>>>; viaToken: boolean } | null> {
+  if (req) {
+    const auth = req.headers.get("authorization");
+    if (auth && auth.toLowerCase().startsWith("bearer ")) {
+      const raw = auth.slice(7).trim();
+      if (raw.startsWith("fw_pat_")) {
+        const hash = hashApiToken(raw);
+        const token = await prisma.apiToken.findUnique({ where: { tokenHash: hash } });
+        if (token && !token.revokedAt) {
+          const user = await prisma.user.findUnique({ where: { id: token.userId } });
+          if (user) {
+            const now = Date.now();
+            const last = tokenTouches.get(token.id) || 0;
+            if (now - last > 60_000) {
+              tokenTouches.set(token.id, now);
+              prisma.apiToken
+                .update({ where: { id: token.id }, data: { lastUsedAt: new Date() } })
+                .catch(() => {});
+            }
+            return { user, viaToken: true };
+          }
+        }
+        return null;
+      }
+    }
+  }
   const session = await getSession();
   if (!session) return null;
   const user = await prisma.user.findUnique({ where: { id: session.uid } });
-  return user;
+  if (!user) return null;
+  return { user, viaToken: false };
+}
+
+export async function requireUser() {
+  const r = await resolveRequestUser();
+  return r?.user ?? null;
+}
+
+export async function requireUserFromReq(req: Request) {
+  return resolveRequestUser(req);
 }
 
 export const SESSION_COOKIE = COOKIE_NAME;
