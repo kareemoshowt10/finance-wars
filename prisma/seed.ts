@@ -214,6 +214,200 @@ export async function runSeed() {
   });
 
   console.log(`Seeded demo user: ${email} / ${password}`);
+
+  // ---------------- Duels seed ----------------
+  await seedDuels(user.id, accounts[0].id);
+}
+
+async function seedDuels(demoUserId: string, demoCheckingId: string) {
+  const partnerEmail = "partner@financewars.app";
+  const partnerPwd = "partner123";
+  const passwordHash = await bcrypt.hash(partnerPwd, 10);
+  const existing = await prisma.user.findUnique({ where: { email: partnerEmail } });
+  if (existing) await prisma.user.delete({ where: { email: partnerEmail } });
+  const partner = await prisma.user.create({
+    data: { email: partnerEmail, passwordHash, name: "Partner", currency: "USD", onboarded: true },
+  });
+  await prisma.category.createMany({
+    data: DEFAULT_CATEGORIES.map((c) => ({ userId: partner.id, ...c })),
+  });
+  const partnerChecking = await prisma.account.create({
+    data: { userId: partner.id, name: "Partner Checking", type: "checking", balance: 6800 },
+  });
+
+  // Active duel: Hawaii Sprint
+  const now = new Date();
+  const start = new Date(now.getTime() - 21 * 86400000);
+  const end = new Date(now.getTime() + 35 * 86400000);
+
+  const duel = await prisma.duel.create({
+    data: {
+      creatorUserId: demoUserId,
+      title: "Hawaii Sprint",
+      targetAmount: 4000,
+      sprintLengthDays: 7,
+      startDate: start,
+      endDate: end,
+      status: "ACTIVE",
+      stakeText: "Loser plans the trip",
+      autoPenaltyEnabled: true,
+      stakeAmount: 200,
+      stakePercentCap: 10,
+    },
+  });
+  const playerA = await prisma.duelPlayer.create({
+    data: { duelId: duel.id, userId: demoUserId, side: "A", accepted: true, joinedAt: start, stakeAccountId: demoCheckingId },
+  });
+  const playerB = await prisma.duelPlayer.create({
+    data: { duelId: duel.id, userId: partner.id, side: "B", accepted: true, joinedAt: start, stakeAccountId: partnerChecking.id },
+  });
+
+  // Seed 3 closed sprints + 1 active
+  const sprintWinners = [playerA.id, playerB.id, playerA.id]; // demo 2-1
+  const themeMults = [1.0, 1.5, 1.0];
+  const themeLabels = [null, "Double-Down", null];
+  let sprintTotalsA = 0, sprintTotalsB = 0, sprintsWonA = 0, sprintsWonB = 0;
+
+  for (let w = 1; w <= 4; w++) {
+    const sStart = new Date(start.getTime() + (w - 1) * 7 * 86400000);
+    const sEnd = new Date(start.getTime() + w * 7 * 86400000);
+    const isClosed = w <= 3;
+    const tMult = isClosed ? themeMults[w - 1] : 1.0;
+    const sprint = await prisma.sprint.create({
+      data: {
+        duelId: duel.id, weekNumber: w, startDate: sStart, endDate: sEnd,
+        status: isClosed ? "CLOSED" : "ACTIVE",
+        themeMultiplier: tMult,
+        themeLabel: isClosed ? themeLabels[w - 1] : null,
+        winnerPlayerId: isClosed ? sprintWinners[w - 1] : null,
+        closedAt: isClosed ? sEnd : null,
+      },
+    });
+    // targets
+    await prisma.sprintTarget.create({ data: { sprintId: sprint.id, playerId: playerA.id, amount: 500 } });
+    await prisma.sprintTarget.create({ data: { sprintId: sprint.id, playerId: playerB.id, amount: 500 } });
+
+    // contributions
+    const aWins = isClosed && sprintWinners[w - 1] === playerA.id;
+    const aDays = aWins ? 6 : 4;
+    const bDays = aWins ? 4 : 6;
+    for (let i = 0; i < aDays; i++) {
+      const d = new Date(sStart.getTime() + i * 86400000 + 12 * 3600000);
+      const amt = 60 + Math.round(Math.random() * 40);
+      const pts = Number((amt * (1 + Math.min(0.5, 0.05 * i)) * tMult).toFixed(2));
+      await prisma.contribution.create({
+        data: { sprintId: sprint.id, playerId: playerA.id, amount: amt, pointsAwarded: pts, createdAt: d, editableUntil: new Date(d.getTime() + 86400000) },
+      });
+      sprintTotalsA += pts;
+    }
+    for (let i = 0; i < bDays; i++) {
+      const d = new Date(sStart.getTime() + i * 86400000 + 14 * 3600000);
+      const amt = 55 + Math.round(Math.random() * 45);
+      const pts = Number((amt * (1 + Math.min(0.5, 0.05 * i)) * tMult).toFixed(2));
+      await prisma.contribution.create({
+        data: { sprintId: sprint.id, playerId: playerB.id, amount: amt, pointsAwarded: pts, createdAt: d, editableUntil: new Date(d.getTime() + 86400000) },
+      });
+      sprintTotalsB += pts;
+    }
+
+    if (isClosed) {
+      if (sprintWinners[w - 1] === playerA.id) sprintsWonA++;
+      else sprintsWonB++;
+      await prisma.duelEvent.create({
+        data: { duelId: duel.id, kind: "SPRINT_CLOSE", payload: { weekNumber: w, winnerPlayerId: sprintWinners[w - 1] } as never, createdAt: sEnd },
+      });
+    }
+    await prisma.duelEvent.create({
+      data: { duelId: duel.id, kind: "SPRINT_OPEN", payload: { weekNumber: w } as never, createdAt: sStart },
+    });
+  }
+
+  // A CONCEDED dispute on partner contribution from sprint 2
+  const partnerContribs = await prisma.contribution.findMany({
+    where: { playerId: playerB.id }, take: 1, orderBy: { createdAt: "desc" },
+  });
+  if (partnerContribs[0]) {
+    await prisma.dispute.create({
+      data: {
+        contributionId: partnerContribs[0].id, raisedByPlayerId: playerA.id,
+        reason: "Already counted last week", status: "CONCEDED", resolvedAt: new Date(now.getTime() - 7 * 86400000),
+        autoResolveAt: new Date(now.getTime() + 7 * 86400000),
+      },
+    });
+    await prisma.contribution.update({ where: { id: partnerContribs[0].id }, data: { disputeStatus: "CONCEDED" } });
+    sprintTotalsB -= partnerContribs[0].pointsAwarded;
+  }
+
+  await prisma.duelEvent.create({
+    data: { duelId: duel.id, kind: "BADGE", playerId: playerA.id, payload: { badge: "FIRST_BLOOD" } as never, createdAt: start },
+  });
+
+  // Cheers
+  await prisma.cheer.createMany({
+    data: [
+      { duelId: duel.id, fromPlayerId: playerB.id, sticker: "fire" },
+      { duelId: duel.id, fromPlayerId: playerA.id, sticker: "crown" },
+      { duelId: duel.id, fromPlayerId: playerB.id, sticker: "flex" },
+      { duelId: duel.id, fromPlayerId: playerA.id, sticker: "100" },
+    ],
+  });
+  await prisma.duelEvent.create({
+    data: { duelId: duel.id, kind: "CHEER", playerId: playerB.id, payload: { sticker: "fire" } as never },
+  });
+
+  // Update totals + streaks
+  await prisma.duelPlayer.update({
+    where: { id: playerA.id },
+    data: { totalPoints: Math.round(sprintTotalsA * 100) / 100, sprintsWon: sprintsWonA, currentStreakDays: 5, longestStreakDays: 7 },
+  });
+  await prisma.duelPlayer.update({
+    where: { id: playerB.id },
+    data: { totalPoints: Math.round(sprintTotalsB * 100) / 100, sprintsWon: sprintsWonB, currentStreakDays: 3, longestStreakDays: 6 },
+  });
+
+  // Practice duel for demo
+  const pStart = new Date(now.getTime() - 6 * 86400000);
+  const pEnd = new Date(now.getTime() + 9 * 86400000);
+  const practice = await prisma.duel.create({
+    data: {
+      creatorUserId: demoUserId,
+      title: "Espresso Machine Sprint",
+      targetAmount: 1200,
+      sprintLengthDays: 3,
+      startDate: pStart,
+      endDate: pEnd,
+      status: "ACTIVE",
+      stakeText: "Loser hand-grinds beans for a month",
+      isPractice: true,
+      practiceOpponentDailyAvg: 35,
+    },
+  });
+  const pA = await prisma.duelPlayer.create({
+    data: { duelId: practice.id, userId: demoUserId, side: "A", accepted: true, joinedAt: pStart },
+  });
+  const pB = await prisma.duelPlayer.create({
+    data: { duelId: practice.id, userId: null, side: "B", accepted: true, joinedAt: pStart },
+  });
+  const pSprintEnd = new Date(pStart.getTime() + 3 * 86400000);
+  const pSprint = await prisma.sprint.create({
+    data: { duelId: practice.id, weekNumber: 1, startDate: pStart, endDate: pSprintEnd, status: "ACTIVE" },
+  });
+  await prisma.sprintTarget.create({ data: { sprintId: pSprint.id, playerId: pA.id, amount: 120 } });
+  await prisma.sprintTarget.create({ data: { sprintId: pSprint.id, playerId: pB.id, amount: 105 } });
+  await prisma.duelEvent.create({ data: { duelId: practice.id, kind: "SPRINT_OPEN", payload: { weekNumber: 1 } as never } });
+  for (let i = 0; i < 2; i++) {
+    const d = new Date(pStart.getTime() + i * 86400000 + 11 * 3600000);
+    await prisma.contribution.create({
+      data: { sprintId: pSprint.id, playerId: pA.id, amount: 45, pointsAwarded: 45, createdAt: d, editableUntil: new Date(d.getTime() + 86400000) },
+    });
+    await prisma.contribution.create({
+      data: { sprintId: pSprint.id, playerId: pB.id, amount: 35, pointsAwarded: 35, createdAt: d, editableUntil: new Date(d.getTime() + 86400000) },
+    });
+  }
+  await prisma.duelPlayer.update({ where: { id: pA.id }, data: { totalPoints: 90, currentStreakDays: 2 } });
+  await prisma.duelPlayer.update({ where: { id: pB.id }, data: { totalPoints: 70, currentStreakDays: 2 } });
+
+  console.log(`Seeded partner: ${partnerEmail} / ${partnerPwd}`);
 }
 
 if (require.main === module) {
