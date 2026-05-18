@@ -135,3 +135,30 @@ export const holdingPatchSchema = z.object({
 export const apiTokenSchema = z.object({
   name: z.string().min(1).max(80),
 });
+
+export const ruleSchema = z.object({
+  name: z.string().min(1).max(80),
+  pattern: z.string().min(1).max(120),
+  accountId: z.string().min(1).optional().nullable(),
+  categoryOut: z.string().min(1).max(80),
+  autoTag: z.string().max(40).optional().nullable(),
+  priority: z.coerce.number().int().optional().default(0),
+  active: z.boolean().optional().default(true),
+});
+
+export const rulePatchSchema = z.object({
+  name: z.string().min(1).max(80).optional(),
+  pattern: z.string().min(1).max(120).optional(),
+  accountId: z.string().min(1).nullable().optional(),
+  categoryOut: z.string().min(1).max(80).optional(),
+  autoTag: z.string().max(40).nullable().optional(),
+  priority: z.coerce.number().int().optional(),
+  active: z.boolean().optional(),
+});
+
+export const goalContributionSchema = z.object({
+  amount: z.coerce.number().positive(),
+  date: z.string().min(1),
+  transactionId: z.string().optional().nullable(),
+  note: z.string().max(200).optional().nullable(),
+});

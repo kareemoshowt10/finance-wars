@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/auth";
 import { bad, ok } from "@/lib/api";
+import { applyRules } from "@/lib/rules";
 
 type Row = {
   date?: string; amount?: string; type?: string;
@@ -39,14 +40,18 @@ export async function POST(req: NextRequest) {
         });
         acctMap.set(accountName.toLowerCase(), acct);
       }
+      const desc = r.description || r.category || "Imported";
+      let category = r.category || "Other";
+      const ruleMatch = await applyRules(user.id, { description: desc, accountId: acct.id });
+      if (ruleMatch) category = ruleMatch.category;
       await prisma.transaction.create({
         data: {
           userId: user.id,
           accountId: acct.id,
           amount: amt,
           type,
-          category: r.category || "Other",
-          description: r.description || r.category || "Imported",
+          category,
+          description: desc,
           date: new Date(r.date),
         },
       });

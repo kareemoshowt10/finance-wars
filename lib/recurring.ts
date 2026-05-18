@@ -1,4 +1,5 @@
 import { prisma } from "./prisma";
+import { applyRules } from "./rules";
 
 export function advanceDate(d: Date, frequency: string): Date {
   const next = new Date(d);
@@ -21,13 +22,15 @@ export async function runDue(userId: string) {
     let runDate = new Date(r.nextRunDate);
     // catch up if multiple periods passed
     while (runDate <= now) {
+      const ruleMatch = await applyRules(r.userId, { description: r.description, accountId: r.accountId });
+      const category = ruleMatch ? ruleMatch.category : r.category;
       await prisma.transaction.create({
         data: {
           userId: r.userId,
           accountId: r.accountId,
           amount: r.amount,
           type: r.type,
-          category: r.category,
+          category,
           description: r.description,
           date: runDate,
         },

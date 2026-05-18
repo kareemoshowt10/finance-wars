@@ -7,6 +7,7 @@ import { txSchema } from "@/lib/schemas";
 import { rateLimit, DEFAULT_MUTATION } from "@/lib/ratelimit";
 import { log } from "@/lib/audit";
 import { checkBudgetThresholds, checkLargeTransaction } from "@/lib/notifications";
+import { applyRules } from "@/lib/rules";
 
 export async function GET(req: NextRequest) {
   const r = await resolveRequestUser(req);
@@ -92,14 +93,18 @@ export async function POST(req: NextRequest) {
   const acct = await prisma.account.findUnique({ where: { id: data.accountId } });
   if (!acct || acct.userId !== r.user.id) return bad("Invalid account", 400);
 
+  let category = data.category;
+  const desc = data.description || data.category;
+  const ruleMatch = await applyRules(r.user.id, { description: desc, accountId: data.accountId });
+  if (ruleMatch) category = ruleMatch.category;
   const tx = await prisma.transaction.create({
     data: {
       userId: r.user.id,
       accountId: data.accountId,
       amount: Math.abs(data.amount),
       type: data.type,
-      category: data.category,
-      description: data.description || data.category,
+      category,
+      description: desc,
       date: data.date ? new Date(data.date) : new Date(),
     },
   });

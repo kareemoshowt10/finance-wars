@@ -28,6 +28,40 @@ model User {
   holdings          Holding[]
   auditLogs         AuditLog[]
   apiTokens         ApiToken[]
+  rules             Rule[]
+  goalContributions GoalContribution[]
+}
+
+model Rule {
+  id         String   @id @default(cuid())
+  userId     String
+  name       String
+  pattern    String
+  accountId  String?
+  categoryOut String
+  autoTag    String?
+  priority   Int      @default(0)
+  active     Boolean  @default(true)
+  createdAt  DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, priority])
+}
+
+model GoalContribution {
+  id            String   @id @default(cuid())
+  userId        String
+  goalId        String
+  amount        Float
+  date          DateTime
+  transactionId String?
+  note          String?
+  createdAt     DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([goalId, date])
 }
 
 model Notification {
