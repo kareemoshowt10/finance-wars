@@ -30,6 +30,155 @@ model User {
   apiTokens         ApiToken[]
   rules             Rule[]
   goalContributions GoalContribution[]
+  duelsCreated      Duel[]             @relation("DuelCreator")
+  duelPlayers       DuelPlayer[]
+}
+
+model Duel {
+  id                       String    @id @default(cuid())
+  creatorUserId            String
+  title                    String
+  goalId                   String?
+  targetAmount             Float
+  sprintLengthDays         Int
+  startDate                DateTime
+  endDate                  DateTime
+  status                   String    @default("PENDING")
+  stakeText                String
+  stakeAmount              Float?
+  stakePercentCap          Int?      @default(10)
+  isPractice               Boolean   @default(false)
+  autoPenaltyEnabled       Boolean   @default(false)
+  stakeVoided              Boolean   @default(false)
+  stakeResolvedAt          DateTime?
+  dailyCap                 Float     @default(500)
+  practiceOpponentDailyAvg Float?
+  createdAt                DateTime  @default(now())
+  completedAt              DateTime?
+
+  creator User         @relation("DuelCreator", fields: [creatorUserId], references: [id], onDelete: Cascade)
+  players DuelPlayer[]
+  sprints Sprint[]
+  cheers  Cheer[]
+  events  DuelEvent[]
+
+  @@index([creatorUserId, status])
+}
+
+model DuelPlayer {
+  id                String    @id @default(cuid())
+  duelId            String
+  userId            String?
+  inviteEmail       String?
+  side              String
+  accepted          Boolean   @default(false)
+  declined          Boolean   @default(false)
+  stakeAccountId    String?
+  totalPoints       Float     @default(0)
+  sprintsWon        Int       @default(0)
+  currentStreakDays Int       @default(0)
+  longestStreakDays Int       @default(0)
+  joinedAt          DateTime?
+
+  duel          Duel           @relation(fields: [duelId], references: [id], onDelete: Cascade)
+  user          User?          @relation(fields: [userId], references: [id], onDelete: SetNull)
+  contributions Contribution[]
+  sprintTargets SprintTarget[]
+  cheers        Cheer[]
+
+  @@unique([duelId, side])
+  @@index([userId])
+}
+
+model Sprint {
+  id              String    @id @default(cuid())
+  duelId          String
+  weekNumber      Int
+  startDate       DateTime
+  endDate         DateTime
+  status          String    @default("ACTIVE")
+  themeMultiplier Float     @default(1.0)
+  themeLabel      String?
+  winnerPlayerId  String?
+  closedAt        DateTime?
+
+  duel          Duel           @relation(fields: [duelId], references: [id], onDelete: Cascade)
+  targets       SprintTarget[]
+  contributions Contribution[]
+
+  @@unique([duelId, weekNumber])
+  @@index([duelId, startDate])
+}
+
+model SprintTarget {
+  id       String   @id @default(cuid())
+  sprintId String
+  playerId String
+  amount   Float
+  setAt    DateTime @default(now())
+
+  sprint Sprint     @relation(fields: [sprintId], references: [id], onDelete: Cascade)
+  player DuelPlayer @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  @@unique([sprintId, playerId])
+}
+
+model Contribution {
+  id            String   @id @default(cuid())
+  sprintId      String
+  playerId      String
+  amount        Float
+  note          String?
+  pointsAwarded Float    @default(0)
+  disputeStatus String?
+  editableUntil DateTime
+  createdAt     DateTime @default(now())
+
+  sprint  Sprint     @relation(fields: [sprintId], references: [id], onDelete: Cascade)
+  player  DuelPlayer @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  dispute Dispute?
+
+  @@index([sprintId, playerId])
+  @@index([sprintId, createdAt])
+}
+
+model Dispute {
+  id               String    @id @default(cuid())
+  contributionId   String    @unique
+  raisedByPlayerId String
+  reason           String?
+  status           String    @default("PENDING")
+  resolvedAt       DateTime?
+  autoResolveAt    DateTime
+  createdAt        DateTime  @default(now())
+
+  contribution Contribution @relation(fields: [contributionId], references: [id], onDelete: Cascade)
+}
+
+model Cheer {
+  id           String   @id @default(cuid())
+  duelId       String
+  fromPlayerId String
+  sticker      String
+  createdAt    DateTime @default(now())
+
+  duel       Duel       @relation(fields: [duelId], references: [id], onDelete: Cascade)
+  fromPlayer DuelPlayer @relation(fields: [fromPlayerId], references: [id], onDelete: Cascade)
+
+  @@index([duelId, createdAt])
+}
+
+model DuelEvent {
+  id        String   @id @default(cuid())
+  duelId    String
+  kind      String
+  playerId  String?
+  payload   Json?
+  createdAt DateTime @default(now())
+
+  duel Duel @relation(fields: [duelId], references: [id], onDelete: Cascade)
+
+  @@index([duelId, createdAt])
 }
 
 model Rule {
