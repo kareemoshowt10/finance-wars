@@ -4,7 +4,7 @@ import {
   AreaChart, Area, XAxis, YAxis, ResponsiveContainer, Tooltip, CartesianGrid,
   LineChart, Line,
 } from "recharts";
-import { ArrowUp, ArrowDown, AlertCircle } from "lucide-react";
+import { ArrowUp, ArrowDown, AlertCircle, Repeat, TrendingUp } from "lucide-react";
 import { formatCurrency, formatCurrencyFull, formatDate } from "@/lib/utils";
 
 type Insights = {
@@ -123,6 +123,10 @@ export default function InsightsPage() {
         )}
       </section>
 
+      <SubscriptionsSection currency={currency} />
+
+      <ProjectionSection currency={currency} />
+
       <section className="card p-5">
         <div className="text-xs text-black/50 dark:text-white/50 mb-3">Spending Heatmap — last 12 weeks</div>
         <div className="overflow-x-auto">
@@ -147,5 +151,105 @@ export default function InsightsPage() {
         </div>
       </section>
     </div>
+  );
+}
+
+type Sub = { description: string; amount: number; intervalDays: number; lastSeen: string; count: number; monthlyEquivalent: number };
+
+function SubscriptionsSection({ currency }: { currency: string }) {
+  const [subs, setSubs] = useState<Sub[] | null>(null);
+  const [accounts, setAccounts] = useState<{ id: string; name: string }[]>([]);
+  const [busy, setBusy] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch("/api/insights/subscriptions").then((r) => r.json()).then((d) => setSubs(Array.isArray(d) ? d : []));
+    fetch("/api/accounts").then((r) => r.json()).then((d) => setAccounts(Array.isArray(d) ? d : []));
+  }, []);
+
+  if (!subs) return null;
+  const total = subs.reduce((s, x) => s + x.monthlyEquivalent, 0);
+
+  async function addRecurring(s: Sub) {
+    if (accounts.length === 0) { alert("Create an account first."); return; }
+    setBusy(s.description);
+    const freq = s.intervalDays <= 8 ? "WEEKLY" : s.intervalDays <= 16 ? "BIWEEKLY" : s.intervalDays <= 35 ? "MONTHLY" : "YEARLY";
+    const next = new Date(s.lastSeen);
+    next.setDate(next.getDate() + s.intervalDays);
+    await fetch("/api/recurring", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        accountId: accounts[0].id, amount: s.amount, type: "expense",
+        category: "Subscriptions", description: s.description,
+        frequency: freq, nextRunDate: next.toISOString(),
+      }),
+    });
+    setBusy(null);
+  }
+
+  return (
+    <section className="card p-5">
+      <div className="flex items-center justify-between mb-3">
+        <div className="text-xs text-black/50 dark:text-white/50 flex items-center gap-2">
+          <Repeat className="w-3.5 h-3.5" /> Detected subscriptions
+        </div>
+        <div className="text-xs text-black/60 dark:text-white/60">
+          ~{formatCurrencyFull(total, currency)}/mo total
+        </div>
+      </div>
+      {subs.length === 0 ? (
+        <div className="text-sm opacity-50">No recurring patterns detected in the last 6 months.</div>
+      ) : (
+        <ul className="divide-y divide-black/5 dark:divide-white/5">
+          {subs.map((s) => (
+            <li key={s.description} className="py-3 flex items-center gap-3">
+              <div className="flex-1 min-w-0">
+                <div className="text-sm truncate">{s.description}</div>
+                <div className="text-xs text-black/40 dark:text-white/40">
+                  every ~{s.intervalDays}d · {s.count}× · last {formatDate(s.lastSeen)}
+                </div>
+              </div>
+              <div className="text-right">
+                <div className="text-sm font-medium">{formatCurrency(s.amount, currency)}</div>
+                <div className="text-xs text-black/50 dark:text-white/50">{formatCurrency(s.monthlyEquivalent, currency)}/mo</div>
+              </div>
+              <button
+                onClick={() => addRecurring(s)}
+                disabled={busy === s.description}
+                className="text-xs px-2 py-1 rounded-full border border-black/10 dark:border-white/10 hover:bg-black/5 dark:hover:bg-white/5"
+              >
+                {busy === s.description ? "Adding…" : "Add as recurring"}
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}
+
+function ProjectionSection({ currency }: { currency: string }) {
+  const [p, setP] = useState<{ currentNetWorth: number; monthlySavings: number; nextMilestone: number; monthsToMilestone: number | null } | null>(null);
+  useEffect(() => {
+    fetch("/api/insights/projection").then((r) => r.json()).then(setP);
+  }, []);
+  if (!p) return null;
+  return (
+    <section className="card p-5">
+      <div className="text-xs text-black/50 dark:text-white/50 mb-3 flex items-center gap-2"><TrendingUp className="w-3.5 h-3.5" /> Projection</div>
+      <div className="grid grid-cols-3 gap-3 text-sm">
+        <div>
+          <div className="text-xs text-black/50 dark:text-white/50">Monthly savings</div>
+          <div className="text-lg font-semibold mt-0.5">{formatCurrency(p.monthlySavings, currency)}</div>
+        </div>
+        <div>
+          <div className="text-xs text-black/50 dark:text-white/50">Next milestone</div>
+          <div className="text-lg font-semibold mt-0.5">{formatCurrency(p.nextMilestone, currency)}</div>
+        </div>
+        <div>
+          <div className="text-xs text-black/50 dark:text-white/50">Months to reach</div>
+          <div className="text-lg font-semibold mt-0.5">{p.monthsToMilestone !== null ? `${p.monthsToMilestone}` : "—"}</div>
+        </div>
+      </div>
+    </section>
   );
 }

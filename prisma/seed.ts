@@ -141,6 +141,47 @@ export async function runSeed() {
   }
   await prisma.netWorthSnapshot.createMany({ data: snapData });
 
+  // Holdings — brokerage account
+  const brokerage = accounts[3];
+  await prisma.holding.createMany({
+    data: [
+      { userId: user.id, accountId: brokerage.id, symbol: "AAPL", shares: 25, costBasis: 4200 },
+      { userId: user.id, accountId: brokerage.id, symbol: "TSLA", shares: 12, costBasis: 2900 },
+      { userId: user.id, accountId: brokerage.id, symbol: "MSFT", shares: 15, costBasis: 5100 },
+      { userId: user.id, accountId: brokerage.id, symbol: "NVDA", shares: 8, costBasis: 3600 },
+      { userId: user.id, accountId: brokerage.id, symbol: "GOOGL", shares: 10, costBasis: 1450 },
+      { userId: user.id, accountId: brokerage.id, symbol: "VTI", shares: 30, costBasis: 6800 },
+    ],
+  });
+
+  // Sample notifications
+  await prisma.notification.createMany({
+    data: [
+      { userId: user.id, kind: "BUDGET_WARNING", title: "Shopping budget at 84%", body: "You've used 84% of your $350 Shopping budget.", link: "/dashboard/budgets", key: `budget:warning:Shopping:${m}` },
+      { userId: user.id, kind: "GOAL_MILESTONE", title: "50% of Emergency Fund", body: "You're halfway to your $15,000 goal.", link: "/dashboard/goals", key: `goal:50:seed-1` },
+      { userId: user.id, kind: "BILL_DUE", title: "Upcoming: Apartment rent", body: "$1,850 due in 5 days.", link: "/dashboard/recurring", key: `bill:seed-rent` },
+      { userId: user.id, kind: "LARGE_TX", title: "Unusually large expense", body: "$1,850 on MacBook accessories is over 2× your average.", link: "/dashboard/transactions", key: `large:seed-mac` },
+      { userId: user.id, kind: "INSIGHT", title: "You saved 18% this month", body: "Up 3 points from last month. Keep going.", link: "/dashboard/insights", key: `insight:seed-1` },
+    ],
+  });
+
+  // Audit log entries
+  await prisma.auditLog.createMany({
+    data: [
+      { userId: user.id, action: "auth.signup", entity: "user", entityId: user.id },
+      { userId: user.id, action: "account.create", entity: "account", entityId: accounts[0].id, meta: { name: "Everyday Checking" } as never },
+      { userId: user.id, action: "account.create", entity: "account", entityId: accounts[1].id, meta: { name: "High-Yield Savings" } as never },
+      { userId: user.id, action: "goal.create", entity: "goal", meta: { name: "Emergency Fund" } as never },
+      { userId: user.id, action: "budget.upsert", entity: "budget", meta: { category: "Food", limit: 500 } as never },
+    ],
+  });
+
+  // One placeholder API token (hash only — no plaintext exposed)
+  const fakeHash = "0".repeat(64);
+  await prisma.apiToken.create({
+    data: { userId: user.id, name: "Demo CLI (revoked)", tokenHash: fakeHash, revokedAt: new Date() },
+  });
+
   console.log(`Seeded demo user: ${email} / ${password}`);
 }
 

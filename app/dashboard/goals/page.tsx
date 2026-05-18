@@ -58,6 +58,7 @@ export default function GoalsPage() {
                   <div className="text-base font-medium mt-0.5 truncate">{g.name}</div>
                   <div className="mt-2 text-2xl font-semibold tracking-tight">{formatCurrency(g.currentAmount, currency)}</div>
                   <div className="text-xs text-black/50 dark:text-white/50">of {formatCurrency(g.targetAmount, currency)}</div>
+                  <Projection goalId={g.id} currency={currency} />
                   <div className="mt-2 opacity-0 group-hover:opacity-100 transition flex gap-1">
                     <button onClick={() => setOpen(g)} className="p-1.5 text-black/40 dark:text-white/40 hover:text-black dark:hover:text-white"><Pencil className="w-4 h-4" /></button>
                     <button onClick={() => remove(g.id)} className="p-1.5 text-black/40 dark:text-white/40 hover:text-rose-400"><Trash2 className="w-4 h-4" /></button>
@@ -86,6 +87,23 @@ export default function GoalsPage() {
       {open !== null && (
         <GoalModal goal={open === "new" ? null : open} onClose={() => setOpen(null)} onSaved={() => { setOpen(null); load(); }} />
       )}
+    </div>
+  );
+}
+
+function Projection({ goalId, currency }: { goalId: string; currency: string }) {
+  const [p, setP] = useState<{ onTrack: boolean; shortfall: number; eta: string | null; requiredPerMonth: number } | null>(null);
+  useEffect(() => {
+    fetch(`/api/goals/${goalId}/projection`).then((r) => r.json()).then(setP).catch(() => {});
+  }, [goalId]);
+  if (!p) return null;
+  const etaLabel = p.eta ? new Date(p.eta).toLocaleDateString("en-US", { month: "short", year: "numeric" }) : "—";
+  return (
+    <div className="mt-2 flex items-center gap-2 text-[11px]">
+      <span className={`px-2 py-0.5 rounded-full ${p.onTrack ? "bg-emerald-500/15 text-emerald-500" : "bg-amber-500/15 text-amber-500"}`}>
+        {p.onTrack ? "On track" : `Behind by ${formatCurrency(p.shortfall, currency)}/mo`}
+      </span>
+      <span className="text-black/40 dark:text-white/40">ETA {etaLabel}</span>
     </div>
   );
 }

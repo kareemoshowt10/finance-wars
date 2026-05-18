@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { LogOut, Download, Trash2 } from "lucide-react";
+import { LogOut, Download, Trash2, Key, Copy } from "lucide-react";
 import ThemeToggle from "../_components/ThemeToggle";
 
 const CURRENCIES = ["USD", "EUR", "GBP", "JPY", "CAD", "AUD", "CHF", "INR", "BRL"];
@@ -170,6 +170,8 @@ export default function SettingsPage() {
         <button onClick={logout} className="btn-danger inline-flex items-center gap-2"><LogOut className="w-4 h-4" />Log out</button>
       </section>
 
+      <ApiTokensSection />
+
       <section className="card p-6 border-rose-500/30">
         <h2 className="text-sm font-semibold text-rose-500">Danger zone</h2>
         <p className="text-xs text-black/50 dark:text-white/50 mt-1">Permanently delete your account and all data.</p>
@@ -192,5 +194,94 @@ export default function SettingsPage() {
         </div>
       )}
     </div>
+  );
+}
+
+type ApiTokenRow = { id: string; name: string; lastUsedAt?: string | null; createdAt: string; revokedAt?: string | null };
+
+function ApiTokensSection() {
+  const [tokens, setTokens] = useState<ApiTokenRow[]>([]);
+  const [name, setName] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [newToken, setNewToken] = useState<string | null>(null);
+  const [err, setErr] = useState<string | null>(null);
+
+  async function load() {
+    const data = await fetch("/api/tokens").then((r) => r.json());
+    setTokens(Array.isArray(data) ? data : []);
+  }
+  useEffect(() => { load(); }, []);
+
+  async function create(e: React.FormEvent) {
+    e.preventDefault();
+    setErr(null); setBusy(true);
+    try {
+      const res = await fetch("/api/tokens", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed");
+      setNewToken(data.token);
+      setName("");
+      load();
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "Failed");
+    } finally { setBusy(false); }
+  }
+
+  async function revoke(id: string) {
+    if (!confirm("Revoke this token? Any clients using it will stop working.")) return;
+    await fetch(`/api/tokens/${id}`, { method: "DELETE" });
+    load();
+  }
+
+  return (
+    <section className="card p-6">
+      <div className="flex items-center gap-2">
+        <Key className="w-4 h-4" />
+        <h2 className="text-sm font-semibold uppercase tracking-wider text-black/60 dark:text-white/60">API tokens</h2>
+      </div>
+      <p className="text-xs text-black/50 dark:text-white/50 mt-1">
+        Use a token with <code>Authorization: Bearer fw_pat_…</code> to call any /api endpoint.
+      </p>
+
+      {newToken && (
+        <div className="mt-4 p-3 rounded-xl bg-amber-500/10 border border-amber-500/30">
+          <div className="text-xs font-medium text-amber-600 dark:text-amber-400">Copy now — this token won&apos;t be shown again.</div>
+          <div className="mt-2 flex items-center gap-2">
+            <code className="flex-1 text-xs break-all bg-black/5 dark:bg-white/5 px-2 py-1 rounded">{newToken}</code>
+            <button onClick={() => { navigator.clipboard.writeText(newToken); }} className="p-2 hover:text-black dark:hover:text-white">
+              <Copy className="w-4 h-4" />
+            </button>
+          </div>
+          <button onClick={() => setNewToken(null)} className="mt-2 text-xs underline">Dismiss</button>
+        </div>
+      )}
+
+      <form onSubmit={create} className="mt-4 flex gap-2">
+        <input className="input flex-1" placeholder="Token name (e.g. CLI)" value={name} onChange={(e) => setName(e.target.value)} required />
+        <button disabled={busy} className="btn-primary">{busy ? "Creating…" : "Create"}</button>
+      </form>
+      {err && <div className="text-sm text-rose-500 mt-2">{err}</div>}
+
+      <ul className="mt-4 divide-y divide-black/5 dark:divide-white/5">
+        {tokens.length === 0 ? (
+          <li className="text-xs text-black/40 dark:text-white/40 py-3">No tokens yet.</li>
+        ) : tokens.map((t) => (
+          <li key={t.id} className="py-3 flex items-center gap-3">
+            <div className="flex-1 min-w-0">
+              <div className="text-sm">{t.name} {t.revokedAt && <span className="text-rose-500 text-xs">(revoked)</span>}</div>
+              <div className="text-xs text-black/40 dark:text-white/40">
+                Created {new Date(t.createdAt).toLocaleDateString()} · {t.lastUsedAt ? `Last used ${new Date(t.lastUsedAt).toLocaleDateString()}` : "Never used"}
+              </div>
+            </div>
+            {!t.revokedAt && (
+              <button onClick={() => revoke(t.id)} className="text-xs text-rose-500 hover:underline">Revoke</button>
+            )}
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }
