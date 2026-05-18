@@ -1,12 +1,22 @@
 import "./globals.css";
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
+import PWARegister from "./dashboard/_components/PWARegister";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
 
 export const metadata: Metadata = {
   title: "Finance Wars — Take command of your money",
   description: "A premium personal finance dashboard. Track net worth, budgets, and goals in one beautiful place.",
+  appleWebApp: { capable: true, statusBarStyle: "black-translucent", title: "Finance Wars" },
+  icons: {
+    icon: [{ url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" }],
+    apple: [{ url: "/icons/icon-192.png", sizes: "192x192" }],
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#000000",
 };
 
 const themeScript = `
@@ -26,7 +36,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
-      <body className="font-sans antialiased">{children}</body>
+      <body className="font-sans antialiased">
+        {children}
+        <PWARegister />
+      </body>
     </html>
   );
 }
