@@ -8,6 +8,10 @@ import { rateLimit, DEFAULT_MUTATION } from "@/lib/ratelimit";
 import { log } from "@/lib/audit";
 import { checkBudgetThresholds, checkLargeTransaction } from "@/lib/notifications";
 import { applyRules } from "@/lib/rules";
+import { getActiveHousehold, getOtherMember } from "@/lib/household";
+import { shouldRequireReview, enqueueReview } from "@/lib/purchaseReview";
+import { notify } from "@/lib/notifications";
+import { recordAllowanceSpend, monthKey, PERSONAL_ALLOWANCE_CATEGORY } from "@/lib/allowance";
 
 export async function GET(req: NextRequest) {
   const r = await resolveRequestUser(req);
@@ -113,6 +117,44 @@ export async function POST(req: NextRequest) {
     where: { id: data.accountId },
     data: { balance: { increment: delta } },
   });
+
+  // Couples: big-purchase pre-flight + allowance
+  const activeHh = await getActiveHousehold(r.user.id);
+  if (activeHh) {
+    if (await shouldRequireReview(r.user.id, activeHh.id, { type: data.type, amount: tx.amount, category, description: desc })) {
+      const other = await getOtherMember(activeHh.id, r.user.id);
+      if (other?.userId) {
+        const review = await enqueueReview({
+          householdId: activeHh.id,
+          transactionId: tx.id,
+          requesterUserId: r.user.id,
+          approverUserId: other.userId,
+          amount: tx.amount,
+        });
+        await notify(
+          other.userId,
+          "BIG_PURCHASE_PENDING",
+          "Approve a purchase",
+          `${r.user.name} just spent $${tx.amount.toFixed(0)} on ${desc}.`,
+          `/dashboard/couples/purchase-reviews/${review.id}`,
+          `review:pending:${review.id}`
+        );
+      }
+    }
+    if (category === PERSONAL_ALLOWANCE_CATEGORY && data.type === "expense") {
+      const led = await recordAllowanceSpend(activeHh.id, r.user.id, monthKey(tx.date), tx.amount);
+      if (led && led.allocated > 0 && (led.allocated - led.spent) / led.allocated < 0.1) {
+        await notify(
+          r.user.id,
+          "ALLOWANCE_LOW",
+          "Allowance running low",
+          `Only $${Math.max(0, led.allocated - led.spent).toFixed(0)} left this month.`,
+          "/dashboard/couples",
+          `allowance:low:${led.id}`
+        );
+      }
+    }
+  }
   const { upsertTodaySnapshot } = await import("@/lib/snapshots");
   await upsertTodaySnapshot(r.user.id);
   if (data.type === "expense") {
