@@ -11,6 +11,7 @@ import { openNextSprint } from "@/lib/duels/sprints";
 const createSchema = z
   .object({
     title: z.string().min(1).max(120),
+    mode: z.enum(["DUEL", "COOP"]).optional().default("DUEL"),
     goalId: z.string().optional().nullable(),
     targetAmount: z.coerce.number().positive().max(10_000_000),
     sprintLengthDays: z.union([z.literal(3), z.literal(7), z.literal(14)]),
@@ -83,18 +84,20 @@ export async function POST(req: NextRequest) {
   if (days < data.sprintLengthDays) return bad("Duration too short for one sprint", 422);
 
   const isPractice = !!data.practiceOpponentDailyAvg;
+  const isCoop = data.mode === "COOP";
 
   const duel = await prisma.duel.create({
     data: {
       creatorUserId: r.user.id,
       title: data.title,
+      mode: data.mode,
       goalId: data.goalId ?? null,
       targetAmount: data.targetAmount,
       sprintLengthDays: data.sprintLengthDays,
       startDate: start,
       endDate: end,
-      stakeText: data.stakeText,
-      autoPenaltyEnabled: data.autoPenaltyEnabled,
+      stakeText: isCoop ? (data.stakeText || "Build it together") : data.stakeText,
+      autoPenaltyEnabled: isCoop ? false : data.autoPenaltyEnabled,
       stakeAmount: data.stakeAmount ?? null,
       stakePercentCap: data.stakePercentCap ?? 10,
       dailyCap: data.dailyCap ?? 500,

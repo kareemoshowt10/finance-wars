@@ -53,8 +53,22 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
 
   const me = duel.players.find((p) => p.userId === r.user.id) ?? null;
 
+  const allContribs = duel.sprints.flatMap((s) => s.contributions);
+  const combinedPoints = allContribs
+    .filter((c) => c.disputeStatus !== "PENDING" && c.disputeStatus !== "CONCEDED")
+    .reduce((sum, c) => sum + c.amount, 0);
+  const totalSprints = Math.max(
+    1,
+    Math.ceil((duel.endDate.getTime() - duel.startDate.getTime()) / (duel.sprintLengthDays * 86400000))
+  );
+  const sprintCombinedTarget =
+    duel.mode === "COOP" ? Math.round((duel.targetAmount / totalSprints) * 100) / 100 : null;
+
   return ok({
     duel,
+    mode: duel.mode,
+    combinedPoints: Math.round(combinedPoints * 100) / 100,
+    sprintCombinedTarget,
     players: playersOut,
     sprints: duel.sprints,
     currentSprintId: currentSprint?.id ?? null,

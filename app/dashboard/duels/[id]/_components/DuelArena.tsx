@@ -24,7 +24,7 @@ type Sprint = {
   targets: { id: string; playerId: string; amount: number }[];
 };
 type Duel = {
-  id: string; title: string; targetAmount: number; sprintLengthDays: number;
+  id: string; title: string; mode?: string; targetAmount: number; sprintLengthDays: number;
   startDate: string; endDate: string; status: string; stakeText: string;
   stakeAmount: number | null; stakePercentCap: number | null; isPractice: boolean;
   autoPenaltyEnabled: boolean; stakeVoided: boolean; stakeResolvedAt: string | null;
@@ -190,8 +190,13 @@ export default function DuelArena({ duelId, userId }: { duelId: string; userId: 
             <div className="text-5xl font-semibold tracking-[-0.03em] mt-2">{daysLeft}d</div>
             <div className="text-xs text-black/50 dark:text-white/50 mt-1">${totalContribs.toFixed(0)} of ${duel.targetAmount.toFixed(0)}</div>
             <div className="mt-3 h-1.5 rounded-full bg-black/10 dark:bg-white/10 overflow-hidden">
-              <motion.div initial={{ width: 0 }} animate={{ width: `${pct}%` }} className="h-full bg-gradient-to-r from-indigo-500 to-fuchsia-500" />
+              <motion.div initial={{ width: 0 }} animate={{ width: `${pct}%` }} className={"h-full " + (duel.mode === "COOP" ? "bg-gradient-to-r from-emerald-500 to-teal-500" : "bg-gradient-to-r from-indigo-500 to-fuchsia-500")} />
             </div>
+            {duel.mode === "COOP" && (
+              <div className="mt-3 px-3 py-2 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs inline-block">
+                Boss fight · combined HP {Math.round(pct)}%
+              </div>
+            )}
           </div>
           <PlayerSide player={opp} mirror />
         </div>

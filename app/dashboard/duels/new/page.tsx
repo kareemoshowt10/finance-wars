@@ -16,6 +16,7 @@ export default function NewDuelPage() {
   const [err, setErr] = useState<string | null>(null);
 
   // step 1
+  const [duelMode, setDuelMode] = useState<"DUEL" | "COOP">("DUEL");
   const [goalId, setGoalId] = useState<string>("");
   const [title, setTitle] = useState("");
   const [targetAmount, setTargetAmount] = useState(2000);
@@ -70,13 +71,14 @@ export default function NewDuelPage() {
     try {
       const body: Record<string, unknown> = {
         title,
+        mode: duelMode,
         goalId: goalId || undefined,
         targetAmount,
         sprintLengthDays,
         startDate: new Date(startDate).toISOString(),
         endDate: new Date(endDate).toISOString(),
-        stakeText,
-        autoPenaltyEnabled,
+        stakeText: duelMode === "COOP" ? (stakeText || "Build it together") : stakeText,
+        autoPenaltyEnabled: duelMode === "COOP" ? false : autoPenaltyEnabled,
         stakeAccountId: stakeAccountId || undefined,
       };
       if (autoPenaltyEnabled) {
@@ -106,7 +108,7 @@ export default function NewDuelPage() {
   const canNext = [
     title.length > 0 && targetAmount > 0,
     sprintsFit >= 1,
-    stakeText.length > 0 && (!autoPenaltyEnabled || (stakeAmount > 0 && !!stakeAccountId)),
+    duelMode === "COOP" ? true : (stakeText.length > 0 && (!autoPenaltyEnabled || (stakeAmount > 0 && !!stakeAccountId))),
     mode === "invite" ? /.+@.+\..+/.test(inviteEmail) : practiceAvg > 0,
   ][step];
 
@@ -133,6 +135,25 @@ export default function NewDuelPage() {
         >
           {step === 0 && (
             <>
+              <h2 className="text-lg font-medium">Mode</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => setDuelMode("DUEL")}
+                  className={"text-left rounded-2xl border p-4 transition " + (duelMode === "DUEL" ? "border-fuchsia-500 bg-fuchsia-500/5" : "border-black/10 dark:border-white/10")}
+                >
+                  <div className="text-sm font-medium">Duel · Head-to-head</div>
+                  <div className="mt-1 text-xs text-black/55 dark:text-white/55">Compete for sprint wins. Loser pays the stake. Best when you want pressure.</div>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setDuelMode("COOP")}
+                  className={"text-left rounded-2xl border p-4 transition " + (duelMode === "COOP" ? "border-emerald-500 bg-emerald-500/5" : "border-black/10 dark:border-white/10")}
+                >
+                  <div className="text-sm font-medium">Co-op Quest · Boss fight</div>
+                  <div className="mt-1 text-xs text-black/55 dark:text-white/55">Both contributions stack toward one goal. Sprint wins when combined target is hit. No stakes.</div>
+                </button>
+              </div>
               <h2 className="text-lg font-medium">Goal & target</h2>
               <div className="space-y-2">
                 <label className="text-xs uppercase tracking-[0.15em] text-black/50 dark:text-white/50">Link an existing goal</label>

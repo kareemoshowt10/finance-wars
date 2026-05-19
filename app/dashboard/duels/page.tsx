@@ -65,7 +65,10 @@ export default async function DuelsPage() {
               <Link key={d.id} href={`/dashboard/duels/${d.id}`} className="card p-5 hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition">
                 <div className="flex items-start justify-between">
                   <div>
-                    <div className="font-medium">{d.title}</div>
+                    <div className="font-medium flex items-center gap-2">
+                      {d.title}
+                      {d.mode === "COOP" && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">CO-OP</span>}
+                    </div>
                     <div className="text-xs text-black/50 dark:text-white/50 mt-1">{formatCurrency(d.targetAmount)} target · {d.sprintLengthDays}-day sprints</div>
                   </div>
                   <div className="text-xs text-black/40 dark:text-white/40">{d.sprints.length} sprints</div>
