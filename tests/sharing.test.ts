@@ -66,8 +66,8 @@ describe("getSharedView", () => {
     const v = await getSharedView("u1", "h1");
     expect(v.accounts).toHaveLength(1);
     expect(v.accounts[0].level).toBe("BALANCE");
-    // tx fetch only happens for FULL acct ids
-    expect(txFindMany).not.toHaveBeenCalled();
+    // No transactions exposed when no FULL acct ids
+    expect(v.transactions).toHaveLength(0);
   });
 
   it("FULL exposes partner transactions", async () => {

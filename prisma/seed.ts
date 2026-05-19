@@ -597,6 +597,265 @@ async function seedCouples(demoUserId: string, demoCheckingId: string, partnerId
     });
   }
 
+  // -------- v2: Shared Bills + Settle-up + Co-op Quest --------
+  const checkingId = acctMap.checking!;
+  const rent = await prisma.sharedBill.create({
+    data: {
+      householdId: hh.id,
+      name: "Rent",
+      amount: 2400,
+      frequency: "MONTHLY",
+      nextDueDate: new Date(now.getFullYear(), now.getMonth() + 1, 1),
+      accountId: checkingId,
+      splitMode: "INCOME_RATIO",
+      splitConfig: {} as never,
+      categoryName: "Housing",
+    },
+  });
+  const internet = await prisma.sharedBill.create({
+    data: {
+      householdId: hh.id,
+      name: "Internet",
+      amount: 80,
+      frequency: "MONTHLY",
+      nextDueDate: new Date(now.getFullYear(), now.getMonth() + 1, 5),
+      accountId: checkingId,
+      splitMode: "EQUAL",
+      splitConfig: {} as never,
+      categoryName: "Bills & Utilities",
+    },
+  });
+  const streaming = await prisma.sharedBill.create({
+    data: {
+      householdId: hh.id,
+      name: "Streaming bundle",
+      amount: 45,
+      frequency: "MONTHLY",
+      nextDueDate: new Date(now.getFullYear(), now.getMonth() + 1, 10),
+      accountId: checkingId,
+      splitMode: "FIXED",
+      splitConfig: { [demoUserId]: 27, [partnerId]: 18 } as never,
+      categoryName: "Entertainment",
+    },
+  });
+
+  // 3 months of past charges with realistic history
+  for (let i = 1; i <= 3; i++) {
+    const due = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    // Rent — demo paid, income_ratio split (assume demo earns ~60%, partner ~40%)
+    const rentCharge = await prisma.billCharge.create({
+      data: {
+        sharedBillId: rent.id,
+        householdId: hh.id,
+        paidByUserId: demoUserId,
+        amount: 2400,
+        dueDate: due,
+        status: "PAID",
+        paidAt: new Date(due.getTime() + 86400000),
+      },
+    });
+    // partner owes share — approximate 40% (income ratio)
+    await prisma.ledgerEntry.create({
+      data: {
+        householdId: hh.id,
+        fromUserId: partnerId,
+        toUserId: demoUserId,
+        amount: 960, // 40% of 2400
+        reason: `Rent (${due.toISOString().slice(0, 10)})`,
+        billChargeId: rentCharge.id,
+      },
+    });
+
+    // Internet — demo paid 2 months, partner paid the most recent of the 3
+    const intDue = new Date(now.getFullYear(), now.getMonth() - i, 5);
+    const paidBy = i === 1 ? partnerId : demoUserId;
+    const intCharge = await prisma.billCharge.create({
+      data: {
+        sharedBillId: internet.id,
+        householdId: hh.id,
+        paidByUserId: paidBy,
+        amount: 80,
+        dueDate: intDue,
+        status: "PAID",
+        paidAt: new Date(intDue.getTime() + 86400000),
+      },
+    });
+    await prisma.ledgerEntry.create({
+      data: {
+        householdId: hh.id,
+        fromUserId: paidBy === demoUserId ? partnerId : demoUserId,
+        toUserId: paidBy,
+        amount: 40,
+        reason: `Internet (${intDue.toISOString().slice(0, 10)})`,
+        billChargeId: intCharge.id,
+      },
+    });
+
+    // Streaming — demo paid, fixed 60/40
+    const strDue = new Date(now.getFullYear(), now.getMonth() - i, 10);
+    const strCharge = await prisma.billCharge.create({
+      data: {
+        sharedBillId: streaming.id,
+        householdId: hh.id,
+        paidByUserId: demoUserId,
+        amount: 45,
+        dueDate: strDue,
+        status: "PAID",
+        paidAt: new Date(strDue.getTime() + 86400000),
+      },
+    });
+    await prisma.ledgerEntry.create({
+      data: {
+        householdId: hh.id,
+        fromUserId: partnerId,
+        toUserId: demoUserId,
+        amount: 18,
+        reason: `Streaming (${strDue.toISOString().slice(0, 10)})`,
+        billChargeId: strCharge.id,
+      },
+    });
+  }
+
+  // Historical settlement 60 days ago, ~$500 (partner→demo)
+  const pastSettle = await prisma.settlement.create({
+    data: {
+      householdId: hh.id,
+      fromUserId: partnerId,
+      toUserId: demoUserId,
+      amount: 500,
+      note: "Square up Q1 bills",
+      settledAt: new Date(now.getTime() - 60 * 86400000),
+    },
+  });
+  await prisma.ledgerEntry.create({
+    data: {
+      householdId: hh.id,
+      fromUserId: demoUserId,
+      toUserId: partnerId,
+      amount: 500,
+      reason: "Settlement: Square up Q1 bills",
+      settlementId: pastSettle.id,
+      createdAt: new Date(now.getTime() - 60 * 86400000),
+    },
+  });
+
+  // After all entries above:
+  //   3 rent charges × $960 owed to demo = $2880
+  //   internet: 2 charges where partner owes demo $40 = $80; 1 where demo owes partner $40 = -$40
+  //   3 streaming × $18 owed to demo = $54
+  //   1 settlement: partner→demo $500 → ledger entry reduces partner's debt by $500
+  //   Net partner owes demo ≈ 2880 + 80 - 40 + 54 - 500 = $2474
+  // We want partner to owe demo ~$340 net — add a balancing settlement (~$2134) to bring near target.
+  const balancingSettle = await prisma.settlement.create({
+    data: {
+      householdId: hh.id,
+      fromUserId: partnerId,
+      toUserId: demoUserId,
+      amount: 2134,
+      note: "Mid-period catch-up",
+      settledAt: new Date(now.getTime() - 20 * 86400000),
+    },
+  });
+  await prisma.ledgerEntry.create({
+    data: {
+      householdId: hh.id,
+      fromUserId: demoUserId,
+      toUserId: partnerId,
+      amount: 2134,
+      reason: "Settlement: Mid-period catch-up",
+      settlementId: balancingSettle.id,
+      createdAt: new Date(now.getTime() - 20 * 86400000),
+    },
+  });
+
+  // Co-op Quest: "House Down Payment" — $20k, 14-day sprints, 6 sprints total.
+  // 1 closed sprint + 1 active sprint with contributions on both sides.
+  const coopStart = new Date(now.getTime() - 18 * 86400000);
+  const coopEnd = new Date(coopStart.getTime() + 6 * 14 * 86400000);
+  const coopDuel = await prisma.duel.create({
+    data: {
+      creatorUserId: demoUserId,
+      title: "House Down Payment",
+      mode: "COOP",
+      targetAmount: 20000,
+      sprintLengthDays: 14,
+      startDate: coopStart,
+      endDate: coopEnd,
+      stakeText: "Build it together",
+      autoPenaltyEnabled: false,
+      status: "ACTIVE",
+    },
+  });
+  const playerA = await prisma.duelPlayer.create({
+    data: { duelId: coopDuel.id, userId: demoUserId, side: "A", accepted: true, joinedAt: coopStart },
+  });
+  const playerB = await prisma.duelPlayer.create({
+    data: { duelId: coopDuel.id, userId: partnerId, side: "B", accepted: true, joinedAt: coopStart },
+  });
+  const sprint1 = await prisma.sprint.create({
+    data: {
+      duelId: coopDuel.id,
+      weekNumber: 1,
+      startDate: coopStart,
+      endDate: new Date(coopStart.getTime() + 14 * 86400000),
+      status: "CLOSED",
+      closedAt: new Date(coopStart.getTime() + 14 * 86400000),
+    },
+  });
+  const sprint2 = await prisma.sprint.create({
+    data: {
+      duelId: coopDuel.id,
+      weekNumber: 2,
+      startDate: new Date(coopStart.getTime() + 14 * 86400000),
+      endDate: new Date(coopStart.getTime() + 28 * 86400000),
+      status: "ACTIVE",
+    },
+  });
+  for (const [p, amts] of [
+    [playerA, [800, 600, 400]],
+    [playerB, [700, 500, 200]],
+  ] as const) {
+    for (let i = 0; i < amts.length; i++) {
+      await prisma.contribution.create({
+        data: {
+          sprintId: sprint1.id,
+          playerId: p.id,
+          amount: amts[i],
+          pointsAwarded: amts[i],
+          editableUntil: new Date(coopStart.getTime() + 14 * 86400000),
+          createdAt: new Date(coopStart.getTime() + (i + 1) * 86400000),
+        },
+      });
+    }
+  }
+  // Active sprint contributions
+  for (const [p, amts] of [
+    [playerA, [500, 350]],
+    [playerB, [400, 300]],
+  ] as const) {
+    for (let i = 0; i < amts.length; i++) {
+      await prisma.contribution.create({
+        data: {
+          sprintId: sprint2.id,
+          playerId: p.id,
+          amount: amts[i],
+          pointsAwarded: amts[i],
+          editableUntil: new Date(coopStart.getTime() + 28 * 86400000),
+          createdAt: new Date(coopStart.getTime() + (14 + i + 1) * 86400000),
+        },
+      });
+    }
+  }
+  // Bump totals for display
+  await prisma.duelPlayer.update({
+    where: { id: playerA.id },
+    data: { totalPoints: 800 + 600 + 400 + 500 + 350, sprintsWon: 1 },
+  });
+  await prisma.duelPlayer.update({
+    where: { id: playerB.id },
+    data: { totalPoints: 700 + 500 + 200 + 400 + 300, sprintsWon: 1 },
+  });
+
   console.log(`Seeded household: ${hh.name}`);
 }
 
