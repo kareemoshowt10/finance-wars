@@ -145,20 +145,23 @@ export default function LandingPageClient() {
         </div>
       </section>
 
-      {/* Modes rail */}
+      {/* Built for couples */}
       <section className="relative py-20 px-6">
         <div className="mx-auto max-w-6xl">
-          <div className="text-xs uppercase tracking-[0.3em] opacity-50 mb-6 text-center">Four ways to play</div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div className="text-xs uppercase tracking-[0.3em] opacity-50 mb-3 text-center">Built for couples</div>
+          <h3 className="text-center text-3xl md:text-5xl font-semibold tracking-[-0.03em] max-w-3xl mx-auto">A transparency layer for two.</h3>
+          <p className="text-center mt-4 opacity-60 max-w-xl mx-auto">
+            40% of partners hide spending. Finance Wars makes that impossible — gently.
+          </p>
+          <div className="mt-10 grid grid-cols-1 md:grid-cols-4 gap-3">
             {[
-              { icon: Wallet, title: "Personal", body: "Just you, your numbers, your peace." },
-              { icon: Target, title: "Goals", body: "Save toward something specific." },
-              { icon: Swords, title: "Duels", body: "Compete with a partner." },
-              { icon: Bot, title: "Practice", body: "Spar with a bot, no pressure." },
+              { title: "Pact", body: "Co-author thresholds and allowances. Both sign." },
+              { title: "Money Date", body: "Weekly 30-min review with an auto-built agenda." },
+              { title: "Pre-flight", body: "Big purchases pause for a quick partner check." },
+              { title: "Allowance", body: "Personal spending lanes. No questions asked." },
             ].map((m) => (
               <div key={m.title} className="card p-5">
-                <m.icon className="w-5 h-5 opacity-80" />
-                <div className="mt-3 font-semibold text-sm">{m.title}</div>
+                <div className="font-semibold text-sm">{m.title}</div>
                 <div className="mt-1 text-xs opacity-55">{m.body}</div>
               </div>
             ))}

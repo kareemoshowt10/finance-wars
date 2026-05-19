@@ -111,7 +111,17 @@ export default function Onboarding() {
               <p className="mt-2 text-sm text-white/60">Sprint head-to-head. Save more. Roast each other. (Optional — you can skip and set this up later.)</p>
               <div className="mt-5 flex gap-2">
                 <Link href="/dashboard/duels/new" onClick={() => setOpen(false)} className="btn-primary">Set one up <ArrowRight className="w-4 h-4" /></Link>
-                <button onClick={() => setOpen(false)} className="btn-ghost">Skip</button>
+                <button onClick={() => setStep(4)} className="btn-ghost">Skip</button>
+              </div>
+            </>
+          )}
+          {step === 4 && (
+            <>
+              <h2 className="mt-2 text-2xl font-semibold tracking-tight">Invite your partner</h2>
+              <p className="mt-2 text-sm text-white/60">Create a Household to share net worth, pact, and money dates — on your terms.</p>
+              <div className="mt-5 flex gap-2">
+                <Link href="/dashboard/couples/setup" onClick={() => setOpen(false)} className="btn-primary">Set up Couples <ArrowRight className="w-4 h-4" /></Link>
+                <button onClick={() => setOpen(false)} className="btn-ghost">Maybe later</button>
               </div>
             </>
           )}
