@@ -62,6 +62,84 @@ model Household {
   moneyDates      MoneyDate[]
   purchaseReviews PurchaseReview[]
   allowances      AllowanceLedger[]
+  sharedBills     SharedBill[]
+  billCharges     BillCharge[]
+  ledgerEntries   LedgerEntry[]
+  settlements     Settlement[]
+}
+
+model SharedBill {
+  id            String   @id @default(cuid())
+  householdId   String
+  name          String
+  amount        Float
+  frequency     String   // ONEOFF|MONTHLY|WEEKLY|BIWEEKLY|YEARLY
+  nextDueDate   DateTime
+  accountId     String?
+  splitMode     String   // EQUAL|PERCENT|INCOME_RATIO|FIXED
+  splitConfig   Json
+  categoryName  String   @default("Bills & Utilities")
+  active        Boolean  @default(true)
+  createdAt     DateTime @default(now())
+
+  household Household    @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  charges   BillCharge[]
+
+  @@index([householdId, active])
+}
+
+model BillCharge {
+  id            String   @id @default(cuid())
+  sharedBillId  String
+  householdId   String
+  paidByUserId  String?
+  amount        Float
+  dueDate       DateTime
+  status        String   @default("UPCOMING") // UPCOMING|PAID|MISSED
+  paidAt        DateTime?
+  transactionId String?
+  createdAt     DateTime @default(now())
+
+  sharedBill SharedBill @relation(fields: [sharedBillId], references: [id], onDelete: Cascade)
+  household  Household  @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  ledger     LedgerEntry[]
+
+  @@index([householdId, status, dueDate])
+  @@unique([sharedBillId, dueDate])
+}
+
+model LedgerEntry {
+  id            String   @id @default(cuid())
+  householdId   String
+  fromUserId    String
+  toUserId      String
+  amount        Float
+  reason        String
+  billChargeId  String?
+  settlementId  String?
+  createdAt     DateTime @default(now())
+
+  household   Household   @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  billCharge  BillCharge? @relation(fields: [billChargeId], references: [id], onDelete: SetNull)
+  settlement  Settlement? @relation(fields: [settlementId], references: [id], onDelete: SetNull)
+
+  @@index([householdId, createdAt])
+}
+
+model Settlement {
+  id            String   @id @default(cuid())
+  householdId   String
+  fromUserId    String
+  toUserId      String
+  amount        Float
+  transactionId String?
+  note          String?
+  settledAt     DateTime @default(now())
+
+  household Household     @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  entries   LedgerEntry[]
+
+  @@index([householdId, settledAt])
 }
 
 model HouseholdMember {
@@ -181,6 +259,7 @@ model Duel {
   id                       String    @id @default(cuid())
   creatorUserId            String
   title                    String
+  mode                     String    @default("DUEL")
   goalId                   String?
   targetAmount             Float
   sprintLengthDays         Int

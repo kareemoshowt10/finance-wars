@@ -29,15 +29,19 @@ export type SharedView = {
   members: { userId: string; name: string; email: string }[];
   accounts: SharedAccount[];
   transactions: SharedTransaction[];
+  nextCursor: string | null;
   goals: { id: string; userId: string; name: string; targetAmount: number; currentAmount: number; deadline: Date }[];
   netWorth: number;
   monthIncome: number;
   monthSpend: number;
+  monthIncomeByUser: Record<string, number>;
   savingsRate: number;
   pendingReviewsCount: number;
 };
 
-export async function getSharedView(viewerUserId: string, householdId: string): Promise<SharedView> {
+export type SharedViewOpts = { cursor?: string; pageSize?: number };
+
+export async function getSharedView(viewerUserId: string, householdId: string, opts: SharedViewOpts = {}): Promise<SharedView> {
   const members = await prisma.householdMember.findMany({
     where: { householdId, accepted: true, userId: { not: null } },
     include: { user: { select: { id: true, email: true, name: true } } },
@@ -74,13 +78,18 @@ export async function getSharedView(viewerUserId: string, householdId: string): 
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
   const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 1);
 
-  const transactions = fullAcctIds.length
+  const pageSize = Math.min(200, Math.max(1, opts.pageSize ?? 50));
+  const fetched = fullAcctIds.length
     ? await prisma.transaction.findMany({
         where: { accountId: { in: fullAcctIds } },
-        orderBy: { date: "desc" },
-        take: 200,
+        orderBy: [{ date: "desc" }, { id: "desc" }],
+        take: pageSize + 1,
+        ...(opts.cursor ? { cursor: { id: opts.cursor }, skip: 1 } : {}),
       })
     : [];
+  const hasMore = fetched.length > pageSize;
+  const transactions = hasMore ? fetched.slice(0, pageSize) : fetched;
+  const nextCursor = hasMore ? transactions[transactions.length - 1].id : null;
 
   const monthTxs = fullAcctIds.length
     ? await prisma.transaction.findMany({
@@ -101,7 +110,21 @@ export async function getSharedView(viewerUserId: string, householdId: string): 
     return s + (a.type === "credit" ? -a.balance : a.balance);
   }, 0);
 
+  // Per-user 90-day avg monthly income (for fairness chips)
+  const ninety = new Date(Date.now() - 90 * 86400000);
+  const monthIncomeByUser: Record<string, number> = {};
+  for (const uid of memberUserIds) {
+    const tx = await prisma.transaction.findMany({
+      where: { userId: uid, type: "income", date: { gte: ninety } },
+      select: { amount: true },
+    });
+    const total = tx.reduce((s, t) => s + t.amount, 0);
+    monthIncomeByUser[uid] = total / 3;
+  }
+
   return {
+    nextCursor,
+    monthIncomeByUser,
     members: members.map((m) => ({
       userId: m.userId!,
       name: m.user?.name || "",

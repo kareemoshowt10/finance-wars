@@ -9,6 +9,10 @@ export async function GET(req: NextRequest, { params }: { params: { hid: string 
   if (!r) return bad("Unauthorized", 401);
   const fb = await assertMember(r.user.id, params.hid);
   if (fb) return fb;
-  const view = await getSharedView(r.user.id, params.hid);
+  const url = new URL(req.url);
+  const cursor = url.searchParams.get("cursor") || undefined;
+  const pageSizeRaw = parseInt(url.searchParams.get("pageSize") || "50", 10);
+  const pageSize = Math.min(200, Math.max(1, isNaN(pageSizeRaw) ? 50 : pageSizeRaw));
+  const view = await getSharedView(r.user.id, params.hid, { cursor, pageSize });
   return ok(view);
 }

@@ -99,11 +99,27 @@ export async function closeSprint(sprintId: string) {
     points[c.playerId] = (points[c.playerId] || 0) + c.pointsAwarded;
   }
 
-  // Determine winner
-  const sorted = Object.entries(points).sort((a, b) => b[1] - a[1]);
+  // COOP mode: shared target — both win if combined hits the per-sprint combined target.
+  const isCoop = sprint.duel.mode === "COOP";
   let winnerPlayerId: string | null = null;
-  const isTie = sorted.length >= 2 && sorted[0][1] === sorted[1][1] && sorted[0][1] > 0;
-  if (!isTie && sorted[0] && sorted[0][1] > 0) winnerPlayerId = sorted[0][0];
+  let isTie = false;
+  let coopHit = false;
+  if (isCoop) {
+    const totalSprints = Math.max(
+      1,
+      Math.ceil((sprint.duel.endDate.getTime() - sprint.duel.startDate.getTime()) / (sprint.duel.sprintLengthDays * 86400000))
+    );
+    const combinedTarget = sprint.duel.targetAmount / totalSprints;
+    const combined = sprint.contributions
+      .filter((c) => c.disputeStatus !== "PENDING" && c.disputeStatus !== "CONCEDED")
+      .reduce((s, c) => s + c.amount, 0);
+    coopHit = combined >= combinedTarget;
+    isTie = coopHit; // both get credit (treated as tie so both increment)
+  } else {
+    const sorted = Object.entries(points).sort((a, b) => b[1] - a[1]);
+    isTie = sorted.length >= 2 && sorted[0][1] === sorted[1][1] && sorted[0][1] > 0;
+    if (!isTie && sorted[0] && sorted[0][1] > 0) winnerPlayerId = sorted[0][0];
+  }
 
   // Streak handling — for each player check if they hit daily target every day
   for (const p of players) {
