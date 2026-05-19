@@ -6,27 +6,61 @@ import { AnimatePresence, motion } from "framer-motion";
 import {
   LayoutDashboard, ArrowLeftRight, Wallet, Target, Trophy, Settings, LogOut, Menu, X,
   Sparkles, Repeat, Tag, Bell, PieChart, Activity, CheckCheck, Filter, TrendingUp, FileText, Swords,
+  Calendar as CalIcon, LineChart, MessageCircle, Award, Flame,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import ThemeToggle from "./ThemeToggle";
 
-const links = [
-  { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
-  { href: "/dashboard/transactions", label: "Transactions", icon: ArrowLeftRight },
-  { href: "/dashboard/accounts", label: "Accounts", icon: Wallet },
-  { href: "/dashboard/portfolio", label: "Portfolio", icon: PieChart },
-  { href: "/dashboard/budgets", label: "Budgets", icon: Target },
-  { href: "/dashboard/goals", label: "Goals", icon: Trophy },
-  { href: "/dashboard/duels", label: "Duels", icon: Swords },
-  { href: "/dashboard/insights", label: "Insights", icon: Sparkles },
-  { href: "/dashboard/cashflow", label: "Cash Flow", icon: TrendingUp },
-  { href: "/dashboard/recurring", label: "Recurring", icon: Repeat },
-  { href: "/dashboard/rules", label: "Rules", icon: Filter },
-  { href: "/dashboard/categories", label: "Categories", icon: Tag },
-  { href: "/dashboard/reports", label: "Reports", icon: FileText },
-  { href: "/dashboard/activity", label: "Activity", icon: Activity },
-  { href: "/dashboard/settings", label: "Settings", icon: Settings },
+const linkGroups: { heading?: string; items: { href: string; label: string; icon: React.ComponentType<{ className?: string }> }[] }[] = [
+  {
+    items: [
+      { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
+      { href: "/dashboard/calendar", label: "Calendar", icon: CalIcon },
+    ],
+  },
+  {
+    heading: "Money",
+    items: [
+      { href: "/dashboard/transactions", label: "Transactions", icon: ArrowLeftRight },
+      { href: "/dashboard/accounts", label: "Accounts", icon: Wallet },
+      { href: "/dashboard/portfolio", label: "Portfolio", icon: PieChart },
+      { href: "/dashboard/budgets", label: "Budgets", icon: Target },
+      { href: "/dashboard/goals", label: "Goals", icon: Trophy },
+    ],
+  },
+  {
+    heading: "Play",
+    items: [
+      { href: "/dashboard/duels", label: "Duels", icon: Swords },
+      { href: "/dashboard/achievements", label: "Achievements", icon: Award },
+    ],
+  },
+  {
+    heading: "Think",
+    items: [
+      { href: "/dashboard/insights", label: "Insights", icon: Sparkles },
+      { href: "/dashboard/cashflow", label: "Cash Flow", icon: TrendingUp },
+      { href: "/dashboard/scenarios", label: "Scenarios", icon: LineChart },
+      { href: "/dashboard/coach", label: "Coach", icon: MessageCircle },
+      { href: "/dashboard/reports", label: "Reports", icon: FileText },
+    ],
+  },
+  {
+    heading: "Automate",
+    items: [
+      { href: "/dashboard/rules", label: "Rules", icon: Filter },
+      { href: "/dashboard/recurring", label: "Recurring", icon: Repeat },
+      { href: "/dashboard/categories", label: "Categories", icon: Tag },
+    ],
+  },
+  {
+    items: [
+      { href: "/dashboard/activity", label: "Activity", icon: Activity },
+      { href: "/dashboard/settings", label: "Settings", icon: Settings },
+    ],
+  },
 ];
+const links = linkGroups.flatMap((g) => g.items);
 
 type Notif = {
   id: string; kind: string; title: string; body: string;
@@ -40,6 +74,14 @@ export default function DashNav({ userName }: { userName: string }) {
   const [bellOpen, setBellOpen] = useState(false);
   const [notifs, setNotifs] = useState<Notif[]>([]);
   const [unread, setUnread] = useState(0);
+  const [gam, setGam] = useState<{ xp: number; level: number; streak: number } | null>(null);
+
+  useEffect(() => {
+    fetch("/api/achievements")
+      .then((r) => r.ok ? r.json() : null)
+      .then((d) => { if (d) setGam({ xp: d.xp, level: d.level?.level || 0, streak: d.streak || 0 }); })
+      .catch(() => {});
+  }, [pathname]);
 
   async function loadNotifs() {
     try {
@@ -170,27 +212,47 @@ export default function DashNav({ userName }: { userName: string }) {
         <div className="px-5 pt-4 md:pt-2 pb-3">
           <div className="text-[11px] uppercase tracking-[0.2em] text-black/40 dark:text-white/40">Signed in</div>
           <div className="text-sm mt-1 truncate">{userName}</div>
+          {gam && (
+            <Link href="/dashboard/achievements" className="mt-2 flex items-center gap-2 text-[11px]">
+              <span className="px-2 py-0.5 rounded-full bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-medium">
+                LVL {gam.level}
+              </span>
+              <span className="opacity-60 tabular-nums">{gam.xp} XP</span>
+              {gam.streak > 0 && (
+                <span className="ml-auto flex items-center gap-1 text-orange-500" title={`${gam.streak}-day streak`}>
+                  <Flame className="w-3 h-3" /> {gam.streak}
+                </span>
+              )}
+            </Link>
+          )}
         </div>
-        <nav className="flex-1 px-3 space-y-0.5 overflow-y-auto">
-          {links.map((l) => {
-            const active = pathname === l.href || (l.href !== "/dashboard" && pathname.startsWith(l.href));
-            return (
-              <Link
-                key={l.href}
-                href={l.href}
-                onClick={() => setOpen(false)}
-                className={cn(
-                  "flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition",
-                  active
-                    ? "bg-black/10 dark:bg-white/10 text-black dark:text-white"
-                    : "text-black/60 dark:text-white/60 hover:text-black dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5"
-                )}
-              >
-                <l.icon className="w-4 h-4" />
-                {l.label}
-              </Link>
-            );
-          })}
+        <nav className="flex-1 px-3 space-y-3 overflow-y-auto pb-4">
+          {linkGroups.map((g, gi) => (
+            <div key={gi} className="space-y-0.5">
+              {g.heading && (
+                <div className="px-3 pt-1 pb-1 text-[10px] uppercase tracking-[0.2em] text-black/35 dark:text-white/35">{g.heading}</div>
+              )}
+              {g.items.map((l) => {
+                const active = pathname === l.href || (l.href !== "/dashboard" && pathname.startsWith(l.href));
+                return (
+                  <Link
+                    key={l.href}
+                    href={l.href}
+                    onClick={() => setOpen(false)}
+                    className={cn(
+                      "flex items-center gap-3 px-3 py-1.5 rounded-lg text-sm transition",
+                      active
+                        ? "bg-black/10 dark:bg-white/10 text-black dark:text-white"
+                        : "text-black/60 dark:text-white/60 hover:text-black dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5"
+                    )}
+                  >
+                    <l.icon className="w-4 h-4" />
+                    {l.label}
+                  </Link>
+                );
+              })}
+            </div>
+          ))}
         </nav>
         <div className="p-3 border-t border-black/5 dark:border-white/5">
           <button onClick={logout} className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-black/60 dark:text-white/60 hover:text-black dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5">

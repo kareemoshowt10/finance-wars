@@ -30,5 +30,7 @@ export async function POST(req: NextRequest) {
   const { upsertTodaySnapshot } = await import("@/lib/snapshots");
   await upsertTodaySnapshot(r.user.id);
   await log(r.user.id, "account.create", { entity: "account", entityId: account.id, meta: { name: data.name }, req });
+  const { evaluate: evalAch } = await import("@/lib/achievements/engine");
+  evalAch(r.user.id, { type: "account-created" }).catch(() => {});
   return ok(account);
 }

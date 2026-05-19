@@ -41,5 +41,7 @@ export async function POST(req: NextRequest) {
     },
   });
   await log(r.user.id, "recurring.create", { entity: "recurring", entityId: item.id, meta: { amount: item.amount }, req });
+  const { evaluate: evalAch } = await import("@/lib/achievements/engine");
+  evalAch(r.user.id, { type: "recurring-created" }).catch(() => {});
   return ok(item);
 }

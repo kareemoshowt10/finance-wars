@@ -90,6 +90,9 @@ export async function resolveRequestUser(
               prisma.apiToken
                 .update({ where: { id: token.id }, data: { lastUsedAt: new Date() } })
                 .catch(() => {});
+              import("./streak")
+                .then(({ touchLoginStreak }) => touchLoginStreak(user.id))
+                .catch(() => {});
             }
             return { user, viaToken: true };
           }

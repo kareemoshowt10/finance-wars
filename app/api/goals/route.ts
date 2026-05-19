@@ -36,5 +36,7 @@ export async function POST(req: NextRequest) {
   });
   await checkGoalMilestones(r.user.id, goal.id, 0, goal.currentAmount, goal.targetAmount, goal.name);
   await log(r.user.id, "goal.create", { entity: "goal", entityId: goal.id, meta: { name: goal.name }, req });
+  const { evaluate: evalAch } = await import("@/lib/achievements/engine");
+  evalAch(r.user.id, { type: "goal-created" }).catch(() => {});
   return ok(goal);
 }

@@ -48,6 +48,8 @@ export async function POST(req: NextRequest) {
       meta: { category: data.category, limit: data.limit, month: m },
       req,
     });
+    const { evaluate: evalAch } = await import("@/lib/achievements/engine");
+    evalAch(r.user.id, { type: "budget-created" }).catch(() => {});
     return ok(budget);
   } catch {
     return bad("Could not save budget");

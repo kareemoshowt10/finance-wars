@@ -41,5 +41,7 @@ export async function POST(req: NextRequest) {
     },
   });
   await log(r.user.id, "rule.create", { entity: "rule", entityId: rule.id, req });
+  const { evaluate: evalAch } = await import("@/lib/achievements/engine");
+  evalAch(r.user.id, { type: "rule-created" }).catch(() => {});
   return ok(rule);
 }

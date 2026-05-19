@@ -155,5 +155,8 @@ export async function POST(req: NextRequest) {
   }
 
   await log(r.user.id, "duel.create", { entity: "duel", entityId: duel.id, meta: { title: duel.title }, req });
+  const { evaluate: evalAch } = await import("@/lib/achievements/engine");
+  evalAch(r.user.id, { type: "duel-created" }).catch(() => {});
+  if (!isPractice) evalAch(r.user.id, { type: "duel-invited" }).catch(() => {});
   return ok(duel);
 }

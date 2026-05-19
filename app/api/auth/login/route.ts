@@ -23,5 +23,7 @@ export async function POST(req: NextRequest) {
   const token = await signToken({ uid: user.id, email: user.email });
   await setSessionCookie(token);
   await log(user.id, "auth.login", { entity: "user", entityId: user.id, req });
+  const { touchLoginStreak } = await import("@/lib/streak");
+  await touchLoginStreak(user.id);
   return ok({ id: user.id, email: user.email, name: user.name });
 }

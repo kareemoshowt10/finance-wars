@@ -17,6 +17,14 @@ model User {
   onboarded    Boolean  @default(false)
   createdAt    DateTime @default(now())
 
+  xp                 Int       @default(0)
+  currentLoginStreak Int       @default(0)
+  longestLoginStreak Int       @default(0)
+  lastLoginAt        DateTime?
+  notifyOnOpponentContribution Boolean @default(true)
+  defaultStakeAccountId        String?
+
+  achievements      UserAchievement[]
   accounts          Account[]
   transactions      Transaction[]
   budgets           Budget[]
@@ -360,6 +368,31 @@ model RecurringTransaction {
 
   user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
   account Account @relation(fields: [accountId], references: [id], onDelete: Cascade)
+}
+
+model Achievement {
+  id          String @id @default(cuid())
+  slug        String @unique
+  name        String
+  description String
+  icon        String
+  xp          Int
+  category    String
+  tier        Int    @default(1)
+}
+
+model UserAchievement {
+  id              String   @id @default(cuid())
+  userId          String
+  achievementSlug String
+  unlockedAt      DateTime @default(now())
+  progress        Float    @default(0)
+  completed       Boolean  @default(false)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, achievementSlug])
+  @@index([userId])
 }
 
 model Category {

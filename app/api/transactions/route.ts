@@ -125,5 +125,7 @@ export async function POST(req: NextRequest) {
     meta: { amount: tx.amount, type: tx.type },
     req,
   });
+  const { evaluate: evalAch } = await import("@/lib/achievements/engine");
+  evalAch(r.user.id, { type: "tx-created" }).catch(() => {});
   return ok(tx);
 }

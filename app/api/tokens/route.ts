@@ -32,5 +32,7 @@ export async function POST(req: NextRequest) {
     select: { id: true, name: true, createdAt: true },
   });
   await log(r.user.id, "token.create", { entity: "apiToken", entityId: token.id, meta: { name: data.name }, req });
+  const { evaluate: evalAch } = await import("@/lib/achievements/engine");
+  evalAch(r.user.id, { type: "api-token-created" }).catch(() => {});
   return ok({ ...token, token: plaintext });
 }
