@@ -2,7 +2,8 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
-import { Sparkles, Wallet, ArrowLeftRight, ArrowRight, X } from "lucide-react";
+import Link from "next/link";
+import { Sparkles, Wallet, ArrowLeftRight, ArrowRight, X, Swords } from "lucide-react";
 
 export default function Onboarding() {
   const router = useRouter();
@@ -41,7 +42,10 @@ export default function Onboarding() {
         category: "Food", description: txDesc, date: new Date().toISOString(),
       }),
     });
-    finish(true);
+    // mark onboarded but keep modal open for optional duel step
+    await fetch("/api/user", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ onboarded: true }) });
+    setStep(3);
+    router.refresh();
   }
 
   if (!open) return null;
@@ -95,8 +99,19 @@ export default function Onboarding() {
                 <input className="input" type="number" value={txAmount} onChange={(e) => setTxAmount(e.target.value)} placeholder="Amount" />
               </div>
               <div className="mt-5 flex gap-2">
-                <button onClick={addTx} className="btn-primary">Finish</button>
+                <button onClick={addTx} className="btn-primary">Continue <ArrowRight className="w-4 h-4" /></button>
                 <button onClick={() => finish(true)} className="btn-ghost">Skip</button>
+              </div>
+            </>
+          )}
+          {step === 3 && (
+            <>
+              <Swords className="w-7 h-7 text-fuchsia-400" />
+              <h2 className="mt-4 text-2xl font-semibold tracking-tight">Challenge your partner to a Duel</h2>
+              <p className="mt-2 text-sm text-white/60">Sprint head-to-head. Save more. Roast each other. (Optional — you can skip and set this up later.)</p>
+              <div className="mt-5 flex gap-2">
+                <Link href="/dashboard/duels/new" onClick={() => setOpen(false)} className="btn-primary">Set one up <ArrowRight className="w-4 h-4" /></Link>
+                <button onClick={() => setOpen(false)} className="btn-ghost">Skip</button>
               </div>
             </>
           )}

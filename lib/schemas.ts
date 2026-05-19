@@ -116,6 +116,8 @@ export const userPatchSchema = z.object({
   onboarded: z.boolean().optional(),
   currentPassword: z.string().min(1).optional(),
   newPassword: passwordSchema.optional(),
+  notifyOnOpponentContribution: z.boolean().optional(),
+  defaultStakeAccountId: z.string().nullable().optional(),
 });
 
 export const holdingSchema = z.object({

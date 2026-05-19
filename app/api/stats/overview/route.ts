@@ -89,6 +89,35 @@ export async function GET() {
     return { id: a.id, name: a.name, type: a.type, balance: a.balance, sparkline };
   });
 
+  // Active duel summary (most recent ACTIVE)
+  let activeDuel: {
+    id: string; title: string; endDate: string; daysRemaining: number;
+    players: { name: string; side: string; totalPoints: number; sprintsWon: number; isMe: boolean }[];
+  } | null = null;
+  try {
+    const players = await prisma.duelPlayer.findMany({
+      where: { OR: [{ userId: user.id }, { inviteEmail: user.email }] },
+      include: { duel: { include: { players: { include: { user: { select: { name: true } } } } } } },
+    });
+    const activeDuels = players.map((p) => p.duel).filter((d) => d.status === "ACTIVE");
+    const seen = new Set<string>();
+    const unique = activeDuels.filter((d) => (seen.has(d.id) ? false : (seen.add(d.id), true)));
+    if (unique.length > 0) {
+      const d = unique[0];
+      const daysRemaining = Math.max(0, Math.ceil((d.endDate.getTime() - now.getTime()) / 86400000));
+      activeDuel = {
+        id: d.id, title: d.title, endDate: d.endDate.toISOString(), daysRemaining,
+        players: d.players.map((p) => ({
+          name: p.user?.name || p.inviteEmail || "Sparring Partner",
+          side: p.side,
+          totalPoints: p.totalPoints,
+          sprintsWon: p.sprintsWon,
+          isMe: p.userId === user.id,
+        })),
+      };
+    }
+  } catch {}
+
   return ok({
     netWorth,
     income,
@@ -100,5 +129,6 @@ export async function GET() {
     accountCount: accounts.length,
     month: monthKey(),
     netWorthBreakdown: { byType, byAccount },
+    activeDuel,
   });
 }

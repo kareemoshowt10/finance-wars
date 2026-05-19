@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { LogOut, Download, Trash2, Key, Copy } from "lucide-react";
+import { LogOut, Download, Trash2, Key, Copy, Swords } from "lucide-react";
 import ThemeToggle from "../_components/ThemeToggle";
 
 const CURRENCIES = ["USD", "EUR", "GBP", "JPY", "CAD", "AUD", "CHF", "INR", "BRL"];
@@ -170,6 +170,8 @@ export default function SettingsPage() {
         <button onClick={logout} className="btn-danger inline-flex items-center gap-2"><LogOut className="w-4 h-4" />Log out</button>
       </section>
 
+      <DuelPreferencesSection />
+
       <ApiTokensSection />
 
       <section className="card p-6 border-rose-500/30">
@@ -283,6 +285,76 @@ function ApiTokensSection() {
           </li>
         ))}
       </ul>
+    </section>
+  );
+}
+
+function DuelPreferencesSection() {
+  const [notify, setNotify] = useState(true);
+  const [stakeAccountId, setStakeAccountId] = useState<string>("");
+  const [accounts, setAccounts] = useState<{ id: string; name: string; type: string }[]>([]);
+  const [loaded, setLoaded] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [msg, setMsg] = useState<string | null>(null);
+
+  useEffect(() => {
+    (async () => {
+      const [me, accts] = await Promise.all([
+        fetch("/api/auth/me").then((r) => r.json()),
+        fetch("/api/accounts").then((r) => r.json()),
+      ]);
+      setNotify(me.notifyOnOpponentContribution ?? true);
+      setStakeAccountId(me.defaultStakeAccountId || "");
+      setAccounts(Array.isArray(accts) ? accts : []);
+      setLoaded(true);
+    })();
+  }, []);
+
+  async function save() {
+    setSaving(true); setMsg(null);
+    try {
+      const res = await fetch("/api/user", {
+        method: "PATCH", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          notifyOnOpponentContribution: notify,
+          defaultStakeAccountId: stakeAccountId || null,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed");
+      setMsg("Saved.");
+    } catch (e) {
+      setMsg(e instanceof Error ? e.message : "Failed");
+    } finally { setSaving(false); }
+  }
+
+  if (!loaded) return null;
+  return (
+    <section className="card p-6">
+      <div className="flex items-center gap-2">
+        <Swords className="w-4 h-4" />
+        <h2 className="text-sm font-semibold uppercase tracking-wider text-black/60 dark:text-white/60">Duel preferences</h2>
+      </div>
+      <div className="mt-4 space-y-4">
+        <label className="flex items-center justify-between gap-3 cursor-pointer">
+          <div>
+            <div className="text-sm">Notify on opponent contributions</div>
+            <div className="text-xs text-black/50 dark:text-white/50">Get a ping when your partner logs progress.</div>
+          </div>
+          <input type="checkbox" checked={notify} onChange={(e) => setNotify(e.target.checked)} className="w-4 h-4 accent-indigo-500" />
+        </label>
+        <div>
+          <label className="text-xs text-black/50 dark:text-white/50">Default stake account</label>
+          <select className="input mt-1" value={stakeAccountId} onChange={(e) => setStakeAccountId(e.target.value)}>
+            <option value="">— none —</option>
+            {accounts.map((a) => <option key={a.id} value={a.id}>{a.name} ({a.type})</option>)}
+          </select>
+        </div>
+        {msg && <div className="text-sm text-black/60 dark:text-white/60">{msg}</div>}
+        <div className="flex justify-end">
+          <button onClick={save} disabled={saving} className="btn-primary">{saving ? "Saving…" : "Save preferences"}</button>
+        </div>
+      </div>
     </section>
   );
 }

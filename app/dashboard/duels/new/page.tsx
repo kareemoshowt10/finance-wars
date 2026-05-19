@@ -44,6 +44,9 @@ export default function NewDuelPage() {
   useEffect(() => {
     fetch("/api/accounts").then((r) => r.json()).then(setAccounts).catch(() => {});
     fetch("/api/goals").then((r) => r.json()).then(setGoals).catch(() => {});
+    fetch("/api/auth/me").then((r) => r.json()).then((me) => {
+      if (me?.defaultStakeAccountId) setStakeAccountId(me.defaultStakeAccountId);
+    }).catch(() => {});
   }, []);
 
   useEffect(() => {

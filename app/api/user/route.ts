@@ -22,6 +22,8 @@ export async function PATCH(req: NextRequest) {
   if (data.currency !== undefined) patch.currency = data.currency.toUpperCase();
   if (data.theme !== undefined) patch.theme = data.theme;
   if (data.onboarded !== undefined) patch.onboarded = data.onboarded;
+  if (data.notifyOnOpponentContribution !== undefined) patch.notifyOnOpponentContribution = data.notifyOnOpponentContribution;
+  if (data.defaultStakeAccountId !== undefined) patch.defaultStakeAccountId = data.defaultStakeAccountId || null;
 
   if (data.email && data.email !== user.email) {
     if (!data.currentPassword) return bad("Current password required to change email");

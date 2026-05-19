@@ -79,8 +79,9 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   // Notify opponent (hour-bucketed)
   const opponent = duel.players.find((p) => p.id !== player.id);
   if (opponent?.userId) {
+    const opp = await prisma.user.findUnique({ where: { id: opponent.userId }, select: { notifyOnOpponentContribution: true } });
     const hourKey = `${now.toISOString().slice(0, 13)}`;
-    try {
+    if (opp?.notifyOnOpponentContribution !== false) try {
       await prisma.notification.create({
         data: {
           userId: opponent.userId,

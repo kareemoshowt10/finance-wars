@@ -5,7 +5,8 @@ import {
   LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip, CartesianGrid,
   PieChart as RPie, Pie, Cell, BarChart, Bar,
 } from "recharts";
-import { ArrowDownRight, ArrowUpRight, TrendingUp, Wallet } from "lucide-react";
+import { ArrowDownRight, ArrowUpRight, TrendingUp, Wallet, Swords } from "lucide-react";
+import Link from "next/link";
 import { formatCurrency, formatCurrencyFull, formatDate } from "@/lib/utils";
 
 type Stats = {
@@ -18,6 +19,10 @@ type Stats = {
     byType: { checking: number; savings: number; credit: number; investment: number };
     byAccount: { id: string; name: string; type: string; balance: number; sparkline: number[] }[];
   };
+  activeDuel?: {
+    id: string; title: string; endDate: string; daysRemaining: number;
+    players: { name: string; side: string; totalPoints: number; sprintsWon: number; isMe: boolean }[];
+  } | null;
 };
 
 const CHART_COLORS = ["#a78bfa", "#60a5fa", "#34d399", "#fbbf24", "#f472b6", "#f87171"];
@@ -48,6 +53,8 @@ export default function OverviewPage() {
         <h1 className="text-4xl md:text-5xl font-semibold tracking-[-0.03em]">Overview</h1>
         <p className="text-black/50 dark:text-white/50 mt-1 text-sm">Your money at a glance.</p>
       </header>
+
+      {stats.activeDuel && <ActiveDuelCard duel={stats.activeDuel} />}
 
       <motion.div
         className="grid grid-cols-2 lg:grid-cols-4 gap-3"
@@ -236,6 +243,46 @@ function NetWorthDrilldown({ breakdown, currency }: {
         </ul>
       </div>
     </div>
+  );
+}
+
+function ActiveDuelCard({ duel }: { duel: NonNullable<Stats["activeDuel"]> }) {
+  const me = duel.players.find((p) => p.isMe);
+  const opp = duel.players.find((p) => !p.isMe);
+  const total = (me?.totalPoints || 0) + (opp?.totalPoints || 0);
+  const mePct = total > 0 ? ((me?.totalPoints || 0) / total) * 100 : 50;
+  return (
+    <Link href={`/dashboard/duels/${duel.id}`} className="card p-5 block relative overflow-hidden hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition">
+      <div className="absolute -top-16 -right-16 w-48 h-48 rounded-full bg-fuchsia-500/15 blur-3xl pointer-events-none" />
+      <div className="absolute -bottom-16 -left-16 w-48 h-48 rounded-full bg-indigo-500/15 blur-3xl pointer-events-none" />
+      <div className="relative flex items-start justify-between flex-wrap gap-3">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-fuchsia-500 flex items-center justify-center">
+            <Swords className="w-5 h-5 text-white" />
+          </div>
+          <div>
+            <div className="text-[10px] uppercase tracking-[0.2em] text-black/50 dark:text-white/50">Duel in progress</div>
+            <div className="font-semibold">{duel.title}</div>
+          </div>
+        </div>
+        <div className="text-xs text-black/50 dark:text-white/50">{duel.daysRemaining} day{duel.daysRemaining === 1 ? "" : "s"} left</div>
+      </div>
+      <div className="relative mt-4 grid grid-cols-3 items-center gap-3">
+        <div>
+          <div className="text-xs text-black/50 dark:text-white/50">{me?.name || "You"}</div>
+          <div className="text-2xl font-semibold tabular-nums">{Math.round(me?.totalPoints || 0)}</div>
+          <div className="text-[10px] opacity-50">{me?.sprintsWon || 0} sprints won</div>
+        </div>
+        <div className="h-2 rounded-full bg-black/10 dark:bg-white/10 overflow-hidden">
+          <div className="h-full bg-gradient-to-r from-indigo-500 to-fuchsia-500" style={{ width: `${mePct}%` }} />
+        </div>
+        <div className="text-right">
+          <div className="text-xs text-black/50 dark:text-white/50">{opp?.name || "Opponent"}</div>
+          <div className="text-2xl font-semibold tabular-nums">{Math.round(opp?.totalPoints || 0)}</div>
+          <div className="text-[10px] opacity-50">{opp?.sprintsWon || 0} sprints won</div>
+        </div>
+      </div>
+    </Link>
   );
 }
 

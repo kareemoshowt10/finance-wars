@@ -149,23 +149,28 @@ export default function DashNav({ userName }: { userName: string }) {
                 <div className="p-6 text-center text-xs text-black/40 dark:text-white/40">All caught up.</div>
               ) : (
                 <ul className="divide-y divide-black/5 dark:divide-white/5">
-                  {notifs.map((n) => (
-                    <li key={n.id}>
-                      <button
-                        onClick={() => clickNotif(n)}
-                        className={cn(
-                          "w-full text-left px-4 py-3 hover:bg-black/[0.03] dark:hover:bg-white/[0.03] flex gap-3",
-                          !n.readAt && "bg-black/[0.02] dark:bg-white/[0.02]"
-                        )}
-                      >
-                        {!n.readAt && <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 mt-2 shrink-0" />}
-                        <div className="flex-1 min-w-0">
-                          <div className="text-sm font-medium truncate">{n.title}</div>
-                          <div className="text-xs text-black/50 dark:text-white/50 line-clamp-2">{n.body}</div>
-                        </div>
-                      </button>
-                    </li>
-                  ))}
+                  {notifs.map((n) => {
+                    const isDuel = n.kind?.startsWith("DUEL_");
+                    return (
+                      <li key={n.id}>
+                        <button
+                          onClick={() => clickNotif(n)}
+                          className={cn(
+                            "w-full text-left px-4 py-3 hover:bg-black/[0.03] dark:hover:bg-white/[0.03] flex gap-3",
+                            !n.readAt && "bg-black/[0.02] dark:bg-white/[0.02]",
+                            isDuel && "border-l-2 border-fuchsia-500"
+                          )}
+                        >
+                          {!n.readAt && <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 mt-2 shrink-0" />}
+                          {isDuel && <Swords className="w-3.5 h-3.5 mt-0.5 shrink-0 text-fuchsia-500" />}
+                          <div className="flex-1 min-w-0">
+                            <div className="text-sm font-medium truncate">{n.title}</div>
+                            <div className="text-xs text-black/50 dark:text-white/50 line-clamp-2">{n.body}</div>
+                          </div>
+                        </button>
+                      </li>
+                    );
+                  })}
                 </ul>
               )}
             </div>

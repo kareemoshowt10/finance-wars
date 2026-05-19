@@ -12,5 +12,7 @@ export async function GET(req: Request) {
     currency: user.currency,
     theme: user.theme,
     onboarded: user.onboarded,
+    notifyOnOpponentContribution: user.notifyOnOpponentContribution,
+    defaultStakeAccountId: user.defaultStakeAccountId,
   });
 }
