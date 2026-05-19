@@ -1,6 +1,7 @@
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import { DEFAULT_CATEGORIES } from "../lib/defaults";
+import { ACHIEVEMENTS_BY_SLUG } from "../lib/achievements/catalog";
 
 const prisma = new PrismaClient();
 
@@ -213,6 +214,28 @@ export async function runSeed() {
     data: { userId: user.id, name: "Demo CLI (revoked)", tokenHash: fakeHash, revokedAt: new Date() },
   });
 
+  // ---------------- Achievements + gamification seed ----------------
+  const demoSlugs = [
+    "first-account", "first-transaction", "ten-tx", "first-budget", "first-goal",
+    "first-recurring", "first-rule", "net-worth-10k", "savings-rate-20", "used-insights",
+  ];
+  let demoXp = 0;
+  for (let i = 0; i < demoSlugs.length; i++) {
+    const slug = demoSlugs[i];
+    const def = ACHIEVEMENTS_BY_SLUG[slug];
+    if (!def) continue;
+    const daysAgo = Math.floor((i / demoSlugs.length) * 88) + 1;
+    const unlockedAt = new Date(now.getTime() - daysAgo * 86400000);
+    await prisma.userAchievement.create({
+      data: { userId: user.id, achievementSlug: slug, unlockedAt, progress: 1, completed: true },
+    });
+    demoXp += def.xp;
+  }
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { xp: demoXp, currentLoginStreak: 12, longestLoginStreak: 23, lastLoginAt: now },
+  });
+
   console.log(`Seeded demo user: ${email} / ${password}`);
 
   // ---------------- Duels seed ----------------
@@ -406,6 +429,23 @@ async function seedDuels(demoUserId: string, demoCheckingId: string) {
   }
   await prisma.duelPlayer.update({ where: { id: pA.id }, data: { totalPoints: 90, currentStreakDays: 2 } });
   await prisma.duelPlayer.update({ where: { id: pB.id }, data: { totalPoints: 70, currentStreakDays: 2 } });
+
+  const partnerSlugs = ["first-account", "first-duel", "first-sprint-won"];
+  let partnerXp = 0;
+  for (let i = 0; i < partnerSlugs.length; i++) {
+    const slug = partnerSlugs[i];
+    const def = ACHIEVEMENTS_BY_SLUG[slug];
+    if (!def) continue;
+    const unlockedAt = new Date(Date.now() - (10 + i * 7) * 86400000);
+    await prisma.userAchievement.create({
+      data: { userId: partner.id, achievementSlug: slug, unlockedAt, progress: 1, completed: true },
+    });
+    partnerXp += def.xp;
+  }
+  await prisma.user.update({
+    where: { id: partner.id },
+    data: { xp: partnerXp, currentLoginStreak: 4, longestLoginStreak: 9, lastLoginAt: new Date() },
+  });
 
   console.log(`Seeded partner: ${partnerEmail} / ${partnerPwd}`);
 }
