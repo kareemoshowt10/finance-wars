@@ -5,6 +5,11 @@ export type IntentName =
   | "subscriptions"
   | "save-suggestion"
   | "status"
+  | "household-ledger"
+  | "household-pact"
+  | "household-month"
+  | "household-top-bill"
+  | "household-money-date"
   | "unknown";
 
 export type Intent = {
@@ -32,6 +37,23 @@ const CATEGORY_KEYWORDS: Record<string, string[]> = {
 export function matchIntent(raw: string): Intent {
   const text = (raw || "").toLowerCase().trim();
   if (!text) return { name: "unknown", match: 0, slots: {} };
+
+  // ---- Household intents (only fire when user is in a household; the route gates this) ----
+  if (/\bwho\s+owes\b/.test(text) || /\bowes?\s+(who|whom|me|you|us)\b/.test(text) || /\b(settle\s*up|ledger|balance)\b/.test(text)) {
+    return { name: "household-ledger", match: 0.9, slots: {} };
+  }
+  if (/\b(on (the )?pact|pact (status|check|breach)|are we on (the )?pact)\b/.test(text)) {
+    return { name: "household-pact", match: 0.9, slots: {} };
+  }
+  if (/\b(how are we|how'?s? our|household|our (month|spending|savings))\b/.test(text)) {
+    return { name: "household-month", match: 0.85, slots: {} };
+  }
+  if (/\b(biggest|top)\b.*\b(shared (expense|bill)|bill)\b/.test(text) || /\bwhat'?s our biggest\b/.test(text)) {
+    return { name: "household-top-bill", match: 0.85, slots: {} };
+  }
+  if (/\b(money date|date night|when'?s our (next )?(money date|date))\b/.test(text)) {
+    return { name: "household-money-date", match: 0.9, slots: {} };
+  }
 
   // status
   if (/\b(how am i|how'?s? it going|status|doing|overview|summary)\b/.test(text)) {

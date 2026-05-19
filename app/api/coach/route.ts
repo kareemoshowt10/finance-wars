@@ -4,6 +4,9 @@ import { resolveRequestUser } from "@/lib/auth";
 import { bad, ok } from "@/lib/api";
 import { matchIntent, DEFAULT_FOLLOW_UPS } from "@/lib/coach/intents";
 import { evaluate } from "@/lib/achievements/engine";
+import { getActiveHousehold } from "@/lib/household";
+import { balanceOf, suggestSettlement } from "@/lib/billsplit";
+import { getSharedView } from "@/lib/sharing";
 
 export const dynamic = "force-dynamic";
 
@@ -48,7 +51,77 @@ export async function POST(req: NextRequest) {
   let chart: ChartData | undefined;
   let followUps = DEFAULT_FOLLOW_UPS;
 
+  // Resolve active household once, lazily reuse for household intents
+  const activeHousehold = await getActiveHousehold(userId).catch(() => null);
+
+  // For household intents, fall back if no household
+  if (intent.name.startsWith("household-") && !activeHousehold) {
+    return ok({
+      reply: "You're not in a household yet. Create one from Couples to track shared bills, dates, and pact decisions together.",
+      suggestedFollowUps: DEFAULT_FOLLOW_UPS,
+    });
+  }
+
   switch (intent.name) {
+    case "household-ledger": {
+      const hid = activeHousehold!.id;
+      const balances = await balanceOf(hid);
+      const members = await prisma.householdMember.findMany({
+        where: { householdId: hid, accepted: true },
+        include: { user: { select: { id: true, name: true } } },
+      });
+      const nameOf = (uid: string) => members.find((m) => m.userId === uid)?.user?.name || "Partner";
+      const suggested = suggestSettlement(balances);
+      if (!suggested) {
+        reply = "You're square. No one owes anyone right now.";
+      } else {
+        reply = `${nameOf(suggested.from)} owes ${nameOf(suggested.to)} ${fmt(suggested.amount)}. Tap "Settle up" in Couples → Bills to clear it.`;
+        chart = { type: "bar", data: balances.map((b) => ({ label: nameOf(b.userId), value: Math.round(b.net) })) };
+      }
+      break;
+    }
+    case "household-pact": {
+      const hid = activeHousehold!.id;
+      const pact = await prisma.pact.findUnique({ where: { householdId: hid } });
+      const view = await getSharedView(userId, hid);
+      if (!pact) { reply = "No pact set yet. Co-author one in Couples → The Pact."; break; }
+      const issues: string[] = [];
+      if (pact.emergencyFundFloor > 0) {
+        const savings = view.accounts.filter((a) => a.type === "savings").reduce((s, a) => s + a.balance, 0);
+        if (savings < pact.emergencyFundFloor) issues.push(`Emergency fund is at ${fmt(savings)} (below floor of ${fmt(pact.emergencyFundFloor)}).`);
+      }
+      if (pact.savingsRateMin > 0 && view.savingsRate < pact.savingsRateMin) {
+        issues.push(`Savings rate is ${view.savingsRate}% (below pact minimum of ${pact.savingsRateMin}%).`);
+      }
+      if (view.pendingReviewsCount > 0) issues.push(`${view.pendingReviewsCount} big-purchase review${view.pendingReviewsCount === 1 ? "" : "s"} pending.`);
+      reply = issues.length
+        ? "Pact check — needs attention:\n" + issues.map((s) => `• ${s}`).join("\n")
+        : "Pact check: all green. Emergency fund, savings rate, and reviews are in line.";
+      break;
+    }
+    case "household-month": {
+      const view = await getSharedView(userId, activeHousehold!.id);
+      reply = `This month, the household pulled in ${fmt(view.monthIncome)} and spent ${fmt(view.monthSpend)} — a ${view.savingsRate}% savings rate. Net worth (shared view): ${fmt(view.netWorth)}.`;
+      chart = { type: "bar", data: [{ label: "Income", value: view.monthIncome }, { label: "Spend", value: view.monthSpend }] };
+      break;
+    }
+    case "household-top-bill": {
+      const hid = activeHousehold!.id;
+      const bills = await prisma.sharedBill.findMany({ where: { householdId: hid, active: true }, orderBy: { amount: "desc" }, take: 5 });
+      if (!bills.length) { reply = "No shared bills tracked yet. Add some in Couples → Bills."; break; }
+      const top = bills[0];
+      reply = `Your biggest shared bill is ${top.name} at ${fmt(top.amount)}/${top.frequency.toLowerCase()}.`;
+      chart = { type: "bar", data: bills.map((b) => ({ label: b.name, value: b.amount })) };
+      break;
+    }
+    case "household-money-date": {
+      const hid = activeHousehold!.id;
+      const md = await prisma.moneyDate.findFirst({ where: { householdId: hid, status: { in: ["UPCOMING", "RESCHEDULED"] }, scheduledAt: { gte: new Date() } }, orderBy: { scheduledAt: "asc" } });
+      reply = md
+        ? `Next money date: ${md.scheduledAt.toLocaleString()} (${md.durationMin} min).`
+        : "No money date scheduled. Set one up in Couples → Money Dates.";
+      break;
+    }
     case "status": {
       const start = new Date(); start.setDate(1); start.setHours(0,0,0,0);
       const end = new Date(start.getFullYear(), start.getMonth() + 1, 1);

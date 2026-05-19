@@ -68,6 +68,8 @@ type Notif = {
   link?: string | null; readAt?: string | null; createdAt: string;
 };
 
+type HH = { id: string; name: string };
+
 export default function DashNav({ userName }: { userName: string }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -76,6 +78,36 @@ export default function DashNav({ userName }: { userName: string }) {
   const [notifs, setNotifs] = useState<Notif[]>([]);
   const [unread, setUnread] = useState(0);
   const [gam, setGam] = useState<{ xp: number; level: number; streak: number } | null>(null);
+  const [households, setHouseholds] = useState<HH[]>([]);
+  const [activeHid, setActiveHid] = useState<string>("personal");
+  const [hhOpen, setHhOpen] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/households").then((r) => r.ok ? r.json() : []).then((d: HH[]) => {
+      setHouseholds(d || []);
+      const cookie = document.cookie.split("; ").find((c) => c.startsWith("fw_active_household="));
+      const val = cookie ? decodeURIComponent(cookie.split("=")[1]) : "";
+      if (val && (d || []).find((h) => h.id === val)) setActiveHid(val);
+      else if ((d || []).length > 0) setActiveHid(d[0].id);
+    }).catch(() => {});
+  }, []);
+
+  async function pickHousehold(id: string) {
+    setActiveHid(id);
+    setHhOpen(false);
+    if (id === "personal") {
+      document.cookie = "fw_active_household=; path=/; max-age=0";
+    } else if (id === "__new__") {
+      router.push("/dashboard/couples/setup");
+      return;
+    } else {
+      await fetch("/api/households/active", { method: "POST", body: JSON.stringify({ householdId: id }) }).catch(() => {});
+    }
+    router.refresh();
+  }
+
+  const activeHh = households.find((h) => h.id === activeHid);
+  const activeLabel = activeHh ? activeHh.name : "Personal";
 
   useEffect(() => {
     fetch("/api/achievements")
@@ -215,7 +247,32 @@ export default function DashNav({ userName }: { userName: string }) {
             <ThemeToggle compact />
           </div>
         </div>
-        <div className="px-5 pt-4 md:pt-2 pb-3">
+        <div className="px-5 pt-4 md:pt-2 pb-2">
+          <div className="text-[11px] uppercase tracking-[0.2em] text-black/40 dark:text-white/40">Lens</div>
+          <div className="relative mt-1">
+            <button
+              onClick={() => setHhOpen((o) => !o)}
+              className="w-full flex items-center justify-between gap-2 px-3 py-2 rounded-lg text-sm bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10"
+            >
+              <span className="flex items-center gap-2 truncate">
+                <Users className="w-3.5 h-3.5 shrink-0" />
+                <span className="truncate">{activeLabel}</span>
+              </span>
+              <span className="text-xs opacity-50">▾</span>
+            </button>
+            {hhOpen && (
+              <div className="absolute z-50 left-0 right-0 mt-1 rounded-lg border border-black/10 dark:border-white/10 bg-white dark:bg-[#0a0a0a] shadow-2xl py-1 max-h-72 overflow-y-auto">
+                <button onClick={() => pickHousehold("personal")} className="w-full text-left px-3 py-1.5 text-sm hover:bg-black/5 dark:hover:bg-white/5">Personal</button>
+                {households.map((h) => (
+                  <button key={h.id} onClick={() => pickHousehold(h.id)} className="w-full text-left px-3 py-1.5 text-sm hover:bg-black/5 dark:hover:bg-white/5 truncate">{h.name}</button>
+                ))}
+                <div className="my-1 border-t border-black/5 dark:border-white/10" />
+                <button onClick={() => pickHousehold("__new__")} className="w-full text-left px-3 py-1.5 text-sm text-indigo-500 hover:bg-black/5 dark:hover:bg-white/5">+ Create new</button>
+              </div>
+            )}
+          </div>
+        </div>
+        <div className="px-5 pb-3">
           <div className="text-[11px] uppercase tracking-[0.2em] text-black/40 dark:text-white/40">Signed in</div>
           <div className="text-sm mt-1 truncate">{userName}</div>
           {gam && (

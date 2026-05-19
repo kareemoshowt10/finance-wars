@@ -5,10 +5,11 @@ import Link from "next/link";
 import { Users, Heart, Eye, EyeOff, EyeIcon, Calendar, ShieldCheck, Sparkles, DollarSign, CheckCircle, XCircle, Plus, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-type Tab = "overview" | "pact" | "sharing" | "dates" | "purchases" | "allowance";
+type Tab = "overview" | "bills" | "pact" | "sharing" | "dates" | "purchases" | "allowance";
 
 const TABS: { id: Tab; label: string }[] = [
   { id: "overview", label: "Overview" },
+  { id: "bills", label: "Bills & Settle" },
   { id: "pact", label: "The Pact" },
   { id: "sharing", label: "Sharing" },
   { id: "dates", label: "Money Dates" },
@@ -78,6 +79,7 @@ export default function CouplesView({ activeId, households }: { activeId: string
           transition={{ duration: 0.18 }}
         >
           {tab === "overview" && <OverviewTab hid={hid} />}
+          {tab === "bills" && <BillsTab hid={hid} />}
           {tab === "pact" && <PactTab hid={hid} />}
           {tab === "sharing" && <SharingTab hid={hid} />}
           {tab === "dates" && <DatesTab hid={hid} />}
@@ -90,12 +92,23 @@ export default function CouplesView({ activeId, households }: { activeId: string
 }
 
 // ---------------- OVERVIEW ----------------
+function FairnessToggle({ current, onChange }: { current: "dollars" | "pct"; onChange: (v: "dollars" | "pct") => void }) {
+  return (
+    <div className="inline-flex rounded-full bg-black/5 dark:bg-white/5 p-0.5 text-xs">
+      <button onClick={() => onChange("dollars")} className={cn("px-3 py-1 rounded-full transition", current === "dollars" ? "bg-white dark:bg-black shadow-sm" : "opacity-60")}>Dollars</button>
+      <button onClick={() => onChange("pct")} className={cn("px-3 py-1 rounded-full transition", current === "pct" ? "bg-white dark:bg-black shadow-sm" : "opacity-60")}>% of income</button>
+    </div>
+  );
+}
+
 function OverviewTab({ hid }: { hid: string }) {
   const [view, setView] = useState<any>(null);
   const [pact, setPact] = useState<any>(null);
   const [dates, setDates] = useState<any>(null);
   const [reviews, setReviews] = useState<any[]>([]);
   const [allowance, setAllowance] = useState<any>(null);
+  const [fairness, setFairness] = useState<"dollars" | "pct">("dollars");
+  const [ledger, setLedger] = useState<any>(null);
 
   useEffect(() => {
     fetch(`/api/households/${hid}/shared-view`).then((r) => r.json()).then(setView).catch(() => {});
@@ -103,12 +116,21 @@ function OverviewTab({ hid }: { hid: string }) {
     fetch(`/api/households/${hid}/money-dates`).then((r) => r.json()).then(setDates).catch(() => {});
     fetch(`/api/households/${hid}/purchase-reviews?status=pending`).then((r) => r.json()).then(setReviews).catch(() => {});
     fetch(`/api/households/${hid}/allowance`).then((r) => r.json()).then(setAllowance).catch(() => {});
+    fetch(`/api/households/${hid}/ledger`).then((r) => r.json()).then(setLedger).catch(() => {});
   }, [hid]);
 
   if (!view) return <div className="text-sm text-black/40 dark:text-white/40">Loading…</div>;
   const upcoming = dates?.upcoming?.[0];
+  const householdName = (view.members || []).map((m: any) => m.name).filter(Boolean).join(" & ") || "Household";
 
   return (
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/5 dark:bg-white/5 text-xs">
+          <Users className="w-3 h-3" /> Viewing as: <span className="font-medium">{householdName}</span>
+        </div>
+        <FairnessToggle current={fairness} onChange={setFairness} />
+      </div>
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       <div className="lg:col-span-2 rounded-3xl border border-black/10 dark:border-white/10 p-6 bg-gradient-to-br from-rose-500/5 to-indigo-500/5">
         <div className="text-xs uppercase tracking-wider text-black/50 dark:text-white/50">Joint net worth</div>
@@ -173,6 +195,159 @@ function OverviewTab({ hid }: { hid: string }) {
             );
           })}
         </div>
+      </div>
+      {ledger?.suggested && (
+        <div className="lg:col-span-3 rounded-3xl border border-amber-500/30 bg-amber-500/5 p-6 flex items-center justify-between gap-4 flex-wrap">
+          <div>
+            <div className="text-xs uppercase tracking-wider text-amber-700 dark:text-amber-300">Settle up</div>
+            <div className="mt-1 text-sm">A net balance of <span className="font-semibold">{fmt(ledger.suggested.amount)}</span> is outstanding. Tap Bills & Settle to clear it.</div>
+          </div>
+        </div>
+      )}
+      {fairness === "pct" && view.monthIncomeByUser && (
+        <div className="lg:col-span-3 rounded-3xl border border-black/10 dark:border-white/10 p-6">
+          <div className="text-xs uppercase tracking-wider text-black/50 dark:text-white/50">Income view · % of income</div>
+          <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-4">
+            {(view.members || []).map((m: any) => {
+              const inc = view.monthIncomeByUser?.[m.userId] || 0;
+              return (
+                <div key={m.userId} className="rounded-2xl bg-black/5 dark:bg-white/5 p-4">
+                  <div className="text-sm font-medium">{m.name}</div>
+                  <div className="mt-1 text-xs text-black/55 dark:text-white/55">Avg monthly income: {fmt(inc)}</div>
+                  <div className="mt-2 text-xs">Allowance share: {inc > 0 ? Math.round(((allowance?.ledgers?.find((l: any) => l.userId === m.userId)?.allocated || 0) / inc) * 100) : 0}% of income</div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+    </div>
+  );
+}
+
+// ---------------- BILLS & SETTLE ----------------
+function BillsTab({ hid }: { hid: string }) {
+  const [bills, setBills] = useState<any[]>([]);
+  const [ledger, setLedger] = useState<any>(null);
+  const [members, setMembers] = useState<any[]>([]);
+  const [showNew, setShowNew] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [form, setForm] = useState<any>({ name: "", amount: 0, frequency: "MONTHLY", nextDueDate: new Date().toISOString().slice(0, 10), splitMode: "EQUAL", splitConfig: {} });
+
+  async function load() {
+    const [b, l, h] = await Promise.all([
+      fetch(`/api/households/${hid}/bills`).then((r) => r.json()),
+      fetch(`/api/households/${hid}/ledger`).then((r) => r.json()),
+      fetch(`/api/households/${hid}`).then((r) => r.json()),
+    ]);
+    setBills(b || []);
+    setLedger(l || null);
+    setMembers(h.members || []);
+  }
+  useEffect(() => { load(); }, [hid]);
+
+  async function createBill() {
+    setBusy(true);
+    const res = await fetch(`/api/households/${hid}/bills`, { method: "POST", body: JSON.stringify(form) });
+    setBusy(false);
+    if (res.ok) { setShowNew(false); load(); }
+  }
+  async function markPaid(bid: string) {
+    await fetch(`/api/households/${hid}/bills/${bid}/mark-paid`, { method: "POST", body: JSON.stringify({}) });
+    load();
+  }
+  async function settle() {
+    if (!ledger?.suggested) return;
+    await fetch(`/api/households/${hid}/settle`, {
+      method: "POST",
+      body: JSON.stringify({
+        fromUserId: ledger.suggested.from,
+        toUserId: ledger.suggested.to,
+        amount: ledger.suggested.amount,
+        note: "Settle up",
+        createTransactions: false,
+      }),
+    });
+    load();
+  }
+  const nameOf = (uid: string) => members.find((m: any) => m.user?.id === uid || m.userId === uid)?.user?.name || "—";
+
+  return (
+    <div className="space-y-6">
+      {ledger?.suggested && (
+        <div className="rounded-3xl border border-emerald-500/30 bg-emerald-500/5 p-6 flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <div className="text-xs uppercase tracking-wider text-emerald-700 dark:text-emerald-300">Suggested settlement</div>
+            <div className="mt-1 text-lg font-semibold">{nameOf(ledger.suggested.from)} → {nameOf(ledger.suggested.to)}: {fmt(ledger.suggested.amount)}</div>
+          </div>
+          <button onClick={settle} className="px-5 py-2 rounded-full bg-emerald-600 text-white text-sm font-medium hover:opacity-90">Settle up</button>
+        </div>
+      )}
+      <div className="rounded-3xl border border-black/10 dark:border-white/10 p-6">
+        <div className="flex items-center justify-between">
+          <div className="text-sm font-medium">Balances</div>
+        </div>
+        <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
+          {(ledger?.balances || []).map((b: any) => (
+            <div key={b.userId} className="flex items-center justify-between rounded-2xl bg-black/5 dark:bg-white/5 px-4 py-3">
+              <div className="text-sm">{nameOf(b.userId)}</div>
+              <div className={cn("text-sm font-medium tabular-nums", b.net > 0 ? "text-emerald-500" : b.net < 0 ? "text-rose-500" : "")}>{b.net > 0 ? "+" : ""}{fmt(b.net)}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="rounded-3xl border border-black/10 dark:border-white/10 p-6">
+        <div className="flex items-center justify-between">
+          <div className="text-sm font-medium">Shared bills</div>
+          <button onClick={() => setShowNew((s) => !s)} className="text-xs px-3 py-1.5 rounded-full border border-black/15 dark:border-white/15">+ New bill</button>
+        </div>
+        {showNew && (
+          <div className="mt-4 rounded-2xl border border-black/10 dark:border-white/10 p-4 grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+            <label className="space-y-1"><div className="text-xs opacity-60">Name</div><input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="w-full px-3 py-2 rounded-lg bg-black/5 dark:bg-white/5" /></label>
+            <label className="space-y-1"><div className="text-xs opacity-60">Amount</div><input type="number" value={form.amount} onChange={(e) => setForm({ ...form, amount: parseFloat(e.target.value) || 0 })} className="w-full px-3 py-2 rounded-lg bg-black/5 dark:bg-white/5" /></label>
+            <label className="space-y-1"><div className="text-xs opacity-60">Frequency</div>
+              <select value={form.frequency} onChange={(e) => setForm({ ...form, frequency: e.target.value })} className="w-full px-3 py-2 rounded-lg bg-black/5 dark:bg-white/5">
+                {["ONEOFF","WEEKLY","BIWEEKLY","MONTHLY","YEARLY"].map((f) => <option key={f} value={f}>{f}</option>)}
+              </select>
+            </label>
+            <label className="space-y-1"><div className="text-xs opacity-60">Next due</div><input type="date" value={form.nextDueDate} onChange={(e) => setForm({ ...form, nextDueDate: e.target.value })} className="w-full px-3 py-2 rounded-lg bg-black/5 dark:bg-white/5" /></label>
+            <label className="space-y-1 md:col-span-2"><div className="text-xs opacity-60">Split mode</div>
+              <select value={form.splitMode} onChange={(e) => setForm({ ...form, splitMode: e.target.value })} className="w-full px-3 py-2 rounded-lg bg-black/5 dark:bg-white/5">
+                {["EQUAL","PERCENT","INCOME_RATIO","FIXED"].map((f) => <option key={f} value={f}>{f}</option>)}
+              </select>
+            </label>
+            <div className="md:col-span-2 flex justify-end">
+              <button disabled={busy || !form.name || !form.amount} onClick={createBill} className="px-4 py-2 rounded-full bg-black text-white dark:bg-white dark:text-black text-sm font-medium disabled:opacity-50">{busy ? "Saving…" : "Create"}</button>
+            </div>
+          </div>
+        )}
+        <ul className="mt-4 divide-y divide-black/5 dark:divide-white/5">
+          {bills.length === 0 && <li className="text-sm text-black/40 dark:text-white/40 py-4">No shared bills yet.</li>}
+          {bills.map((b) => (
+            <li key={b.id} className="py-3 flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <div className="text-sm font-medium">{b.name} · <span className="opacity-60 font-normal">{b.frequency.toLowerCase()}</span></div>
+                <div className="text-xs text-black/55 dark:text-white/55">{fmt(b.amount)} · next {new Date(b.nextDueDate).toLocaleDateString()} · {b.splitMode}</div>
+              </div>
+              <button onClick={() => markPaid(b.id)} className="text-xs px-3 py-1.5 rounded-full border border-black/15 dark:border-white/15">Mark paid</button>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <div className="rounded-3xl border border-black/10 dark:border-white/10 p-6">
+        <div className="text-sm font-medium">Recent ledger</div>
+        <ul className="mt-3 divide-y divide-black/5 dark:divide-white/5">
+          {(ledger?.entries || []).slice(0, 10).map((e: any) => (
+            <li key={e.id} className="py-2 flex justify-between text-sm">
+              <span className="truncate">{nameOf(e.fromUserId)} → {nameOf(e.toUserId)} · <span className="opacity-60">{e.reason}</span></span>
+              <span className="tabular-nums">{fmt(e.amount)}</span>
+            </li>
+          ))}
+          {(ledger?.entries || []).length === 0 && <li className="text-sm text-black/40 dark:text-white/40 py-3">No entries yet.</li>}
+        </ul>
       </div>
     </div>
   );
