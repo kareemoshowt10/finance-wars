@@ -8,8 +8,37 @@ export const NOTIFICATION_KINDS = [
   "BILL_DUE",
   "LARGE_TX",
   "INSIGHT",
+  "HOUSEHOLD_INVITE_RECEIVED",
+  "HOUSEHOLD_INVITE_ACCEPTED",
+  "BIG_PURCHASE_PENDING",
+  "BIG_PURCHASE_APPROVED",
+  "BIG_PURCHASE_DENIED",
+  "BIG_PURCHASE_EXPIRED",
+  "MONEY_DATE_REMINDER",
+  "MONEY_DATE_COMPLETED",
+  "PACT_CHANGED_AWAITING_SIGNATURE",
+  "PACT_FULLY_SIGNED",
+  "ALLOWANCE_LOW",
 ] as const;
 export type NotificationKind = (typeof NOTIFICATION_KINDS)[number];
+
+export async function notify(
+  userId: string,
+  kind: NotificationKind,
+  title: string,
+  body: string,
+  link: string | null,
+  key: string
+) {
+  try {
+    await prisma.notification.create({
+      data: { userId, kind, title, body, link: link ?? null, key },
+    });
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 function monthKey(d: Date = new Date()) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
