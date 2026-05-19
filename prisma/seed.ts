@@ -448,6 +448,156 @@ async function seedDuels(demoUserId: string, demoCheckingId: string) {
   });
 
   console.log(`Seeded partner: ${partnerEmail} / ${partnerPwd}`);
+
+  await seedCouples(demoUserId, demoCheckingId, partner.id, partnerChecking.id);
+}
+
+async function seedCouples(demoUserId: string, demoCheckingId: string, partnerId: string, partnerCheckingId: string) {
+  const accountsDemo = await prisma.account.findMany({ where: { userId: demoUserId } });
+  const acctMap: Record<string, string> = {};
+  for (const a of accountsDemo) acctMap[a.type] = a.id;
+
+  for (const uid of [demoUserId, partnerId]) {
+    await prisma.category.upsert({
+      where: { userId_name: { userId: uid, name: "Personal Allowance" } },
+      update: {},
+      create: { userId: uid, name: "Personal Allowance", color: "#ec4899", icon: "wallet", kind: "EXPENSE" },
+    });
+  }
+
+  const now = new Date();
+  const hh = await prisma.household.create({
+    data: {
+      name: "The Smiths",
+      createdById: demoUserId,
+      pactSignedAt: now,
+      members: {
+        create: [
+          { userId: demoUserId, role: "OWNER", accepted: true, joinedAt: new Date(now.getTime() - 60 * 86400000) },
+          { userId: partnerId, role: "MEMBER", accepted: true, joinedAt: new Date(now.getTime() - 50 * 86400000) },
+        ],
+      },
+      pact: {
+        create: {
+          bigPurchaseThreshold: 300,
+          emergencyFundFloor: 10000,
+          savingsRateMin: 15,
+          personalAllowanceA: 250,
+          personalAllowanceB: 200,
+          requireDualSignOff: true,
+          version: 1,
+        },
+      },
+    },
+    include: { pact: true },
+  });
+
+  if (hh.pact) {
+    await prisma.pactSignature.createMany({
+      data: [
+        { pactId: hh.pact.id, userId: demoUserId, version: 1, signedAt: new Date(now.getTime() - 50 * 86400000) },
+        { pactId: hh.pact.id, userId: partnerId, version: 1, signedAt: new Date(now.getTime() - 49 * 86400000) },
+      ],
+    });
+  }
+
+  const shares: { accountId: string; level: string; ownerUserId: string }[] = [];
+  if (acctMap.checking) shares.push({ accountId: acctMap.checking, level: "FULL", ownerUserId: demoUserId });
+  if (acctMap.savings) shares.push({ accountId: acctMap.savings, level: "BALANCE", ownerUserId: demoUserId });
+  if (acctMap.credit) shares.push({ accountId: acctMap.credit, level: "HIDDEN", ownerUserId: demoUserId });
+  if (acctMap.investment) shares.push({ accountId: acctMap.investment, level: "BALANCE", ownerUserId: demoUserId });
+  shares.push({ accountId: partnerCheckingId, level: "FULL", ownerUserId: partnerId });
+  for (const s of shares) {
+    await prisma.accountShare.create({ data: { ...s, householdId: hh.id } });
+  }
+
+  await prisma.moneyDate.create({
+    data: {
+      householdId: hh.id,
+      scheduledAt: new Date(now.getTime() - 14 * 86400000),
+      cadence: "WEEKLY",
+      status: "COMPLETED",
+      completedAt: new Date(now.getTime() - 14 * 86400000 + 1800000),
+      decisions: { "Spending:0": "Note", "Goals:0": "Approve" } as never,
+    },
+  });
+  await prisma.moneyDate.create({
+    data: {
+      householdId: hh.id,
+      scheduledAt: new Date(now.getTime() - 7 * 86400000),
+      cadence: "WEEKLY",
+      status: "COMPLETED",
+      completedAt: new Date(now.getTime() - 7 * 86400000 + 1800000),
+      decisions: { "Bills:0": "Note" } as never,
+    },
+  });
+  await prisma.moneyDate.create({
+    data: {
+      householdId: hh.id,
+      scheduledAt: new Date(now.getTime() + 3 * 86400000),
+      cadence: "WEEKLY",
+      status: "UPCOMING",
+      agenda: { summary: "Prepared agenda pending fresh data.", sections: [] } as never,
+    },
+  });
+
+  const macTx = await prisma.transaction.findFirst({
+    where: { userId: demoUserId, description: "MacBook accessories spree" },
+  });
+  if (macTx) {
+    const review = await prisma.purchaseReview.create({
+      data: {
+        householdId: hh.id,
+        transactionId: macTx.id,
+        requesterUserId: demoUserId,
+        approverUserId: partnerId,
+        amount: macTx.amount,
+        status: "PENDING",
+        expiresAt: new Date(now.getTime() + 24 * 3600 * 1000),
+      },
+    });
+    await prisma.transaction.update({
+      where: { id: macTx.id },
+      data: { pending: true, reviewId: review.id },
+    });
+  }
+
+  const histTx = await prisma.transaction.create({
+    data: {
+      userId: partnerId,
+      accountId: partnerCheckingId,
+      amount: 480,
+      type: "expense",
+      category: "Travel",
+      description: "Hotel deposit",
+      date: new Date(now.getTime() - 20 * 86400000),
+    },
+  });
+  await prisma.purchaseReview.create({
+    data: {
+      householdId: hh.id,
+      transactionId: histTx.id,
+      requesterUserId: partnerId,
+      approverUserId: demoUserId,
+      amount: histTx.amount,
+      status: "APPROVED",
+      decidedAt: new Date(now.getTime() - 19 * 86400000),
+      expiresAt: new Date(now.getTime() - 19 * 86400000),
+    },
+  });
+
+  for (let i = 0; i < 3; i++) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const m = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    await prisma.allowanceLedger.create({
+      data: { householdId: hh.id, userId: demoUserId, month: m, allocated: 250, spent: 80 + Math.round(Math.random() * 140) },
+    });
+    await prisma.allowanceLedger.create({
+      data: { householdId: hh.id, userId: partnerId, month: m, allocated: 200, spent: 60 + Math.round(Math.random() * 110) },
+    });
+  }
+
+  console.log(`Seeded household: ${hh.name}`);
 }
 
 if (require.main === module) {

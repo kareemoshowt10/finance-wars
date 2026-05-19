@@ -40,6 +40,141 @@ model User {
   goalContributions GoalContribution[]
   duelsCreated      Duel[]             @relation("DuelCreator")
   duelPlayers       DuelPlayer[]
+
+  purchaseReviewMutedCategories String[] @default([])
+
+  households                HouseholdMember[]
+  purchaseReviewsRequested  PurchaseReview[]   @relation("ReviewRequester")
+  purchaseReviewsApproving  PurchaseReview[]   @relation("ReviewApprover")
+  pactSignatures            PactSignature[]
+}
+
+model Household {
+  id            String    @id @default(cuid())
+  name          String
+  createdById   String
+  pactSignedAt  DateTime?
+  createdAt     DateTime  @default(now())
+
+  members         HouseholdMember[]
+  accountShares   AccountShare[]
+  pact            Pact?
+  moneyDates      MoneyDate[]
+  purchaseReviews PurchaseReview[]
+  allowances      AllowanceLedger[]
+}
+
+model HouseholdMember {
+  id          String    @id @default(cuid())
+  householdId String
+  userId      String?
+  role        String    @default("MEMBER")
+  joinedAt    DateTime?
+  inviteEmail String?
+  accepted    Boolean   @default(false)
+  declined    Boolean   @default(false)
+
+  household Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  user      User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([householdId, userId])
+  @@unique([householdId, inviteEmail])
+  @@index([userId])
+}
+
+model AccountShare {
+  id           String   @id @default(cuid())
+  householdId  String
+  accountId    String
+  ownerUserId  String
+  level        String   @default("HIDDEN")
+  updatedAt    DateTime @updatedAt
+
+  household Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  account   Account   @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@unique([householdId, accountId])
+  @@index([householdId])
+}
+
+model Pact {
+  id                    String   @id @default(cuid())
+  householdId           String   @unique
+  version               Int      @default(1)
+  bigPurchaseThreshold  Float    @default(250)
+  emergencyFundFloor    Float    @default(0)
+  savingsRateMin        Int      @default(0)
+  personalAllowanceA    Float    @default(0)
+  personalAllowanceB    Float    @default(0)
+  requireDualSignOff    Boolean  @default(true)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  household  Household       @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  signatures PactSignature[]
+}
+
+model PactSignature {
+  id       String   @id @default(cuid())
+  pactId   String
+  userId   String
+  version  Int
+  signedAt DateTime @default(now())
+
+  pact Pact @relation(fields: [pactId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([pactId, userId, version])
+}
+
+model MoneyDate {
+  id           String    @id @default(cuid())
+  householdId  String
+  scheduledAt  DateTime
+  durationMin  Int       @default(30)
+  cadence      String    @default("WEEKLY")
+  status       String    @default("UPCOMING")
+  agenda       Json?
+  completedAt  DateTime?
+  decisions    Json?
+  createdAt    DateTime  @default(now())
+
+  household Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+
+  @@index([householdId, scheduledAt])
+}
+
+model PurchaseReview {
+  id              String    @id @default(cuid())
+  householdId     String
+  transactionId   String    @unique
+  requesterUserId String
+  amount          Float
+  approverUserId  String
+  status          String    @default("PENDING")
+  reason          String?
+  decidedAt       DateTime?
+  expiresAt       DateTime
+  createdAt       DateTime  @default(now())
+
+  household  Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  requester  User      @relation("ReviewRequester", fields: [requesterUserId], references: [id], onDelete: Cascade)
+  approver   User      @relation("ReviewApprover", fields: [approverUserId], references: [id], onDelete: Cascade)
+
+  @@index([householdId, status])
+}
+
+model AllowanceLedger {
+  id          String   @id @default(cuid())
+  householdId String
+  userId      String
+  month       String
+  allocated   Float
+  spent       Float    @default(0)
+
+  household Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+
+  @@unique([householdId, userId, month])
 }
 
 model Duel {
@@ -300,6 +435,7 @@ model Account {
   transactions Transaction[]
   recurring    RecurringTransaction[]
   holdings     Holding[]
+  shares       AccountShare[]
 }
 
 model Transaction {
@@ -311,6 +447,8 @@ model Transaction {
   category    String
   description String
   date        DateTime
+  pending     Boolean  @default(false)
+  reviewId    String?
   createdAt   DateTime @default(now())
 
   user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
