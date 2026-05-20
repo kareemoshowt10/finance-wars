@@ -25,7 +25,13 @@ export async function POST(req: NextRequest) {
   const { data, error } = await parseBody(req, accountSchema);
   if (error) return error;
   const account = await prisma.account.create({
-    data: { userId: r.user.id, name: data.name, type: data.type, balance: data.balance ?? 0 },
+    data: {
+      userId: r.user.id,
+      name: data.name,
+      type: data.type,
+      balance: data.balance ?? 0,
+      interestRate: data.interestRate ?? null,
+    },
   });
   const { upsertTodaySnapshot } = await import("@/lib/snapshots");
   await upsertTodaySnapshot(r.user.id);

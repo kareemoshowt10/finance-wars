@@ -17,14 +17,16 @@ export const signupSchema = z.object({
 
 export const accountSchema = z.object({
   name: z.string().min(1).max(80),
-  type: z.enum(["checking", "savings", "credit", "investment"]),
+  type: z.enum(["checking", "savings", "credit", "investment", "loan", "mortgage", "student_loan"]),
   balance: z.coerce.number().finite().optional().default(0),
+  interestRate: z.coerce.number().min(0).max(100).optional(),
 });
 
 export const accountPatchSchema = z.object({
   name: z.string().min(1).max(80).optional(),
-  type: z.enum(["checking", "savings", "credit", "investment"]).optional(),
+  type: z.enum(["checking", "savings", "credit", "investment", "loan", "mortgage", "student_loan"]).optional(),
   balance: z.coerce.number().finite().optional(),
+  interestRate: z.coerce.number().min(0).max(100).optional().nullable(),
 });
 
 export const txSchema = z.object({

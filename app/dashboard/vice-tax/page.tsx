@@ -101,7 +101,7 @@ export default function ViceTaxPage() {
                   </button>
                 </div>
               </div>
-              <div className="mt-3 grid grid-cols-2 gap-3 text-xs">
+              <div className="mt-3 grid grid-cols-3 gap-3 text-xs">
                 <div>
                   <div className="text-black/50 dark:text-white/50">Total taxed</div>
                   <div className="font-semibold mt-0.5">{formatCurrency(t.taxedTotal, currency)}</div>
@@ -110,7 +110,21 @@ export default function ViceTaxPage() {
                   <div className="text-black/50 dark:text-white/50">Hits</div>
                   <div className="font-semibold mt-0.5">{t.hitCount}</div>
                 </div>
+                <div>
+                  <div className="text-black/50 dark:text-white/50">Goal</div>
+                  <div className="font-semibold mt-0.5">
+                    {t.goal ? `${Math.min(100, Math.round((t.goal.currentAmount / t.goal.targetAmount) * 100))}%` : "—"}
+                  </div>
+                </div>
               </div>
+              {t.goal && t.goal.targetAmount > 0 && (
+                <div className="mt-2 h-1.5 rounded-full bg-black/10 dark:bg-white/10 overflow-hidden">
+                  <div
+                    className="h-full bg-emerald-500 transition-all"
+                    style={{ width: `${Math.min(100, (t.goal.currentAmount / t.goal.targetAmount) * 100)}%` }}
+                  />
+                </div>
+              )}
             </div>
           ))}
         </div>

@@ -1,15 +1,16 @@
 "use client";
 import { useEffect, useState } from "react";
 import { Plus, Pencil, Trash2, CreditCard, PiggyBank, Wallet, TrendingUp } from "lucide-react";
-import { ACCOUNT_TYPES, formatCurrency, type AccountType } from "@/lib/utils";
+import { ACCOUNT_TYPES, ACCOUNT_TYPE_LABELS, DEBT_ACCOUNT_TYPES, formatCurrency, type AccountType } from "@/lib/utils";
 import Modal from "../_components/Modal";
 
-type Acct = { id: string; name: string; type: AccountType; balance: number };
+type Acct = { id: string; name: string; type: AccountType; balance: number; interestRate?: number | null };
 type Tx = { id: string; accountId: string; amount: number; type: string; date: string };
 
-const typeIcon = {
+const typeIcon: Record<string, React.ComponentType<{ className?: string }>> = {
   checking: Wallet, savings: PiggyBank, credit: CreditCard, investment: TrendingUp,
-} as const;
+  loan: CreditCard, mortgage: CreditCard, student_loan: CreditCard,
+};
 
 export default function AccountsPage() {
   const [items, setItems] = useState<Acct[]>([]);
@@ -38,7 +39,7 @@ export default function AccountsPage() {
     load();
   }
 
-  const netWorth = items.reduce((s, a) => s + (a.type === "credit" ? -a.balance : a.balance), 0);
+  const netWorth = items.reduce((s, a) => s + (DEBT_ACCOUNT_TYPES.includes(a.type) ? -a.balance : a.balance), 0);
 
   return (
     <div className="space-y-6">
@@ -72,7 +73,12 @@ export default function AccountsPage() {
                     <button onClick={() => remove(a.id)} className="p-1.5 text-black/40 dark:text-white/40 hover:text-rose-400"><Trash2 className="w-4 h-4" /></button>
                   </div>
                 </div>
-                <div className="mt-4 text-xs text-black/40 dark:text-white/40 capitalize">{a.type}</div>
+                <div className="mt-4 text-xs text-black/40 dark:text-white/40 flex items-center gap-1.5">
+                  {ACCOUNT_TYPE_LABELS[a.type] ?? a.type}
+                  {a.interestRate != null && (
+                    <span className="text-red-400 font-medium">{a.interestRate}% APR</span>
+                  )}
+                </div>
                 <div className="text-sm">{a.name}</div>
                 <div className="mt-2 text-3xl font-semibold tracking-tight">
                   {a.type === "credit" && a.balance > 0 && "−"}{formatCurrency(a.balance, currency)}
@@ -141,8 +147,10 @@ function AccountModal({ acct, onClose, onSaved }: { acct: Acct | null; onClose: 
   const [name, setName] = useState(acct?.name || "");
   const [type, setType] = useState<AccountType>(acct?.type || "checking");
   const [balance, setBalance] = useState(acct?.balance?.toString() || "0");
+  const [apr, setApr] = useState(acct?.interestRate?.toString() || "");
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const isDebt = DEBT_ACCOUNT_TYPES.includes(type);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -153,7 +161,10 @@ function AccountModal({ acct, onClose, onSaved }: { acct: Acct | null; onClose: 
       const res = await fetch(acct ? `/api/accounts/${acct.id}` : "/api/accounts", {
         method: acct ? "PATCH" : "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, type, balance: Number(balance) }),
+        body: JSON.stringify({
+          name, type, balance: Number(balance),
+          interestRate: isDebt && apr !== "" ? Number(apr) : null,
+        }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Save failed");
@@ -173,13 +184,19 @@ function AccountModal({ acct, onClose, onSaved }: { acct: Acct | null; onClose: 
         <div>
           <label className="text-xs text-black/50 dark:text-white/50">Type</label>
           <select className="input mt-1" value={type} onChange={(e) => setType(e.target.value as AccountType)}>
-            {ACCOUNT_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+            {ACCOUNT_TYPES.map((t) => <option key={t} value={t}>{ACCOUNT_TYPE_LABELS[t]}</option>)}
           </select>
         </div>
         <div>
-          <label className="text-xs text-black/50 dark:text-white/50">Balance</label>
+          <label className="text-xs text-black/50 dark:text-white/50">Balance {isDebt && "(enter as positive; will show as debt)"}</label>
           <input className="input mt-1" type="number" step="0.01" value={balance} onChange={(e) => setBalance(e.target.value)} />
         </div>
+        {isDebt && (
+          <div>
+            <label className="text-xs text-black/50 dark:text-white/50">APR % (optional — powers debt strategy)</label>
+            <input className="input mt-1" type="number" step="0.01" min="0" max="100" placeholder="e.g. 24.99" value={apr} onChange={(e) => setApr(e.target.value)} />
+          </div>
+        )}
         {error && <div className="text-sm text-red-400">{error}</div>}
         <div className="flex justify-end gap-2 pt-2">
           <button type="button" onClick={onClose} className="btn-ghost">Cancel</button>

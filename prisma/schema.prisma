@@ -747,6 +747,8 @@ model Account {
   balance   Float    @default(0)
   createdAt DateTime @default(now())
 
+  interestRate Float?
+
   user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   transactions Transaction[]
   recurring    RecurringTransaction[]

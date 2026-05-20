@@ -9,11 +9,22 @@ export type DebtBoss = {
   hp: number;
   maxHp: number;
   hpPct: number;
+  apr: number | null;
+  monthlyInterestCost: number;
   dps30: number;
   attacks30: number;
+  biggestHit: number;
+  attackStreakMonths: number;
   lastAttackAt: string | null;
   etaMonths: number | null;
   defeated: boolean;
+};
+
+export type DebtStrategy = {
+  avalancheTargetId: string | null;
+  snowballTargetId: string | null;
+  recommended: "avalanche" | "snowball" | null;
+  reason: string;
 };
 
 export function isDebtAccount(type: string) {
@@ -21,45 +32,62 @@ export function isDebtAccount(type: string) {
 }
 
 export async function getDebtBosses(userId: string): Promise<DebtBoss[]> {
-  const accts = await prisma.account.findMany({
-    where: { userId },
-    orderBy: { createdAt: "asc" },
-  });
+  const accts = await prisma.account.findMany({ where: { userId }, orderBy: { createdAt: "asc" } });
   const debts = accts.filter((a) => isDebtAccount(a.type));
   if (debts.length === 0) return [];
 
   const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-  const recent = await prisma.transaction.findMany({
-    where: { userId, accountId: { in: debts.map((d) => d.id) }, date: { gte: since } },
-    orderBy: { date: "desc" },
-  });
-
-  // For peak HP, look at full history and reconstruct.
-  const all = await prisma.transaction.findMany({
-    where: { userId, accountId: { in: debts.map((d) => d.id) } },
-    orderBy: { date: "asc" },
-  });
+  const [recent, all] = await Promise.all([
+    prisma.transaction.findMany({
+      where: { userId, accountId: { in: debts.map((d) => d.id) }, date: { gte: since } },
+      orderBy: { date: "desc" },
+    }),
+    prisma.transaction.findMany({
+      where: { userId, accountId: { in: debts.map((d) => d.id) } },
+      orderBy: { date: "asc" },
+    }),
+  ]);
 
   return debts.map((a) => {
     const acctTxs = all.filter((t) => t.accountId === a.id);
-    // Reconstruct historical balance: balance now = a.balance. Walk forward from 0 using deltas.
-    // Each tx delta: income -> +amount, expense -> -amount.
+
+    // Reconstruct peak debt balance from full history.
     let running = 0;
     let peakNegative = 0;
     for (const t of acctTxs) {
-      const delta = t.type === "income" ? t.amount : -t.amount;
-      running += delta;
+      running += t.type === "income" ? t.amount : -t.amount;
       if (running < peakNegative) peakNegative = running;
     }
-    // For debt, balance is negative or zero. HP = |current balance|.
-    const hp = Math.max(0, -a.balance);
-    const maxHp = Math.max(hp, -peakNegative, hp);
 
+    const hp = Math.max(0, -a.balance);
+    const maxHp = Math.max(hp, -peakNegative);
+
+    // APR and monthly interest cost.
+    const apr = (a as unknown as { interestRate?: number | null }).interestRate ?? null;
+    const monthlyInterestCost = apr && hp > 0 ? Math.round(hp * (apr / 100 / 12) * 100) / 100 : 0;
+
+    // 30-day attack stats.
     const acctRecent = recent.filter((t) => t.accountId === a.id && t.type === "income");
     const dps30 = acctRecent.reduce((s, t) => s + t.amount, 0);
     const attacks30 = acctRecent.length;
     const lastAttackAt = acctRecent[0]?.date.toISOString() ?? null;
     const etaMonths = dps30 > 0 && hp > 0 ? Math.ceil(hp / dps30) : null;
+
+    // All-time stats.
+    const allAttacks = acctTxs.filter((t) => t.type === "income");
+    const biggestHit = allAttacks.reduce((m, t) => Math.max(m, t.amount), 0);
+
+    // Attack streak: consecutive calendar months with at least one payment.
+    const monthsWithAttacks = new Set(
+      allAttacks.map((t) => `${t.date.getFullYear()}-${t.date.getMonth()}`)
+    );
+    let streak = 0;
+    const cur = new Date();
+    cur.setDate(1);
+    while (monthsWithAttacks.has(`${cur.getFullYear()}-${cur.getMonth()}`)) {
+      streak++;
+      cur.setMonth(cur.getMonth() - 1);
+    }
 
     return {
       accountId: a.id,
@@ -68,11 +96,46 @@ export async function getDebtBosses(userId: string): Promise<DebtBoss[]> {
       hp: Math.round(hp * 100) / 100,
       maxHp: Math.round(maxHp * 100) / 100,
       hpPct: maxHp > 0 ? Math.max(0, Math.min(1, hp / maxHp)) : 0,
+      apr,
+      monthlyInterestCost,
       dps30: Math.round(dps30 * 100) / 100,
       attacks30,
+      biggestHit: Math.round(biggestHit * 100) / 100,
+      attackStreakMonths: streak,
       lastAttackAt,
       etaMonths,
       defeated: hp <= 0.01,
     };
   });
+}
+
+export function pickStrategy(bosses: DebtBoss[]): DebtStrategy {
+  const alive = bosses.filter((b) => !b.defeated);
+  if (alive.length === 0) {
+    return { avalancheTargetId: null, snowballTargetId: null, recommended: null, reason: "All bosses defeated." };
+  }
+
+  // Avalanche: if APRs known, highest APR first; otherwise highest HP.
+  const hasApr = alive.some((b) => b.apr != null);
+  const avalanche = hasApr
+    ? [...alive].sort((a, b) => (b.apr ?? 0) - (a.apr ?? 0))[0]
+    : [...alive].sort((a, b) => b.hp - a.hp)[0];
+
+  // Snowball: smallest balance first.
+  const snowball = [...alive].sort((a, b) => a.hp - b.hp)[0];
+
+  const totalHp = alive.reduce((s, b) => s + b.hp, 0);
+  const snowballShare = snowball.hp / totalHp;
+
+  const recommended: "avalanche" | "snowball" =
+    snowballShare < 0.25 && alive.length > 1 ? "snowball" : "avalanche";
+
+  const reason =
+    recommended === "snowball"
+      ? `Knock out ${snowball.name} first — it's only ${Math.round(snowballShare * 100)}% of your total debt and will give you a fast psychological win.`
+      : hasApr
+        ? `Target ${avalanche.name} — at ${avalanche.apr}% APR it's costing you ${avalanche.monthlyInterestCost > 0 ? `$${avalanche.monthlyInterestCost.toFixed(0)}/mo` : "the most"} in interest.`
+        : `Pound ${avalanche.name} hardest — it's your biggest balance and likely your biggest interest drain.`;
+
+  return { avalancheTargetId: avalanche.accountId, snowballTargetId: snowball.accountId, recommended, reason };
 }

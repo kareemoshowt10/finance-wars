@@ -54,5 +54,15 @@ export const CATEGORIES = [
   "Other",
 ];
 
-export const ACCOUNT_TYPES = ["checking", "savings", "credit", "investment"] as const;
+export const ACCOUNT_TYPES = ["checking", "savings", "credit", "investment", "loan", "mortgage", "student_loan"] as const;
 export type AccountType = (typeof ACCOUNT_TYPES)[number];
+export const DEBT_ACCOUNT_TYPES: AccountType[] = ["credit", "loan", "mortgage", "student_loan"];
+export const ACCOUNT_TYPE_LABELS: Record<AccountType, string> = {
+  checking: "Checking",
+  savings: "Savings",
+  credit: "Credit Card",
+  investment: "Investment",
+  loan: "Loan",
+  mortgage: "Mortgage",
+  student_loan: "Student Loan",
+};

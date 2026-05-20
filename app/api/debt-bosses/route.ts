@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { resolveRequestUser } from "@/lib/auth";
 import { bad, ok } from "@/lib/api";
-import { getDebtBosses } from "@/lib/debtBoss";
+import { getDebtBosses, pickStrategy } from "@/lib/debtBoss";
 
 export const dynamic = "force-dynamic";
 
@@ -21,5 +21,6 @@ export async function GET(req: NextRequest) {
       totalDps30: Math.round(totalDps * 100) / 100,
       etaMonths: totalDps > 0 && totalHp > 0 ? Math.ceil(totalHp / totalDps) : null,
     },
+    strategy: pickStrategy(bosses),
   });
 }
