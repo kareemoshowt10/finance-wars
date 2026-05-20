@@ -12,6 +12,7 @@ export const signupSchema = z.object({
   email: emailSchema,
   password: passwordSchema,
   name: z.string().min(1).max(80),
+  referralCode: z.string().min(4).max(16).optional(),
 });
 
 export const accountSchema = z.object({

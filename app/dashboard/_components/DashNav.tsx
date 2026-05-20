@@ -46,6 +46,7 @@ const linkGroups: { heading?: string; items: { href: string; label: string; icon
       { href: "/dashboard/cashflow", label: "Cash Flow", icon: TrendingUp },
       { href: "/dashboard/scenarios", label: "Scenarios", icon: LineChart },
       { href: "/dashboard/coach", label: "Coach", icon: MessageCircle },
+      { href: "/dashboard/predictions", label: "Predictions", icon: Target },
       { href: "/dashboard/reports", label: "Reports", icon: FileText },
     ],
   },

@@ -1,10 +1,12 @@
 "use client";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useState } from "react";
 
-export default function SignupPage() {
+function SignupForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const referralCode = searchParams.get("ref") || "";
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -19,7 +21,7 @@ export default function SignupPage() {
       const res = await fetch("/api/auth/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, password }),
+        body: JSON.stringify({ name, email, password, referralCode: referralCode || undefined }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Signup failed");
@@ -39,6 +41,11 @@ export default function SignupPage() {
         <Link href="/" className="block text-center text-[13px] text-white/60 hover:text-white">← Finance Wars</Link>
         <h1 className="mt-8 text-3xl font-semibold tracking-tight text-center">Create your account</h1>
         <p className="mt-2 text-sm text-white/50 text-center">A premium finance dashboard in under a minute.</p>
+        {referralCode && (
+          <div className="mt-4 rounded-xl bg-emerald-500/15 border border-emerald-500/30 px-4 py-2 text-center text-xs text-emerald-300">
+            Referred with code <span className="font-mono font-semibold">{referralCode}</span> · you'll get 25 SC on signup
+          </div>
+        )}
 
         <form onSubmit={submit} className="mt-8 space-y-3">
           <div>
@@ -64,5 +71,13 @@ export default function SignupPage() {
         </p>
       </div>
     </div>
+  );
+}
+
+export default function SignupPage() {
+  return (
+    <Suspense fallback={null}>
+      <SignupForm />
+    </Suspense>
   );
 }

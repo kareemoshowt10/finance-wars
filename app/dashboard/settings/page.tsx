@@ -172,6 +172,8 @@ export default function SettingsPage() {
 
       <DuelPreferencesSection />
 
+      <ReferralsSection />
+
       <ApiTokensSection />
 
       <section className="card p-6 border-rose-500/30">
@@ -354,6 +356,55 @@ function DuelPreferencesSection() {
         <div className="flex justify-end">
           <button onClick={save} disabled={saving} className="btn-primary">{saving ? "Saving…" : "Save preferences"}</button>
         </div>
+      </div>
+    </section>
+  );
+}
+
+function ReferralsSection() {
+  const [data, setData] = useState<{ code: string; count: number; recent: { id: string; name: string; status: string; createdAt: string }[] } | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/referrals").then((r) => r.json()).then(setData).catch(() => {});
+  }, []);
+
+  if (!data) return null;
+  const link = typeof window !== "undefined" ? `${window.location.origin}/signup?ref=${data.code}` : `/signup?ref=${data.code}`;
+
+  function copy() {
+    navigator.clipboard.writeText(link);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  }
+
+  return (
+    <section className="card p-6">
+      <div className="flex items-center gap-2">
+        <Key className="w-4 h-4" />
+        <h2 className="text-sm font-semibold uppercase tracking-wider text-black/60 dark:text-white/60">Refer friends · earn 100 SC each</h2>
+      </div>
+      <div className="mt-4 space-y-3">
+        <div>
+          <label className="text-xs text-black/50 dark:text-white/50">Your code</label>
+          <div className="mt-1 flex gap-2">
+            <input readOnly value={link} className="input flex-1 font-mono text-xs" />
+            <button onClick={copy} className="btn-primary inline-flex items-center gap-1"><Copy className="w-3.5 h-3.5" /> {copied ? "Copied" : "Copy"}</button>
+          </div>
+        </div>
+        <div className="text-sm text-black/60 dark:text-white/60">
+          <span className="font-medium text-black dark:text-white">{data.count}</span> conversion{data.count === 1 ? "" : "s"} so far. New users get 25 SC; you get 100 SC each.
+        </div>
+        {data.recent.length > 0 && (
+          <ul className="mt-2 divide-y divide-black/5 dark:divide-white/5">
+            {data.recent.map((r) => (
+              <li key={r.id} className="py-2 flex justify-between text-sm">
+                <span>{r.name}</span>
+                <span className={r.status === "CONVERTED" ? "text-emerald-500" : "text-black/40 dark:text-white/40"}>{r.status.toLowerCase()}</span>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
     </section>
   );

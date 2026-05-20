@@ -8,6 +8,7 @@ import { parseBody } from "@/lib/validate";
 import { signupSchema } from "@/lib/schemas";
 import { rateLimit } from "@/lib/ratelimit";
 import { log } from "@/lib/audit";
+import { recordReferralOnSignup } from "@/lib/referrals";
 
 export async function POST(req: NextRequest) {
   const rl = rateLimit(req, { key: "auth/signup", limit: 3, windowMs: 60_000 });
@@ -24,6 +25,9 @@ export async function POST(req: NextRequest) {
   });
 
   await seedDefaultCategories(user.id);
+  if (data.referralCode) {
+    await recordReferralOnSignup(user.id, data.referralCode).catch(() => {});
+  }
   const token = await signToken({ uid: user.id, email: user.email });
   await setSessionCookie(token);
   await log(user.id, "auth.signup", { entity: "user", entityId: user.id, req });

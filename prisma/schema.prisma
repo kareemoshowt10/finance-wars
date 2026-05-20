@@ -59,6 +59,47 @@ model User {
   squadContributions SquadContribution[]
 
   gamePlays GamePlay[]
+
+  referralCode      String?    @unique
+  referralsMade     Referral[] @relation("ReferralReferrer")
+  referralReceived  Referral?  @relation("ReferralReferred")
+
+  predictions Prediction[]
+}
+
+model Prediction {
+  id        String   @id @default(cuid())
+  userId    String
+  month     String
+  category  String
+  forecast  Float
+  actual    Float?
+  accuracy  Float?
+  xpAwarded Int      @default(0)
+  scAwarded Int      @default(0)
+  settledAt DateTime?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, month, category])
+  @@index([userId, month])
+}
+
+model Referral {
+  id          String    @id @default(cuid())
+  referrerId  String
+  referredId  String?   @unique
+  code        String
+  status      String    @default("PENDING")
+  convertedAt DateTime?
+  createdAt   DateTime  @default(now())
+
+  referrer User  @relation("ReferralReferrer", fields: [referrerId], references: [id], onDelete: Cascade)
+  referred User? @relation("ReferralReferred", fields: [referredId], references: [id], onDelete: SetNull)
+
+  @@index([referrerId])
+  @@index([code])
 }
 
 model Squad {
