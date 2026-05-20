@@ -33,6 +33,8 @@ const linkGroups: { heading?: string; items: { href: string; label: string; icon
     items: [
       { href: "/dashboard/duels", label: "Duels", icon: Swords },
       { href: "/dashboard/couples", label: "Couples", icon: Users },
+      { href: "/dashboard/games", label: "Mini-Games", icon: Sparkles },
+      { href: "/dashboard/squads", label: "Squads", icon: Flame },
       { href: "/dashboard/achievements", label: "Achievements", icon: Award },
       { href: "/dashboard/marketplace", label: "Marketplace", icon: Store },
     ],

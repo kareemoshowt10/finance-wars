@@ -53,6 +53,74 @@ model User {
   walletEntriesIssued WalletEntry[] @relation("WalletIssuer")
   confessions         Confession[]
   redemptions         Redemption[]
+
+  squadsCreated     Squad[]             @relation("SquadCreator")
+  squadMemberships  SquadMember[]
+  squadContributions SquadContribution[]
+
+  gamePlays GamePlay[]
+}
+
+model Squad {
+  id          String   @id @default(cuid())
+  name        String
+  emoji       String   @default("🎯")
+  createdById String
+  inviteCode  String   @unique
+  visibility  String   @default("PRIVATE")
+  createdAt   DateTime @default(now())
+
+  creator User          @relation("SquadCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  members SquadMember[]
+  quests  SquadQuest[]
+}
+
+model SquadMember {
+  id       String   @id @default(cuid())
+  squadId  String
+  userId   String
+  role     String   @default("MEMBER")
+  joinedAt DateTime @default(now())
+
+  squad Squad @relation(fields: [squadId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([squadId, userId])
+  @@index([userId])
+}
+
+model SquadQuest {
+  id           String   @id @default(cuid())
+  squadId      String
+  title        String
+  description  String?
+  mode         String   @default("COOP")
+  targetAmount Float
+  deadline     DateTime
+  status       String   @default("ACTIVE")
+  createdById  String
+  completedAt  DateTime?
+  createdAt    DateTime @default(now())
+
+  squad         Squad               @relation(fields: [squadId], references: [id], onDelete: Cascade)
+  contributions SquadContribution[]
+
+  @@index([squadId, status])
+}
+
+model SquadContribution {
+  id        String   @id @default(cuid())
+  questId   String
+  userId    String
+  amount    Float
+  note      String?
+  createdAt DateTime @default(now())
+
+  quest SquadQuest @relation(fields: [questId], references: [id], onDelete: Cascade)
+  user  User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([questId, userId])
+  @@index([questId, createdAt])
 }
 
 model WalletEntry {
@@ -140,6 +208,37 @@ model Household {
   billCharges     BillCharge[]
   ledgerEntries   LedgerEntry[]
   settlements     Settlement[]
+  gameSessions    GameSession[]
+}
+
+model GameSession {
+  id          String   @id @default(cuid())
+  householdId String
+  game        String
+  status      String   @default("OPEN")
+  config      Json?
+  createdById String
+  createdAt   DateTime @default(now())
+  completedAt DateTime?
+
+  household Household  @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  plays     GamePlay[]
+
+  @@index([householdId, status])
+}
+
+model GamePlay {
+  id        String   @id @default(cuid())
+  sessionId String
+  userId    String
+  answers   Json
+  score     Float?
+  createdAt DateTime @default(now())
+
+  session GameSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  user    User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([sessionId, userId])
 }
 
 model SharedBill {
