@@ -6,7 +6,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import {
   LayoutDashboard, ArrowLeftRight, Wallet, Target, Trophy, Settings, LogOut, Menu, X,
   Sparkles, Repeat, Tag, Bell, PieChart, Activity, CheckCheck, Filter, TrendingUp, FileText, Swords,
-  Calendar as CalIcon, LineChart, MessageCircle, Award, Flame, Users,
+  Calendar as CalIcon, LineChart, MessageCircle, Award, Flame, Users, Store,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import ThemeToggle from "./ThemeToggle";
@@ -34,6 +34,7 @@ const linkGroups: { heading?: string; items: { href: string; label: string; icon
       { href: "/dashboard/duels", label: "Duels", icon: Swords },
       { href: "/dashboard/couples", label: "Couples", icon: Users },
       { href: "/dashboard/achievements", label: "Achievements", icon: Award },
+      { href: "/dashboard/marketplace", label: "Marketplace", icon: Store },
     ],
   },
   {

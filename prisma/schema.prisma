@@ -48,6 +48,79 @@ model User {
   purchaseReviewsRequested  PurchaseReview[]   @relation("ReviewRequester")
   purchaseReviewsApproving  PurchaseReview[]   @relation("ReviewApprover")
   pactSignatures            PactSignature[]
+
+  walletEntriesOwned  WalletEntry[] @relation("WalletOwner")
+  walletEntriesIssued WalletEntry[] @relation("WalletIssuer")
+  confessions         Confession[]
+  redemptions         Redemption[]
+}
+
+model WalletEntry {
+  id          String   @id @default(cuid())
+  userId      String
+  currency    String
+  delta       Int
+  reason      String
+  refType     String?
+  refId       String?
+  fromUserId  String?
+  householdId String?
+  meta        Json?
+  createdAt   DateTime @default(now())
+
+  user User  @relation("WalletOwner", fields: [userId], references: [id], onDelete: Cascade)
+  from User? @relation("WalletIssuer", fields: [fromUserId], references: [id], onDelete: SetNull)
+
+  @@index([userId, currency, createdAt])
+  @@index([householdId, createdAt])
+}
+
+model Confession {
+  id            String   @id @default(cuid())
+  userId        String
+  householdId   String?
+  transactionId String?
+  amount        Float
+  category      String
+  note          String?
+  partnerSeen   Boolean  @default(false)
+  createdAt     DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([householdId, createdAt])
+}
+
+model MarketplaceItem {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  name        String
+  description String
+  currency    String
+  cost        Int
+  category    String
+  active      Boolean  @default(true)
+  payload     Json?
+  createdAt   DateTime @default(now())
+
+  redemptions Redemption[]
+}
+
+model Redemption {
+  id        String   @id @default(cuid())
+  userId    String
+  itemId    String
+  cost      Int
+  currency  String
+  status    String   @default("REDEEMED")
+  meta      Json?
+  createdAt DateTime @default(now())
+
+  user User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  item MarketplaceItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
 }
 
 model Household {

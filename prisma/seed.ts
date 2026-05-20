@@ -857,7 +857,82 @@ async function seedCouples(demoUserId: string, demoCheckingId: string, partnerId
   });
 
   console.log(`Seeded household: ${hh.name}`);
+
+  await seedWalletDemo(demoUserId, partnerId, hh.id);
+  await seedMarketplace();
 }
+
+async function seedMarketplace() {
+  const items = [
+    { slug: "free-pass-token", name: "Free Pass Token", description: "Skip one big-purchase review with your partner.", currency: "TP", cost: 150, category: "Couples", payload: { kind: "free_pass" } },
+    { slug: "streak-freeze", name: "Streak Freeze", description: "Protect your login streak for one missed day.", currency: "SHARD", cost: 5, category: "Streaks", payload: { kind: "streak_freeze" } },
+    { slug: "charity-match-10", name: "$10 Charity Match", description: "We'll match $10 to a charity of your choice.", currency: "SC", cost: 200, category: "Impact", payload: { kind: "charity_match", amount: 10 } },
+    { slug: "date-night", name: "Date Night Unlock", description: "Unlocks a curated $50 date night experience.", currency: "TP", cost: 300, category: "Couples", payload: { kind: "date_night" } },
+    { slug: "flair-gold-ring", name: "Gold Ring Flair", description: "Cosmetic profile flair shown next to your name.", currency: "SC", cost: 100, category: "Cosmetic", payload: { kind: "flair", value: "gold-ring" } },
+    { slug: "flair-onyx", name: "Onyx Flair", description: "Premium dark cosmetic flair.", currency: "KARMA", cost: 500, category: "Cosmetic", payload: { kind: "flair", value: "onyx" } },
+  ];
+  for (const it of items) {
+    await prisma.marketplaceItem.upsert({
+      where: { slug: it.slug },
+      update: { name: it.name, description: it.description, currency: it.currency, cost: it.cost, category: it.category, payload: it.payload as never, active: true },
+      create: { ...it, payload: it.payload as never },
+    });
+  }
+  console.log(`Seeded ${items.length} marketplace items`);
+}
+
+async function seedWalletDemo(demoUserId: string, partnerUserId: string, householdId: string) {
+  await prisma.walletEntry.deleteMany({ where: { userId: { in: [demoUserId, partnerUserId] } } });
+  await prisma.confession.deleteMany({ where: { userId: { in: [demoUserId, partnerUserId] } } });
+
+  const conf = await prisma.confession.create({
+    data: {
+      userId: demoUserId,
+      householdId,
+      amount: 89.5,
+      category: "Dining",
+      note: "Went out with the team after a long week — wanted you to know first.",
+      partnerSeen: true,
+    },
+  });
+
+  const now = Date.now();
+  const entries: { userId: string; currency: string; delta: number; reason: string; fromUserId?: string; refType?: string; refId?: string; daysAgo: number; householdId?: string }[] = [
+    { userId: demoUserId, currency: "TP", delta: 25, reason: "CONFESSION_HONEST", refType: "Confession", refId: conf.id, daysAgo: 6, householdId },
+    { userId: demoUserId, currency: "TP", delta: 10, reason: "PARTNER_VERIFY", fromUserId: partnerUserId, refType: "Confession", refId: conf.id, daysAgo: 5, householdId },
+    { userId: demoUserId, currency: "TP", delta: 15, reason: "PACT_KEPT", fromUserId: partnerUserId, daysAgo: 4, householdId },
+    { userId: partnerUserId, currency: "TP", delta: 15, reason: "PACT_KEPT", fromUserId: demoUserId, daysAgo: 4, householdId },
+    { userId: demoUserId, currency: "TP", delta: 5, reason: "REVIEW_APPROVED", fromUserId: partnerUserId, daysAgo: 3, householdId },
+    { userId: partnerUserId, currency: "TP", delta: 25, reason: "CONFESSION_HONEST", daysAgo: 2, householdId },
+    { userId: partnerUserId, currency: "TP", delta: 10, reason: "PARTNER_VERIFY", fromUserId: demoUserId, daysAgo: 1, householdId },
+    { userId: demoUserId, currency: "SC", delta: 30, reason: "CHEER_GIVEN", daysAgo: 7 },
+    { userId: demoUserId, currency: "SC", delta: 50, reason: "GOAL_MILESTONE", daysAgo: 10 },
+    { userId: demoUserId, currency: "SC", delta: 100, reason: "REFERRAL", daysAgo: 14 },
+    { userId: partnerUserId, currency: "SC", delta: 25, reason: "CHEER_GIVEN", daysAgo: 5 },
+    { userId: demoUserId, currency: "SHARD", delta: 12, reason: "STREAK_BONUS", daysAgo: 3 },
+    { userId: partnerUserId, currency: "SHARD", delta: 8, reason: "STREAK_BONUS", daysAgo: 3 },
+  ];
+
+  for (const e of entries) {
+    await prisma.walletEntry.create({
+      data: {
+        userId: e.userId,
+        currency: e.currency,
+        delta: e.delta,
+        reason: e.reason,
+        fromUserId: e.fromUserId,
+        refType: e.refType,
+        refId: e.refId,
+        householdId: e.householdId,
+        createdAt: new Date(now - e.daysAgo * 86400000),
+      },
+    });
+  }
+
+  console.log(`Seeded wallet ledger (${entries.length} entries) + 1 confession`);
+}
+
+export { seedMarketplace, seedWalletDemo };
 
 if (require.main === module) {
   runSeed()

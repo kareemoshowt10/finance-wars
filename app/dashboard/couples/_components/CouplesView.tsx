@@ -5,10 +5,11 @@ import Link from "next/link";
 import { Users, Heart, Eye, EyeOff, EyeIcon, Calendar, ShieldCheck, Sparkles, DollarSign, CheckCircle, XCircle, Plus, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-type Tab = "overview" | "bills" | "pact" | "sharing" | "dates" | "purchases" | "allowance";
+type Tab = "overview" | "trust" | "bills" | "pact" | "sharing" | "dates" | "purchases" | "allowance";
 
 const TABS: { id: Tab; label: string }[] = [
   { id: "overview", label: "Overview" },
+  { id: "trust", label: "Trust" },
   { id: "bills", label: "Bills & Settle" },
   { id: "pact", label: "The Pact" },
   { id: "sharing", label: "Sharing" },
@@ -79,6 +80,7 @@ export default function CouplesView({ activeId, households }: { activeId: string
           transition={{ duration: 0.18 }}
         >
           {tab === "overview" && <OverviewTab hid={hid} />}
+          {tab === "trust" && <TrustTab hid={hid} />}
           {tab === "bills" && <BillsTab hid={hid} />}
           {tab === "pact" && <PactTab hid={hid} />}
           {tab === "sharing" && <SharingTab hid={hid} />}
@@ -683,6 +685,185 @@ function AllowanceTab({ hid }: { hid: string }) {
             </li>
           ))}
         </ul>
+      </div>
+    </div>
+  );
+}
+
+type LedgerEntry = {
+  id: string;
+  to: { id: string; name: string };
+  from: { id: string; name: string } | null;
+  delta: number;
+  reason: string;
+  refType: string | null;
+  refId: string | null;
+  createdAt: string;
+};
+type Member = { userId: string | null; name: string; balance: number; sparkline: number[] };
+type TrustData = { household: { id: string; name: string }; members: Member[]; entries: LedgerEntry[]; issuedByPair: Record<string, number> };
+
+function TrustTab({ hid }: { hid: string }) {
+  const [data, setData] = useState<TrustData | null>(null);
+  const [meId, setMeId] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [showBooth, setShowBooth] = useState(false);
+  const [confAmount, setConfAmount] = useState("");
+  const [confCategory, setConfCategory] = useState("Dining");
+  const [confNote, setConfNote] = useState("");
+
+  useEffect(() => { void load(); fetch("/api/auth/me").then((r) => r.json()).then((u) => setMeId(u?.id ?? null)).catch(() => {}); }, [hid]);
+
+  async function load() {
+    const r = await fetch("/api/trust/ledger");
+    if (r.ok) setData(await r.json());
+  }
+
+  async function submitConfession() {
+    if (!confAmount) return;
+    setBusy(true);
+    try {
+      const res = await fetch("/api/confessions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ amount: Number(confAmount), category: confCategory, note: confNote }),
+      });
+      if (res.ok) {
+        setConfAmount(""); setConfNote(""); setShowBooth(false);
+        await load();
+      }
+    } finally { setBusy(false); }
+  }
+
+  async function verifyPartner(targetUserId: string, refType?: string, refId?: string) {
+    setBusy(true);
+    try {
+      const res = await fetch("/api/trust/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ targetUserId, kind: refType === "Confession" ? "CONFESSION" : "MANUAL", refType, refId }),
+      });
+      if (res.ok) await load();
+    } finally { setBusy(false); }
+  }
+
+  if (!data) return <div className="text-sm text-black/40 dark:text-white/40">Loading…</div>;
+
+  const me = data.members.find((m) => m.userId === meId);
+  const partner = data.members.find((m) => m.userId !== meId);
+  const reasonLabel: Record<string, string> = {
+    CONFESSION_HONEST: "Confession (honest)",
+    PARTNER_VERIFY: "Partner verified",
+    PACT_KEPT: "Pact kept",
+    PACT_BROKEN: "Pact broken",
+    REVIEW_APPROVED: "Review approved",
+    REVIEW_HONEST_FLAG: "Flagged honestly",
+  };
+
+  return (
+    <div className="space-y-8">
+      <section className="rounded-3xl border border-black/10 dark:border-white/10 bg-gradient-to-br from-emerald-500/10 via-teal-500/5 to-cyan-500/10 p-8">
+        <div className="flex items-start justify-between flex-wrap gap-4">
+          <div>
+            <div className="text-xs uppercase tracking-wider text-emerald-600 dark:text-emerald-400 font-medium flex items-center gap-2"><ShieldCheck className="w-3 h-3" /> Trust Ledger</div>
+            <h2 className="mt-1 text-2xl font-semibold tracking-tight">Trust is earned, not assumed.</h2>
+            <p className="mt-2 text-sm text-black/60 dark:text-white/60 max-w-xl">Trust Points (TP) are issued by your partner when you act with transparency — confessing purchases, keeping pacts, approving reviews honestly.</p>
+          </div>
+          <button onClick={() => setShowBooth((s) => !s)} className="px-5 py-3 rounded-full bg-black text-white dark:bg-white dark:text-black text-sm font-medium flex items-center gap-2">
+            <Sparkles className="w-4 h-4" /> Confession Booth
+          </button>
+        </div>
+
+        <AnimatePresence>
+          {showBooth && (
+            <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
+              <div className="mt-6 rounded-2xl bg-white dark:bg-black/40 border border-black/10 dark:border-white/10 p-5 grid md:grid-cols-3 gap-3">
+                <input type="number" placeholder="Amount" value={confAmount} onChange={(e) => setConfAmount(e.target.value)} className="px-4 py-3 rounded-xl bg-black/5 dark:bg-white/10 text-sm" />
+                <select value={confCategory} onChange={(e) => setConfCategory(e.target.value)} className="px-4 py-3 rounded-xl bg-black/5 dark:bg-white/10 text-sm">
+                  {["Dining","Shopping","Entertainment","Subscriptions","Other"].map((c) => <option key={c}>{c}</option>)}
+                </select>
+                <input placeholder="Note (optional)" value={confNote} onChange={(e) => setConfNote(e.target.value)} className="px-4 py-3 rounded-xl bg-black/5 dark:bg-white/10 text-sm" />
+                <button disabled={busy || !confAmount} onClick={submitConfession} className="md:col-span-3 px-5 py-3 rounded-full bg-emerald-500 text-white text-sm font-medium disabled:opacity-50">
+                  Confess for +25 TP, +5 SC
+                </button>
+                <p className="md:col-span-3 text-xs text-black/50 dark:text-white/50">Honest pre-disclosure is rewarded. Your partner can then verify it for additional TP.</p>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </section>
+
+      <div className="grid md:grid-cols-2 gap-4">
+        {data.members.map((m) => (
+          <div key={m.userId || m.name} className="rounded-2xl border border-black/10 dark:border-white/10 p-5">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-xs uppercase tracking-wider text-black/50 dark:text-white/50">{m.userId === meId ? "You" : "Partner"}</div>
+                <div className="text-lg font-medium">{m.name}</div>
+              </div>
+              <div className="text-right">
+                <div className="text-3xl font-semibold tabular-nums">{m.balance}</div>
+                <div className="text-xs text-black/50 dark:text-white/50">Trust Points</div>
+              </div>
+            </div>
+            <div className="mt-4 flex items-end gap-1 h-12">
+              {m.sparkline.map((v, i) => {
+                const max = Math.max(1, ...m.sparkline.map(Math.abs));
+                const h = Math.max(4, (Math.abs(v) / max) * 48);
+                return <div key={i} className={cn("flex-1 rounded-sm", v >= 0 ? "bg-emerald-500/70" : "bg-rose-500/70")} style={{ height: h }} />;
+              })}
+            </div>
+            <div className="mt-2 text-xs text-black/50 dark:text-white/50">7-day TP movement</div>
+          </div>
+        ))}
+      </div>
+
+      <div className="rounded-2xl border border-black/10 dark:border-white/10 p-5">
+        <h3 className="text-lg font-medium mb-4">Recent activity</h3>
+        {data.entries.length === 0 ? (
+          <div className="text-sm text-black/40 dark:text-white/40">No trust activity yet. Confess a purchase to start the ledger.</div>
+        ) : (
+          <ul className="space-y-2">
+            {data.entries.slice(0, 20).map((e) => {
+              const canVerify = me && partner && e.to.id === partner.userId && !e.from && e.reason === "CONFESSION_HONEST" && e.refId;
+              return (
+                <li key={e.id} className="flex items-center justify-between rounded-xl border border-black/5 dark:border-white/5 p-3 text-sm">
+                  <div className="flex-1">
+                    <div className="font-medium">
+                      <span className={cn(e.delta >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-500")}>
+                        {e.delta >= 0 ? "+" : ""}{e.delta} TP
+                      </span>{" "}
+                      <span className="text-black/70 dark:text-white/70">→ {e.to.name}</span>
+                    </div>
+                    <div className="text-xs text-black/50 dark:text-white/50">
+                      {reasonLabel[e.reason] || e.reason}
+                      {e.from && <> · from {e.from.name}</>}
+                      {" · "}{new Date(e.createdAt).toLocaleString()}
+                    </div>
+                  </div>
+                  {canVerify && (
+                    <button
+                      disabled={busy}
+                      onClick={() => verifyPartner(e.to.id, e.refType || undefined, e.refId || undefined)}
+                      className="text-xs px-3 py-1.5 rounded-full bg-emerald-500 text-white disabled:opacity-50"
+                    >
+                      Verify +10 TP
+                    </button>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </div>
+
+      <div className="rounded-2xl border border-black/10 dark:border-white/10 p-5">
+        <h3 className="text-lg font-medium">Weekly Trust Audit</h3>
+        <p className="mt-1 text-sm text-black/60 dark:text-white/60">
+          {me && partner ? (
+            <>You issued <span className="font-medium">{data.issuedByPair[`${me.userId}->${partner.userId}`] ?? 0} TP</span> to {partner.name}. They issued <span className="font-medium">{data.issuedByPair[`${partner.userId}->${me.userId}`] ?? 0} TP</span> to you.</>
+          ) : "Add a partner to see audit details."}
+        </p>
       </div>
     </div>
   );

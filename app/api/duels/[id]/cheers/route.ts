@@ -6,6 +6,7 @@ import { bad, ok } from "@/lib/api";
 import { parseBody } from "@/lib/validate";
 import { rateLimit } from "@/lib/ratelimit";
 import { STICKERS } from "@/lib/duels/constants";
+import { award, REWARDS } from "@/lib/wallet";
 
 const schema = z.object({ sticker: z.enum(STICKERS as unknown as [string, ...string[]]) });
 
@@ -29,5 +30,28 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   await prisma.duelEvent.create({
     data: { duelId: duel.id, kind: "CHEER", playerId: me.id, payload: { sticker: data.sticker } as never },
   });
+
+  // Social Currency: small reward for giving cheers, smaller for receiving.
+  await award({
+    userId: r.user.id,
+    currency: "SC",
+    delta: REWARDS.CHEER_GIVEN,
+    reason: "CHEER_GIVEN",
+    refType: "Cheer",
+    refId: cheer.id,
+  });
+  const opponent = duel.players.find((p) => p.id !== me.id && p.userId);
+  if (opponent?.userId) {
+    await award({
+      userId: opponent.userId,
+      currency: "SC",
+      delta: REWARDS.CHEER_RECEIVED,
+      reason: "CHEER_RECEIVED",
+      refType: "Cheer",
+      refId: cheer.id,
+      fromUserId: r.user.id,
+    });
+  }
+
   return ok(cheer);
 }
