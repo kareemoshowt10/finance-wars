@@ -64,5 +64,7 @@ export async function POST(req: NextRequest) {
   });
 
   await log(r.user.id, "create", { entity: "ViceTax", entityId: tax.id, req });
+  const { evaluate: evalAch } = await import("@/lib/achievements/engine");
+  evalAch(r.user.id, { type: "vice-tax-created" }).catch(() => {});
   return ok({ tax });
 }

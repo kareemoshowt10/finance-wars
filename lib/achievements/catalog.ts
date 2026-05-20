@@ -50,6 +50,12 @@ export const ACHIEVEMENTS: AchievementDef[] = [
 
   // social
   { slug: "invited-friend", name: "Recruiter", description: "Invite someone to a duel.", icon: "UserPlus", xp: 40, category: "social", tier: 1 },
+
+  // vice tax + debt boss
+  { slug: "first-vice-tax", name: "Self-Imposed Tax", description: "Set up your first Vice Tax.", icon: "Flame", xp: 40, category: "savings", tier: 1 },
+  { slug: "vice-tax-100", name: "Pleasure Tithe", description: "Funnel $100 in vice taxes into a goal.", icon: "PiggyBank", xp: 100, category: "savings", tier: 2 },
+  { slug: "first-debt-ko", name: "First Blood", description: "Defeat your first debt boss.", icon: "Swords", xp: 150, category: "savings", tier: 2 },
+  { slug: "debt-free", name: "Debt Free", description: "Defeat every debt boss you've spawned.", icon: "Trophy", xp: 500, category: "savings", tier: 4 },
 ];
 
 export const ACHIEVEMENTS_BY_SLUG: Record<string, AchievementDef> = Object.fromEntries(

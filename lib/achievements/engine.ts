@@ -25,7 +25,10 @@ export type AchievementEvent =
   | { type: "visit-scenarios" }
   | { type: "savings-rate"; rate: number }
   | { type: "net-worth-snapshot"; netWorth: number }
-  | { type: "portfolio-value"; value: number };
+  | { type: "portfolio-value"; value: number }
+  | { type: "vice-tax-created" }
+  | { type: "vice-tax-total"; total: number }
+  | { type: "debt-ko"; remainingBosses: number };
 
 async function unlock(userId: string, slug: string) {
   const def = ACHIEVEMENTS_BY_SLUG[slug];
@@ -146,6 +149,16 @@ export async function evaluate(userId: string, event: AchievementEvent) {
         break;
       case "portfolio-value":
         if (event.value >= 10_000 && !(await alreadyHas(userId, "stock-portfolio-10k"))) await unlock(userId, "stock-portfolio-10k");
+        break;
+      case "vice-tax-created":
+        if (!(await alreadyHas(userId, "first-vice-tax"))) await unlock(userId, "first-vice-tax");
+        break;
+      case "vice-tax-total":
+        if (event.total >= 100 && !(await alreadyHas(userId, "vice-tax-100"))) await unlock(userId, "vice-tax-100");
+        break;
+      case "debt-ko":
+        if (!(await alreadyHas(userId, "first-debt-ko"))) await unlock(userId, "first-debt-ko");
+        if (event.remainingBosses === 0 && !(await alreadyHas(userId, "debt-free"))) await unlock(userId, "debt-free");
         break;
     }
   } catch {

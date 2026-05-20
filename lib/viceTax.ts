@@ -1,4 +1,6 @@
 import { prisma } from "./prisma";
+import { notify } from "./notifications";
+import { evaluate as evalAch } from "./achievements/engine";
 
 export function computeTaxAmount(mode: string, rate: number, transactionAmount: number): number {
   if (rate <= 0 || transactionAmount <= 0) return 0;
@@ -39,6 +41,17 @@ export async function applyViceTaxOnTransaction(userId: string, tx: { id: string
       },
     }),
   ]);
+
+  const newTotal = vice.taxedTotal + taxAmount;
+  await notify(
+    userId,
+    "VICE_TAX_HIT",
+    `Vice tax: +${taxAmount.toFixed(2)}`,
+    `${tx.category} → goal. Total funneled: ${newTotal.toFixed(2)}.`,
+    "/dashboard/vice-tax",
+    `vicetax:hit:${tx.id}`
+  );
+  evalAch(userId, { type: "vice-tax-total", total: newTotal }).catch(() => {});
 
   return { taxAmount, goalId: vice.goalId };
 }

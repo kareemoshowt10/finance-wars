@@ -2,6 +2,7 @@ import { prisma } from "./prisma";
 import { award } from "./wallet";
 import { notify } from "./notifications";
 import { isDebtAccount } from "./debtBoss";
+import { evaluate as evalAch } from "./achievements/engine";
 
 const KO_KEY = "debtboss:ko:";
 
@@ -34,4 +35,8 @@ export async function checkDebtKO(userId: string, accountId: string) {
     "/dashboard/debt",
     ref
   );
+
+  const debts = await prisma.account.findMany({ where: { userId } });
+  const remaining = debts.filter((a) => isDebtAccount(a.type) && a.balance < -0.01).length;
+  evalAch(userId, { type: "debt-ko", remainingBosses: remaining }).catch(() => {});
 }
