@@ -40,3 +40,23 @@ export async function checkDebtKO(userId: string, accountId: string) {
   const remaining = debts.filter((a) => isDebtAccount(a.type) && a.balance < -0.01).length;
   evalAch(userId, { type: "debt-ko", remainingBosses: remaining }).catch(() => {});
 }
+
+export async function recordDebtAttack(userId: string, accountId: string) {
+  const acct = await prisma.account.findUnique({ where: { id: accountId } });
+  if (!acct || acct.userId !== userId || !isDebtAccount(acct.type)) return;
+  const txs = await prisma.transaction.findMany({
+    where: { userId, accountId, type: "income" },
+    select: { date: true },
+  });
+  const months = new Set(txs.map((t) => `${t.date.getFullYear()}-${t.date.getMonth()}`));
+  let streak = 0;
+  const cur = new Date();
+  cur.setDate(1);
+  while (months.has(`${cur.getFullYear()}-${cur.getMonth()}`)) {
+    streak++;
+    cur.setMonth(cur.getMonth() - 1);
+  }
+  if (streak > 0) {
+    evalAch(userId, { type: "debt-streak", months: streak }).catch(() => {});
+  }
+}

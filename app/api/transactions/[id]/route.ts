@@ -7,7 +7,8 @@ import { txPatchSchema } from "@/lib/schemas";
 import { rateLimit, DEFAULT_MUTATION } from "@/lib/ratelimit";
 import { log } from "@/lib/audit";
 import { checkBudgetThresholds } from "@/lib/notifications";
-import { reverseViceTaxForTransaction } from "@/lib/viceTax";
+import { reverseViceTaxForTransaction, applyViceTaxOnTransaction } from "@/lib/viceTax";
+import { checkDebtKO, recordDebtAttack } from "@/lib/debtBossHooks";
 
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
   const rl = rateLimit(req, { key: "tx:patch", ...DEFAULT_MUTATION });
@@ -35,6 +36,29 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     where: { id: updated.accountId },
     data: { balance: { increment: newDelta } },
   });
+
+  // Vice tax: reverse the old contribution, then re-apply against the new category/amount.
+  const catChanged = data.category !== undefined && data.category !== existing.category;
+  const amtChanged = data.amount !== undefined && Math.abs(data.amount) !== existing.amount;
+  const typeChanged = data.type !== undefined && data.type !== existing.type;
+  if (catChanged || amtChanged || typeChanged) {
+    await reverseViceTaxForTransaction(r.user.id, params.id).catch(() => {});
+    if (updated.type === "expense") {
+      await applyViceTaxOnTransaction(r.user.id, {
+        id: updated.id,
+        amount: updated.amount,
+        category: updated.category,
+        type: updated.type,
+        date: updated.date,
+      }).catch(() => {});
+    }
+  }
+
+  // Debt boss KO check if a payment landed on a debt account.
+  if (updated.type === "income") {
+    await recordDebtAttack(r.user.id, updated.accountId).catch(() => {});
+    await checkDebtKO(r.user.id, updated.accountId).catch(() => {});
+  }
   const { upsertTodaySnapshot } = await import("@/lib/snapshots");
   await upsertTodaySnapshot(r.user.id);
   if (updated.type === "expense") await checkBudgetThresholds(r.user.id, updated.category);
