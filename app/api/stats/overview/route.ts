@@ -4,6 +4,7 @@ import { bad, ok } from "@/lib/api";
 import { monthKey } from "@/lib/utils";
 import { backfillSnapshots, upsertTodaySnapshot, dayKey, computeNetWorth } from "@/lib/snapshots";
 import { runDue } from "@/lib/recurring";
+import { getDebtBosses } from "@/lib/debtBoss";
 
 export async function GET() {
   const user = await requireUser();
@@ -118,6 +119,34 @@ export async function GET() {
     }
   } catch {}
 
+  let topBoss: { name: string; hp: number; maxHp: number; hpPct: number; etaMonths: number | null } | null = null;
+  let bossCount = 0;
+  let bossesDefeated = 0;
+  try {
+    const bosses = await getDebtBosses(user.id);
+    bossCount = bosses.length;
+    bossesDefeated = bosses.filter((b) => b.defeated).length;
+    const alive = bosses.filter((b) => !b.defeated).sort((a, b) => b.hp - a.hp);
+    if (alive[0]) {
+      topBoss = {
+        name: alive[0].name,
+        hp: alive[0].hp,
+        maxHp: alive[0].maxHp,
+        hpPct: alive[0].hpPct,
+        etaMonths: alive[0].etaMonths,
+      };
+    }
+  } catch {}
+
+  let viceTaxTotal = 0;
+  try {
+    const sum = await prisma.viceTax.aggregate({
+      where: { userId: user.id },
+      _sum: { taxedTotal: true },
+    });
+    viceTaxTotal = sum._sum.taxedTotal ?? 0;
+  } catch {}
+
   return ok({
     netWorth,
     income,
@@ -130,5 +159,9 @@ export async function GET() {
     month: monthKey(),
     netWorthBreakdown: { byType, byAccount },
     activeDuel,
+    topBoss,
+    bossCount,
+    bossesDefeated,
+    viceTaxTotal: Math.round(viceTaxTotal * 100) / 100,
   });
 }

@@ -5,7 +5,7 @@ import {
   LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip, CartesianGrid,
   PieChart as RPie, Pie, Cell, BarChart, Bar,
 } from "recharts";
-import { ArrowDownRight, ArrowUpRight, TrendingUp, Wallet, Swords } from "lucide-react";
+import { ArrowDownRight, ArrowUpRight, TrendingUp, Wallet, Swords, Flame } from "lucide-react";
 import Link from "next/link";
 import { formatCurrency, formatCurrencyFull, formatDate } from "@/lib/utils";
 
@@ -23,6 +23,10 @@ type Stats = {
     id: string; title: string; endDate: string; daysRemaining: number;
     players: { name: string; side: string; totalPoints: number; sprintsWon: number; isMe: boolean }[];
   } | null;
+  topBoss?: { name: string; hp: number; maxHp: number; hpPct: number; etaMonths: number | null } | null;
+  bossCount?: number;
+  bossesDefeated?: number;
+  viceTaxTotal?: number;
 };
 
 const CHART_COLORS = ["#a78bfa", "#60a5fa", "#34d399", "#fbbf24", "#f472b6", "#f87171"];
@@ -55,6 +59,36 @@ export default function OverviewPage() {
       </header>
 
       {stats.activeDuel && <ActiveDuelCard duel={stats.activeDuel} />}
+      {(stats.topBoss || (stats.viceTaxTotal ?? 0) > 0) && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          {stats.topBoss && (
+            <Link href="/dashboard/debt" className="card p-5 block hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <div className="text-xs text-black/50 dark:text-white/50 flex items-center gap-1.5"><Swords className="w-3.5 h-3.5" />Top boss</div>
+                  <div className="text-lg font-semibold mt-1">{stats.topBoss.name}</div>
+                  <div className="text-xs text-black/50 dark:text-white/50 mt-0.5">
+                    {formatCurrency(stats.topBoss.hp, currency)} HP · {stats.topBoss.etaMonths != null ? `${stats.topBoss.etaMonths}mo ETA` : "no DPS"}
+                  </div>
+                </div>
+                <div className="text-right text-xs text-black/50 dark:text-white/50">
+                  {(stats.bossesDefeated ?? 0)}/{stats.bossCount ?? 0} defeated
+                </div>
+              </div>
+              <div className="mt-3 h-2 rounded-full bg-black/10 dark:bg-white/10 overflow-hidden">
+                <div className="h-full bg-red-500 transition-all" style={{ width: `${Math.round(stats.topBoss.hpPct * 100)}%` }} />
+              </div>
+            </Link>
+          )}
+          {(stats.viceTaxTotal ?? 0) > 0 && (
+            <Link href="/dashboard/vice-tax" className="card p-5 block hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition">
+              <div className="text-xs text-black/50 dark:text-white/50 flex items-center gap-1.5"><Flame className="w-3.5 h-3.5" />Vice tax funneled</div>
+              <div className="text-3xl font-semibold mt-1">{formatCurrency(stats.viceTaxTotal ?? 0, currency)}</div>
+              <div className="text-xs text-black/50 dark:text-white/50 mt-1">Auto-saved from guilty pleasures into your goals.</div>
+            </Link>
+          )}
+        </div>
+      )}
 
       <motion.div
         className="grid grid-cols-2 lg:grid-cols-4 gap-3"

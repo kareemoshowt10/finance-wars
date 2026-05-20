@@ -7,6 +7,7 @@ import { txPatchSchema } from "@/lib/schemas";
 import { rateLimit, DEFAULT_MUTATION } from "@/lib/ratelimit";
 import { log } from "@/lib/audit";
 import { checkBudgetThresholds } from "@/lib/notifications";
+import { reverseViceTaxForTransaction } from "@/lib/viceTax";
 
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
   const rl = rateLimit(req, { key: "tx:patch", ...DEFAULT_MUTATION });
@@ -53,6 +54,7 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
     where: { id: existing.accountId },
     data: { balance: { increment: -delta } },
   });
+  await reverseViceTaxForTransaction(r.user.id, params.id).catch(() => {});
   await prisma.transaction.delete({ where: { id: params.id } });
   const { upsertTodaySnapshot } = await import("@/lib/snapshots");
   await upsertTodaySnapshot(r.user.id);

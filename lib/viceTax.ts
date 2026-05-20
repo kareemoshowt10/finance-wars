@@ -55,3 +55,31 @@ export async function applyViceTaxOnTransaction(userId: string, tx: { id: string
 
   return { taxAmount, goalId: vice.goalId };
 }
+
+export async function reverseViceTaxForTransaction(userId: string, transactionId: string) {
+  const contribs = await prisma.goalContribution.findMany({
+    where: { userId, transactionId },
+  });
+  if (contribs.length === 0) return;
+  for (const c of contribs) {
+    if (!c.note?.startsWith("Vice tax")) continue;
+    await prisma.$transaction([
+      prisma.goal.update({
+        where: { id: c.goalId },
+        data: { currentAmount: { decrement: c.amount } },
+      }),
+      prisma.goalContribution.delete({ where: { id: c.id } }),
+    ]);
+    // Decrement the matching vice tax stats if we can find it by category.
+    const tax = await prisma.viceTax.findFirst({ where: { userId, goalId: c.goalId } });
+    if (tax) {
+      await prisma.viceTax.update({
+        where: { id: tax.id },
+        data: {
+          taxedTotal: { decrement: c.amount },
+          hitCount: { decrement: 1 },
+        },
+      });
+    }
+  }
+}
