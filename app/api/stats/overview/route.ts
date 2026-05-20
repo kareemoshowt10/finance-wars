@@ -5,12 +5,14 @@ import { monthKey } from "@/lib/utils";
 import { backfillSnapshots, upsertTodaySnapshot, dayKey, computeNetWorth } from "@/lib/snapshots";
 import { runDue } from "@/lib/recurring";
 import { getDebtBosses } from "@/lib/debtBoss";
+import { accrueInterestForUser } from "@/lib/interestAccrual";
 
 export async function GET() {
   const user = await requireUser();
   if (!user) return bad("Unauthorized", 401);
 
   await runDue(user.id);
+  await accrueInterestForUser(user.id).catch(() => {});
   await backfillSnapshots(user.id);
   await upsertTodaySnapshot(user.id);
 

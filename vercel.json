@@ -5,6 +5,7 @@
     { "path": "/api/cron/notifications", "schedule": "0 9 * * *" },
     { "path": "/api/cron/duels", "schedule": "0 * * * *" },
     { "path": "/api/cron/couples", "schedule": "0 9 * * *" },
-    { "path": "/api/cron/predictions", "schedule": "30 1 1 * *" }
+    { "path": "/api/cron/predictions", "schedule": "30 1 1 * *" },
+    { "path": "/api/cron/interest", "schedule": "0 2 1 * *" }
   ]
 }

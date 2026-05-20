@@ -748,6 +748,7 @@ model Account {
   createdAt DateTime @default(now())
 
   interestRate Float?
+  lastInterestAccruedAt DateTime?
 
   user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   transactions Transaction[]

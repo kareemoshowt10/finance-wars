@@ -12,6 +12,7 @@ export const DEFAULT_CATEGORIES: { name: string; color: string; icon: string; ki
   { name: "Travel", color: "#22d3ee", icon: "Plane", kind: "EXPENSE" },
   { name: "Subscriptions", color: "#c084fc", icon: "Repeat", kind: "EXPENSE" },
   { name: "Investments", color: "#10b981", icon: "TrendingUp", kind: "INCOME" },
+  { name: "Interest", color: "#ef4444", icon: "TrendingUp", kind: "EXPENSE" },
   { name: "Other", color: "#9ca3af", icon: "Tag", kind: "EXPENSE" },
 ];
 
