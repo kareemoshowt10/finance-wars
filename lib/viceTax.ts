@@ -1,0 +1,44 @@
+import { prisma } from "./prisma";
+
+export function computeTaxAmount(mode: string, rate: number, transactionAmount: number): number {
+  if (rate <= 0 || transactionAmount <= 0) return 0;
+  if (mode === "PERCENT") return Math.round(transactionAmount * (rate / 100) * 100) / 100;
+  return Math.min(transactionAmount, Math.round(rate * 100) / 100);
+}
+
+export async function applyViceTaxOnTransaction(userId: string, tx: { id: string; amount: number; category: string; type: string; date: Date }) {
+  if (tx.type !== "expense") return null;
+  const vice = await prisma.viceTax.findUnique({
+    where: { userId_category: { userId, category: tx.category } },
+  });
+  if (!vice || !vice.enabled) return null;
+
+  const taxAmount = computeTaxAmount(vice.mode, vice.rate, tx.amount);
+  if (taxAmount <= 0) return null;
+
+  await prisma.$transaction([
+    prisma.goal.update({
+      where: { id: vice.goalId },
+      data: { currentAmount: { increment: taxAmount } },
+    }),
+    prisma.goalContribution.create({
+      data: {
+        userId,
+        goalId: vice.goalId,
+        amount: taxAmount,
+        date: tx.date,
+        transactionId: tx.id,
+        note: `Vice tax · ${tx.category}`,
+      },
+    }),
+    prisma.viceTax.update({
+      where: { id: vice.id },
+      data: {
+        taxedTotal: { increment: taxAmount },
+        hitCount: { increment: 1 },
+      },
+    }),
+  ]);
+
+  return { taxAmount, goalId: vice.goalId };
+}

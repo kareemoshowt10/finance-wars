@@ -65,6 +65,27 @@ model User {
   referralReceived  Referral?  @relation("ReferralReferred")
 
   predictions Prediction[]
+
+  viceTaxes ViceTax[]
+}
+
+model ViceTax {
+  id         String   @id @default(cuid())
+  userId     String
+  category   String
+  mode       String   @default("PERCENT")
+  rate       Float
+  goalId     String
+  enabled    Boolean  @default(true)
+  taxedTotal Float    @default(0)
+  hitCount   Int      @default(0)
+  createdAt  DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  goal Goal @relation(fields: [goalId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, category])
+  @@index([userId, enabled])
 }
 
 model Prediction {
@@ -770,7 +791,8 @@ model Goal {
   deadline      DateTime
   createdAt     DateTime @default(now())
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  viceTaxes ViceTax[]
 }
 
 model NetWorthSnapshot {

@@ -12,6 +12,8 @@ import { getActiveHousehold, getOtherMember } from "@/lib/household";
 import { shouldRequireReview, enqueueReview } from "@/lib/purchaseReview";
 import { notify } from "@/lib/notifications";
 import { recordAllowanceSpend, monthKey, PERSONAL_ALLOWANCE_CATEGORY } from "@/lib/allowance";
+import { applyViceTaxOnTransaction } from "@/lib/viceTax";
+import { checkDebtKO } from "@/lib/debtBossHooks";
 
 export async function GET(req: NextRequest) {
   const r = await resolveRequestUser(req);
@@ -160,6 +162,10 @@ export async function POST(req: NextRequest) {
   if (data.type === "expense") {
     await checkBudgetThresholds(r.user.id, data.category);
     await checkLargeTransaction(r.user.id, tx.id, tx.amount);
+    await applyViceTaxOnTransaction(r.user.id, { id: tx.id, amount: tx.amount, category, type: data.type, date: tx.date }).catch(() => {});
+  }
+  if (data.type === "income") {
+    await checkDebtKO(r.user.id, data.accountId).catch(() => {});
   }
   await log(r.user.id, "transaction.create", {
     entity: "transaction",
