@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
   if (error) return error;
 
   const user = await prisma.user.findUnique({ where: { email: data.email } });
-  if (!user) return bad("Invalid email or password", 401);
+  if (!user || !user.passwordHash) return bad("Invalid email or password", 401);
 
   const valid = await bcrypt.compare(data.password, user.passwordHash);
   if (!valid) return bad("Invalid email or password", 401);

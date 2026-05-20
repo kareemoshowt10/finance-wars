@@ -26,18 +26,22 @@ export async function PATCH(req: NextRequest) {
   if (data.defaultStakeAccountId !== undefined) patch.defaultStakeAccountId = data.defaultStakeAccountId || null;
 
   if (data.email && data.email !== user.email) {
-    if (!data.currentPassword) return bad("Current password required to change email");
-    const valid = await bcrypt.compare(data.currentPassword, user.passwordHash);
-    if (!valid) return bad("Current password is incorrect", 401);
+    if (user.passwordHash) {
+      if (!data.currentPassword) return bad("Current password required to change email");
+      const valid = await bcrypt.compare(data.currentPassword, user.passwordHash);
+      if (!valid) return bad("Current password is incorrect", 401);
+    }
     const existing = await prisma.user.findUnique({ where: { email: data.email } });
     if (existing) return bad("Email already in use", 409);
     patch.email = data.email;
   }
 
   if (data.newPassword) {
-    if (!data.currentPassword) return bad("Current password required");
-    const valid = await bcrypt.compare(data.currentPassword, user.passwordHash);
-    if (!valid) return bad("Current password is incorrect", 401);
+    if (user.passwordHash) {
+      if (!data.currentPassword) return bad("Current password required");
+      const valid = await bcrypt.compare(data.currentPassword, user.passwordHash);
+      if (!valid) return bad("Current password is incorrect", 401);
+    }
     patch.passwordHash = await bcrypt.hash(data.newPassword, 10);
   }
 
