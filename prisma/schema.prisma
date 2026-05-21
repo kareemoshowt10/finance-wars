@@ -69,6 +69,7 @@ model User {
   predictions Prediction[]
 
   viceTaxes ViceTax[]
+  weeklyRecaps WeeklyRecap[]
 }
 
 model ViceTax {
@@ -670,6 +671,33 @@ model GoalContribution {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([goalId, date])
+}
+
+model WeeklyRecap {
+  id            String   @id @default(cuid())
+  userId        String
+  weekStart     DateTime
+  weekEnd       DateTime
+  income        Float
+  spend         Float
+  net           Float
+  topCategory   String?
+  topCategorySpend Float?
+  biggestTxAmount Float?
+  biggestTxDescription String?
+  txCount       Int
+  viceTaxFunneled Float
+  debtPaid      Float
+  bossesDefeated Int
+  netWorthDelta Float
+  achievementsUnlocked Int
+  highlights    Json
+  createdAt     DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, weekStart])
+  @@index([userId, weekStart])
 }
 
 model Notification {
