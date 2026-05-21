@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
-import { Swords, Skull, Flame, Trophy, Crosshair, Zap, TrendingDown } from "lucide-react";
+import Link from "next/link";
+import { Swords, Skull, Flame, Trophy, Crosshair, Zap, TrendingDown, Sparkles } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 
 type Boss = {
@@ -71,6 +72,9 @@ export default function DebtBossPage() {
             Every payment is an attack. Defeat them all.
           </p>
         </div>
+        <Link href="/dashboard/debt/simulator" className="btn-primary">
+          <Sparkles className="w-4 h-4" />Payoff simulator
+        </Link>
       </header>
 
       {summary && summary.count > 0 && (
