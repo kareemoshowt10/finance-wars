@@ -12,6 +12,9 @@ type Boss = {
   hpPct: number;
   apr: number | null;
   monthlyInterestCost: number;
+  projectedInterest6mo: number;
+  daysSinceLastAttack: number | null;
+  neglected: boolean;
   dps30: number;
   attacks30: number;
   biggestHit: number;
@@ -168,6 +171,13 @@ function BossCard({ boss, currency, isTarget }: { boss: Boss; currency: string; 
                 <Flame className="w-3 h-3" />{boss.attackStreakMonths}mo streak
               </span>
             )}
+            {boss.neglected && !boss.defeated && (
+              <span className="text-xs bg-red-500/15 text-red-400 px-2 py-0.5 rounded">
+                {boss.daysSinceLastAttack != null
+                  ? `${boss.daysSinceLastAttack}d silent`
+                  : "Untouched"}
+              </span>
+            )}
           </div>
           <div className="text-xs text-black/50 dark:text-white/50 mt-0.5 capitalize">{boss.type}</div>
         </div>
@@ -211,6 +221,14 @@ function BossCard({ boss, currency, isTarget }: { boss: Boss; currency: string; 
           <div className="font-semibold mt-0.5">{boss.etaMonths != null ? `${boss.etaMonths} mo` : "—"}</div>
         </div>
       </div>
+
+      {boss.projectedInterest6mo > 0 && !boss.defeated && (
+        <div className="mt-3 pt-3 border-t border-black/10 dark:border-white/10 text-xs text-black/50 dark:text-white/50">
+          At current pace, this boss will cost you{" "}
+          <span className="text-red-400 font-medium">{formatCurrency(boss.projectedInterest6mo, currency)}</span>{" "}
+          in interest over the next 6 months.
+        </div>
+      )}
     </div>
   );
 }

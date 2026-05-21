@@ -6,6 +6,7 @@ import { parseBody } from "@/lib/validate";
 import { txBulkSchema } from "@/lib/schemas";
 import { rateLimit, DEFAULT_MUTATION } from "@/lib/ratelimit";
 import { log } from "@/lib/audit";
+import { reverseViceTaxForTransaction, applyViceTaxOnTransaction } from "@/lib/viceTax";
 
 export async function POST(req: NextRequest) {
   const rl = rateLimit(req, { key: "tx:bulk", ...DEFAULT_MUTATION });
@@ -39,6 +40,9 @@ export async function POST(req: NextRequest) {
         })
       ),
     ]);
+    for (const t of txs) {
+      await reverseViceTaxForTransaction(r.user.id, t.id).catch(() => {});
+    }
     count = ids.length;
   } else if (data.action === "recategorize") {
     if (!data.category) return bad("category required");
@@ -46,6 +50,19 @@ export async function POST(req: NextRequest) {
       where: { id: { in: ids } },
       data: { category: data.category },
     });
+    // Reverse old vice tax, re-apply at new category for each tx.
+    for (const t of txs) {
+      await reverseViceTaxForTransaction(r.user.id, t.id).catch(() => {});
+      if (t.type === "expense") {
+        await applyViceTaxOnTransaction(r.user.id, {
+          id: t.id,
+          amount: t.amount,
+          category: data.category,
+          type: t.type,
+          date: t.date,
+        }).catch(() => {});
+      }
+    }
     count = res.count;
   } else if (data.action === "move") {
     if (!data.accountId) return bad("accountId required");

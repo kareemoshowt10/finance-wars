@@ -11,6 +11,9 @@ export type DebtBoss = {
   hpPct: number;
   apr: number | null;
   monthlyInterestCost: number;
+  projectedInterest6mo: number;
+  daysSinceLastAttack: number | null;
+  neglected: boolean;
   dps30: number;
   attacks30: number;
   biggestHit: number;
@@ -70,7 +73,24 @@ export async function getDebtBosses(userId: string): Promise<DebtBoss[]> {
     const acctRecent = recent.filter((t) => t.accountId === a.id && t.type === "income");
     const dps30 = acctRecent.reduce((s, t) => s + t.amount, 0);
     const attacks30 = acctRecent.length;
-    const lastAttackAt = acctRecent[0]?.date.toISOString() ?? null;
+
+    // Compound projection over 6 months assuming current monthly DPS continues.
+    let projected = 0;
+    if (apr && hp > 0) {
+      const monthlyRate = apr / 100 / 12;
+      let bal = hp;
+      for (let i = 0; i < 6 && bal > 0; i++) {
+        const interest = bal * monthlyRate;
+        projected += interest;
+        bal = Math.max(0, bal + interest - dps30);
+      }
+    }
+    const projectedInterest6mo = Math.round(projected * 100) / 100;
+    const lastAllAttack = [...all].reverse().find((t) => t.accountId === a.id && t.type === "income");
+    const lastAttackAt = lastAllAttack?.date.toISOString() ?? null;
+    const daysSinceLastAttack = lastAllAttack
+      ? Math.floor((Date.now() - lastAllAttack.date.getTime()) / 86_400_000)
+      : null;
     const etaMonths = dps30 > 0 && hp > 0 ? Math.ceil(hp / dps30) : null;
 
     // All-time stats.
@@ -98,6 +118,9 @@ export async function getDebtBosses(userId: string): Promise<DebtBoss[]> {
       hpPct: maxHp > 0 ? Math.max(0, Math.min(1, hp / maxHp)) : 0,
       apr,
       monthlyInterestCost,
+      projectedInterest6mo,
+      daysSinceLastAttack,
+      neglected: hp > 0 && (daysSinceLastAttack == null || daysSinceLastAttack >= 30),
       dps30: Math.round(dps30 * 100) / 100,
       attacks30,
       biggestHit: Math.round(biggestHit * 100) / 100,
