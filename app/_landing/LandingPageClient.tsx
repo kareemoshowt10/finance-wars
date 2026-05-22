@@ -23,6 +23,10 @@ export default function LandingPageClient() {
       <nav className="fixed top-0 inset-x-0 z-50 backdrop-blur-xl bg-white/60 dark:bg-black/60 border-b border-black/5 dark:border-white/5">
         <div className="mx-auto max-w-7xl px-6 h-12 flex items-center justify-between text-[13px]">
           <Link href="/" className="font-semibold tracking-tight">Finance Wars</Link>
+          <div className="hidden sm:flex items-center gap-4 opacity-70">
+            <Link href="/mission" className="hover:opacity-100">Mission</Link>
+            <Link href="/rules" className="hover:opacity-100">Rules</Link>
+          </div>
           <div className="flex items-center gap-1">
             <Link href="/login" className="btn-ghost">Sign in</Link>
             <Link href="/signup" className="ml-1 px-3 py-1.5 rounded-full bg-black text-white dark:bg-white dark:text-black text-[13px] font-medium hover:scale-[1.03] transition-transform">Get started</Link>
@@ -210,8 +214,13 @@ export default function LandingPageClient() {
         </div>
       </section>
 
-      <footer className="border-t border-black/5 dark:border-white/5 py-10 text-center text-xs opacity-40">
-        Finance Wars © {new Date().getFullYear()}
+      <footer className="border-t border-black/5 dark:border-white/5 py-10 text-center text-xs opacity-50">
+        <div className="flex items-center justify-center gap-5 mb-3">
+          <Link href="/mission" className="hover:opacity-100 opacity-70">Mission</Link>
+          <Link href="/rules" className="hover:opacity-100 opacity-70">Rules</Link>
+          <Link href="/login" className="hover:opacity-100 opacity-70">Sign in</Link>
+        </div>
+        <div className="opacity-60">Finance Wars © {new Date().getFullYear()}</div>
       </footer>
     </div>
   );
