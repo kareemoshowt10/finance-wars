@@ -26,6 +26,7 @@ export default function LandingPageClient() {
           <div className="hidden sm:flex items-center gap-4 opacity-70">
             <Link href="/mission" className="hover:opacity-100">Mission</Link>
             <Link href="/rules" className="hover:opacity-100">Rules</Link>
+            <Link href="/learn" className="hover:opacity-100">Learn</Link>
           </div>
           <div className="flex items-center gap-1">
             <Link href="/login" className="btn-ghost">Sign in</Link>
