@@ -14,6 +14,7 @@ export async function POST(req: NextRequest) {
   if (!user) return bad("Unauthorized", 401);
   const body = await req.json().catch(() => null);
   if (!body || !Array.isArray(body.rows)) return bad("rows[] required");
+  if (body.rows.length > 5000) return bad("Maximum 5000 rows per import", 400);
   const createMissing = !!body.createMissingAccounts;
   const rows = body.rows as Row[];
 

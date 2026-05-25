@@ -7,6 +7,7 @@ import { evaluate } from "@/lib/achievements/engine";
 import { getActiveHousehold } from "@/lib/household";
 import { balanceOf, suggestSettlement } from "@/lib/billsplit";
 import { getSharedView } from "@/lib/sharing";
+import { rateLimit, DEFAULT_MUTATION } from "@/lib/ratelimit";
 
 export const dynamic = "force-dynamic";
 
@@ -39,6 +40,8 @@ function fmt(n: number) {
 }
 
 export async function POST(req: NextRequest) {
+  const rl = rateLimit(req, { key: "coach", ...DEFAULT_MUTATION });
+  if (rl) return rl;
   const r = await resolveRequestUser(req);
   if (!r) return bad("Unauthorized", 401);
   const body = await req.json().catch(() => ({}));

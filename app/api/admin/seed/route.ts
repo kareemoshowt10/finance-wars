@@ -14,7 +14,7 @@ export async function POST(req: NextRequest) {
   }
   try {
     await runSeed();
-    return NextResponse.json({ ok: true, message: "Seeded. Login: demo@financewars.app / demo1234" });
+    return NextResponse.json({ ok: true, message: "Seed complete." });
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : "Unknown error";
     return NextResponse.json({ ok: false, error: msg }, { status: 500 });

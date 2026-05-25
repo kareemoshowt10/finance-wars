@@ -2,9 +2,15 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { jwtVerify } from "jose";
 
-const SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || "dev-secret-change-me"
-);
+function getJwtSecret(): Uint8Array {
+  const raw = process.env.JWT_SECRET;
+  if (!raw && process.env.NODE_ENV === "production") {
+    throw new Error("JWT_SECRET must be set in production");
+  }
+  return new TextEncoder().encode(raw || "dev-secret-change-me");
+}
+
+const SECRET = getJwtSecret();
 
 export async function middleware(req: NextRequest) {
   const token = req.cookies.get("fw_session")?.value;

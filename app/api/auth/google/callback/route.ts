@@ -78,6 +78,6 @@ export async function GET(req: NextRequest) {
   const { touchLoginStreak } = await import("@/lib/streak");
   await touchLoginStreak(user.id).catch(() => {});
 
-  const safeReturn = returnTo.startsWith("/") ? returnTo : "/dashboard";
+  const safeReturn = returnTo.startsWith("/") && !returnTo.startsWith("//") ? returnTo : "/dashboard";
   return NextResponse.redirect(new URL(safeReturn, req.url));
 }

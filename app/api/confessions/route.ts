@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { award, REWARDS } from "@/lib/wallet";
 import { getActiveHousehold } from "@/lib/household";
 import { log } from "@/lib/audit";
+import { rateLimit, DEFAULT_MUTATION } from "@/lib/ratelimit";
 
 export const dynamic = "force-dynamic";
 
@@ -28,6 +29,8 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  const rl = rateLimit(req, { key: "confessions", ...DEFAULT_MUTATION });
+  if (rl) return rl;
   const r = await resolveRequestUser(req);
   if (!r) return bad("Unauthorized", 401);
   const body = await req.json().catch(() => ({}));
