@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
-import { Users, Heart, Eye, EyeOff, EyeIcon, Calendar, ShieldCheck, Sparkles, DollarSign, CheckCircle, XCircle, Plus, ArrowRight } from "lucide-react";
+import { Users, Heart, Eye, EyeOff, EyeIcon, Calendar, ShieldCheck, Sparkles, DollarSign, CheckCircle, XCircle, Plus, ArrowRight, Brain } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type Tab = "overview" | "trust" | "bills" | "pact" | "sharing" | "dates" | "purchases" | "allowance";
@@ -182,6 +182,14 @@ function OverviewTab({ hid }: { hid: string }) {
           <Link href={`/dashboard/couples/purchase-reviews/${reviews[0].id}`} className="mt-2 text-xs underline">Review first item</Link>
         )}
       </div>
+      <Link href="/dashboard/couples/money-mind" className="rounded-3xl border border-violet-500/30 bg-gradient-to-br from-violet-500/10 via-fuchsia-500/5 to-indigo-500/10 p-6 block hover:border-violet-500/50 transition">
+        <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-violet-500"><Brain className="w-3 h-3" /> Money Mind</div>
+        <div className="mt-2 text-sm font-medium">Find out what you each really think</div>
+        <div className="mt-1 text-xs text-black/55 dark:text-white/55">
+          Answer 10 money questions privately, then reveal together. Surfaces the quiet disagreements before they become fights.
+        </div>
+        <span className="mt-3 inline-flex items-center gap-1 text-xs font-medium text-violet-500">Play a round <ArrowRight className="w-3 h-3" /></span>
+      </Link>
       <div className="lg:col-span-2 rounded-3xl border border-black/10 dark:border-white/10 p-6">
         <div className="text-xs uppercase tracking-wider text-black/50 dark:text-white/50">Allowance this month</div>
         <div className="mt-3 grid grid-cols-2 gap-4">

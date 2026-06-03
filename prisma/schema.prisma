@@ -70,6 +70,8 @@ model User {
 
   viceTaxes ViceTax[]
   weeklyRecaps WeeklyRecap[]
+  goalRaids    GoalRaid[]
+  moneyMindResponses MoneyMindResponse[]
 }
 
 model ViceTax {
@@ -274,6 +276,68 @@ model Household {
   ledgerEntries   LedgerEntry[]
   settlements     Settlement[]
   gameSessions    GameSession[]
+  goalRaids       GoalRaid[]
+  moneyMindRounds MoneyMindRound[]
+}
+
+// A short-timeframe, high-intensity goal reframed as a named raid boss with
+// narrative stages. Optionally shared with a household so couples raid together.
+model GoalRaid {
+  id            String   @id @default(cuid())
+  userId        String
+  householdId   String?
+  goalId        String   @unique
+  bossName      String
+  bossTitle     String
+  theme         String   @default("DRAGON")
+  lore          String
+  startAt       DateTime @default(now())
+  deadline      DateTime
+  targetAmount  Float
+  startAmount   Float    @default(0)
+  status        String   @default("ACTIVE") // ACTIVE | DEFEATED | EXPIRED
+  defeatedAt    DateTime?
+  lastStage     Int      @default(0)
+  createdAt     DateTime @default(now())
+
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  household Household?  @relation(fields: [householdId], references: [id], onDelete: SetNull)
+  goal      Goal       @relation(fields: [goalId], references: [id], onDelete: Cascade)
+
+  @@index([userId, status])
+  @@index([householdId, status])
+}
+
+// Couples financial-alignment game. Each partner answers privately; results
+// are revealed together to surface real positions and conversation gaps.
+model MoneyMindRound {
+  id          String   @id @default(cuid())
+  householdId String
+  createdById String
+  status      String   @default("OPEN") // OPEN | REVEALED
+  promptSet   String   @default("CORE")
+  revealedAt  DateTime?
+  createdAt   DateTime @default(now())
+
+  household Household          @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  responses MoneyMindResponse[]
+
+  @@index([householdId, status])
+}
+
+model MoneyMindResponse {
+  id        String   @id @default(cuid())
+  roundId   String
+  userId    String
+  answers   Json     // { promptId: { value: number, note?: string } }
+  submitted Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  round MoneyMindRound @relation(fields: [roundId], references: [id], onDelete: Cascade)
+  user  User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([roundId, userId])
 }
 
 model GameSession {
@@ -828,6 +892,7 @@ model Goal {
 
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   viceTaxes ViceTax[]
+  raid      GoalRaid?
 }
 
 model NetWorthSnapshot {

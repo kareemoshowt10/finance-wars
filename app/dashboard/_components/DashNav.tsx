@@ -26,6 +26,7 @@ const linkGroups: { heading?: string; items: { href: string; label: string; icon
       { href: "/dashboard/portfolio", label: "Portfolio", icon: PieChart },
       { href: "/dashboard/budgets", label: "Budgets", icon: Target },
       { href: "/dashboard/goals", label: "Goals", icon: Trophy },
+      { href: "/dashboard/raids", label: "Goal Raids", icon: Swords },
       { href: "/dashboard/debt", label: "Debt Bosses", icon: Swords },
       { href: "/dashboard/vice-tax", label: "Vice Tax", icon: Flame },
     ],
