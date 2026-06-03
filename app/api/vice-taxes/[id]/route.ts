@@ -4,6 +4,7 @@ import { resolveRequestUser } from "@/lib/auth";
 import { bad, ok } from "@/lib/api";
 import { prisma } from "@/lib/prisma";
 import { log } from "@/lib/audit";
+import { rateLimit, DEFAULT_MUTATION } from "@/lib/ratelimit";
 
 export const dynamic = "force-dynamic";
 
@@ -15,6 +16,8 @@ const patchSchema = z.object({
 });
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const rl = rateLimit(req, { key: "vice-taxes:patch", ...DEFAULT_MUTATION });
+  if (rl) return rl;
   const { id } = await params;
   const r = await resolveRequestUser(req);
   if (!r) return bad("Unauthorized", 401);
@@ -32,6 +35,8 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 }
 
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const rl = rateLimit(req, { key: "vice-taxes:del", ...DEFAULT_MUTATION });
+  if (rl) return rl;
   const { id } = await params;
   const r = await resolveRequestUser(req);
   if (!r) return bad("Unauthorized", 401);

@@ -18,6 +18,12 @@ export async function applyViceTaxOnTransaction(userId: string, tx: { id: string
   const taxAmount = computeTaxAmount(vice.mode, vice.rate, tx.amount);
   if (taxAmount <= 0) return null;
 
+  // Idempotency: never tax the same transaction twice.
+  const already = await prisma.goalContribution.findFirst({
+    where: { userId, transactionId: tx.id, viceTaxId: { not: null } },
+  });
+  if (already) return null;
+
   await prisma.$transaction([
     prisma.goal.update({
       where: { id: vice.goalId },
@@ -30,6 +36,7 @@ export async function applyViceTaxOnTransaction(userId: string, tx: { id: string
         amount: taxAmount,
         date: tx.date,
         transactionId: tx.id,
+        viceTaxId: vice.id,
         note: `Vice tax · ${tx.category}`,
       },
     }),
@@ -62,7 +69,8 @@ export async function reverseViceTaxForTransaction(userId: string, transactionId
   });
   if (contribs.length === 0) return;
   for (const c of contribs) {
-    if (!c.note?.startsWith("Vice tax")) continue;
+    // Only reverse vice-tax-originated contributions.
+    if (!c.viceTaxId) continue;
     await prisma.$transaction([
       prisma.goal.update({
         where: { id: c.goalId },
@@ -70,8 +78,8 @@ export async function reverseViceTaxForTransaction(userId: string, transactionId
       }),
       prisma.goalContribution.delete({ where: { id: c.id } }),
     ]);
-    // Decrement the matching vice tax stats if we can find it by category.
-    const tax = await prisma.viceTax.findFirst({ where: { userId, goalId: c.goalId } });
+    // Decrement the exact vice tax that produced this contribution.
+    const tax = await prisma.viceTax.findUnique({ where: { id: c.viceTaxId } });
     if (tax) {
       await prisma.viceTax.update({
         where: { id: tax.id },

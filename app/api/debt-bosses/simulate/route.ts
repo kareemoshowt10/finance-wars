@@ -4,6 +4,7 @@ import { resolveRequestUser } from "@/lib/auth";
 import { bad, ok } from "@/lib/api";
 import { getDebtBosses } from "@/lib/debtBoss";
 import { simulatePayoff } from "@/lib/payoffSim";
+import { rateLimit, DEFAULT_MUTATION } from "@/lib/ratelimit";
 
 export const dynamic = "force-dynamic";
 
@@ -14,6 +15,8 @@ const schema = z.object({
 });
 
 export async function POST(req: NextRequest) {
+  const rl = rateLimit(req, { key: "debt-simulate", ...DEFAULT_MUTATION });
+  if (rl) return rl;
   const r = await resolveRequestUser(req);
   if (!r) return bad("Unauthorized", 401);
   const parsed = schema.safeParse(await req.json().catch(() => ({})));

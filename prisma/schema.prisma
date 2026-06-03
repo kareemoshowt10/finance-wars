@@ -665,12 +665,14 @@ model GoalContribution {
   amount        Float
   date          DateTime
   transactionId String?
+  viceTaxId     String?
   note          String?
   createdAt     DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([goalId, date])
+  @@index([transactionId])
 }
 
 model WeeklyRecap {

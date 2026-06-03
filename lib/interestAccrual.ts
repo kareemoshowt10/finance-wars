@@ -33,6 +33,10 @@ export async function accrueInterestForUser(userId: string, now: Date = new Date
     const interest = Math.round(principal * monthlyRate * months * 100) / 100;
     if (interest <= 0) continue;
 
+    // Anchor the accrual marker to the first of the current month so re-running
+    // the cron (or a dashboard load) within the same month is a no-op.
+    const anchor = new Date(now.getFullYear(), now.getMonth(), 1);
+
     await prisma.$transaction([
       prisma.transaction.create({
         data: {
@@ -49,7 +53,7 @@ export async function accrueInterestForUser(userId: string, now: Date = new Date
         where: { id: a.id },
         data: {
           balance: { decrement: interest },
-          lastInterestAccruedAt: now,
+          lastInterestAccruedAt: anchor,
         },
       }),
     ]);
