@@ -1,228 +1,220 @@
 "use client";
 import Link from "next/link";
-import { motion } from "framer-motion";
+import { ArrowRight, Check } from "lucide-react";
 import {
-  ArrowRight, BarChart3, Target, Wallet, ShieldCheck, TrendingUp, PieChart,
-  Swords, User, Trophy, Sparkles, Bot,
-} from "lucide-react";
-
-const fadeUp = {
-  hidden: { opacity: 0, y: 20 },
-  show: { opacity: 1, y: 0, transition: { type: "spring" as const, stiffness: 80, damping: 18 } },
-};
-
-const tags = [
-  "Net Worth", "Groceries", "Salary", "Investments", "Rent", "Travel",
-  "Subscriptions", "Coffee", "Bonus", "Savings Goal", "Emergency Fund", "Dining",
-  "Transport", "Health", "Side Hustle", "Duels", "Sprints",
-];
+  BlobOrange, BlobGreen, BlobBlue, BlobYellow,
+  CoinStack, Star, Heart, ShieldVault, SwordIcon, Sparkle,
+} from "@/app/_family/Characters";
+import { FamilyNav, FamilyFooter } from "@/app/_family/FamilyShell";
+import { useEffect } from "react";
 
 export default function LandingPageClient() {
+  // Apply Family theme to body for this route.
+  useEffect(() => {
+    document.body.classList.add("family-theme");
+    document.documentElement.classList.remove("dark");
+    return () => {
+      document.body.classList.remove("family-theme");
+      // Restore dashboard preference on unmount.
+      const t = typeof window !== "undefined" ? localStorage.getItem("fw-theme") : "dark";
+      if (t !== "light") document.documentElement.classList.add("dark");
+    };
+  }, []);
+
   return (
-    <div className="min-h-screen overflow-x-hidden">
-      <nav className="fixed top-0 inset-x-0 z-50 backdrop-blur-xl bg-white/60 dark:bg-black/60 border-b border-black/5 dark:border-white/5">
-        <div className="mx-auto max-w-7xl px-6 h-12 flex items-center justify-between text-[13px]">
-          <Link href="/" className="font-semibold tracking-tight">Finance Wars</Link>
-          <div className="hidden sm:flex items-center gap-4 opacity-70">
-            <Link href="/mission" className="hover:opacity-100">Mission</Link>
-            <Link href="/rules" className="hover:opacity-100">Rules</Link>
-            <Link href="/learn" className="hover:opacity-100">Learn</Link>
-          </div>
-          <div className="flex items-center gap-1">
-            <Link href="/login" className="btn-ghost">Sign in</Link>
-            <Link href="/signup" className="ml-1 px-3 py-1.5 rounded-full bg-black text-white dark:bg-white dark:text-black text-[13px] font-medium hover:scale-[1.03] transition-transform">Get started</Link>
-          </div>
-        </div>
-      </nav>
+    <div className="min-h-screen">
+      <FamilyNav active={null} />
 
-      <section className="relative pt-44 pb-24 px-6">
-        <div className="absolute inset-0 hero-grid pointer-events-none" />
-        <motion.div
-          className="absolute top-10 left-1/2 -translate-x-1/2 w-[900px] h-[900px] glow-radial pointer-events-none"
-          animate={{ y: [0, 30, 0], opacity: [0.55, 0.85, 0.55] }}
-          transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
-        />
-        <div className="relative mx-auto max-w-5xl text-center">
-          <motion.p initial="hidden" animate="show" variants={fadeUp} className="text-xs uppercase tracking-[0.3em] opacity-50 mb-6">Personal finance, reimagined</motion.p>
-          <motion.h1 initial="hidden" animate="show" variants={fadeUp} transition={{ delay: 0.05 }} className="text-6xl md:text-8xl font-semibold tracking-[-0.04em] leading-[0.95]">
-            Take command<br />of your money.
-          </motion.h1>
-          <motion.p initial="hidden" animate="show" variants={fadeUp} transition={{ delay: 0.15 }} className="mt-8 max-w-2xl mx-auto text-lg md:text-xl opacity-60 leading-relaxed">
-            Track. Save. Compete with your partner. Net worth, budgets, goals — plus head-to-head Duels in one calm dashboard.
-          </motion.p>
-          <motion.div initial="hidden" animate="show" variants={fadeUp} transition={{ delay: 0.25 }} className="mt-10 flex items-center justify-center gap-3">
-            <Link href="/signup" className="btn-primary">Get started <ArrowRight className="w-4 h-4" /></Link>
-            <Link href="/login" className="btn-secondary">Sign in</Link>
-          </motion.div>
-        </div>
+      {/* HERO ----------------------------------------------------------------- */}
+      <section className="relative px-6 pt-20 pb-28 overflow-hidden">
+        <div className="max-w-[1200px] mx-auto relative">
+          {/* Scattered characters — desktop only, asymmetric */}
+          <div className="absolute inset-0 pointer-events-none hidden md:block">
+            <BlobOrange size={110} className="family-character absolute" style={{ top: 30, left: 40, ["--rot" as string]: "-6deg", ["--delay" as string]: "0s" }} />
+            <BlobBlue size={120} className="family-character absolute" style={{ top: 8, right: 80, ["--rot" as string]: "8deg", ["--delay" as string]: "0.5s" }} />
+            <BlobYellow size={100} className="family-character absolute" style={{ top: 320, left: 0, ["--rot" as string]: "-12deg", ["--delay" as string]: "1.1s" }} />
+            <BlobGreen size={115} className="family-character absolute" style={{ top: 280, right: 20, ["--rot" as string]: "10deg", ["--delay" as string]: "0.3s" }} />
+            <CoinStack size={70} className="family-character absolute" style={{ top: 200, left: 140, ["--rot" as string]: "-4deg", ["--delay" as string]: "0.8s" }} />
+            <Star size={48} className="family-character absolute" style={{ top: 110, right: 240, ["--delay" as string]: "1.4s" }} />
+            <Heart size={42} className="family-character absolute" style={{ top: 260, right: 200, ["--delay" as string]: "0.6s" }} />
+            <Sparkle size={24} className="absolute" style={{ top: 60, left: 320, color: "#ff3e00" }} color="#ff3e00" />
+            <Sparkle size={20} className="absolute" style={{ top: 380, right: 320 }} color="#0090ff" />
+          </div>
 
-        <div className="relative mt-16 overflow-hidden">
-          <div className="flex gap-3 animate-[marquee_30s_linear_infinite]" style={{ width: "max-content" }}>
-            {[...tags, ...tags].map((t, i) => (
-              <span key={i} className="px-3 py-1.5 rounded-full text-xs border border-black/10 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.02] whitespace-nowrap">
-                {t}
-              </span>
-            ))}
+          <div className="relative text-center mx-auto max-w-3xl pt-20">
+            <div className="text-[#ff3e00] text-[13px] font-medium tracking-[0.04em] uppercase mb-5">A money game you'll actually play</div>
+            <h1 className="family-display family-pop">
+              Money should feel like<br /> a game you want to play.
+            </h1>
+            <p className="family-body mt-7 max-w-xl mx-auto">
+              Track every dollar, fight your debts as boss raids, tax your vices into savings, and stop pretending you and your partner agree about money.
+            </p>
+            <div className="mt-9 flex items-center justify-center gap-3 flex-wrap">
+              <Link href="/signup" className="family-btn-dark">Get started <ArrowRight className="w-4 h-4" /></Link>
+              <Link href="/learn" className="family-btn-light">Try free tools</Link>
+            </div>
+            <div className="mt-5 text-[12px] text-[#848281]">No credit card · Free forever tier · No bank login required</div>
           </div>
         </div>
       </section>
 
-      <section className="relative py-32 px-6">
-        <div className="mx-auto max-w-6xl">
-          <motion.h2 initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ type: "spring", stiffness: 80, damping: 18 }} className="text-4xl md:text-6xl font-semibold tracking-[-0.04em] max-w-3xl">
-            Everything you need.<br /><span className="opacity-40">Nothing you don&apos;t.</span>
-          </motion.h2>
-          <div className="mt-16 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {[
-              { icon: Wallet, title: "Accounts", body: "Track every checking, savings, credit, and investment account in one ledger." },
-              { icon: BarChart3, title: "Insights", body: "See where money goes with auto-categorized spending and gorgeous charts." },
-              { icon: Target, title: "Budgets", body: "Set monthly limits per category. Stay on track with live progress bars." },
-              { icon: TrendingUp, title: "Goals", body: "Save for what matters. Visual progress rings keep you motivated." },
-            ].map((f, i) => (
-              <motion.div key={f.title} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ type: "spring", stiffness: 80, damping: 18, delay: i * 0.05 }} className="card p-6">
-                <f.icon className="w-6 h-6 opacity-80" />
-                <div className="mt-6 font-semibold">{f.title}</div>
-                <div className="mt-2 text-sm opacity-55 leading-relaxed">{f.body}</div>
-              </motion.div>
-            ))}
-          </div>
+      {/* TRUST SIGNALS -------------------------------------------------------- */}
+      <section className="px-6 pb-24">
+        <div className="max-w-[1200px] mx-auto grid grid-cols-2 sm:grid-cols-4 gap-4">
+          {[
+            { icon: <SwordIcon size={42} />, label: "Debt Bosses", body: "HP bars, APR, KO rewards" },
+            { icon: <CoinStack size={42} />, label: "Vice Tax", body: "Guilty pleasures → savings" },
+            { icon: <ShieldVault size={42} />, label: "Goal Raids", body: "Short clock, big target" },
+            { icon: <Heart size={42} />, label: "Money Mind", body: "Couples alignment game" },
+          ].map((it, i) => (
+            <div key={i} className="family-card family-card-hover text-left">
+              <div className="mb-3">{it.icon}</div>
+              <div className="family-heading-sm text-[#121212]">{it.label}</div>
+              <div className="family-body-sm mt-1">{it.body}</div>
+            </div>
+          ))}
         </div>
       </section>
 
-      {/* Duel section */}
-      <section className="relative py-32 px-6">
-        <div className="mx-auto max-w-6xl">
-          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="max-w-3xl">
-            <div className="text-xs uppercase tracking-[0.3em] opacity-50 mb-4 flex items-center gap-2"><Swords className="w-3 h-3" />The Duel</div>
-            <h2 className="text-4xl md:text-6xl font-semibold tracking-[-0.04em]">Beat the slump together.</h2>
-            <p className="mt-5 opacity-60 text-lg leading-relaxed">Sprint head-to-head. Save more. Roast each other.</p>
-          </motion.div>
-
-          <motion.div initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-80px" }} transition={{ type: "spring", stiffness: 60, damping: 20 }} className="mt-10">
-            <div className="card p-8 md:p-12 relative overflow-hidden bg-gradient-to-br from-indigo-500/10 via-transparent to-fuchsia-500/10">
-              <div className="absolute -top-32 -right-32 w-80 h-80 rounded-full bg-fuchsia-500/20 blur-3xl" />
-              <div className="absolute -bottom-32 -left-32 w-80 h-80 rounded-full bg-indigo-500/20 blur-3xl" />
-
-              <div className="relative grid md:grid-cols-3 items-center gap-8">
-                <div className="text-center md:text-left">
-                  <div className="w-20 h-20 rounded-full bg-gradient-to-br from-indigo-500 to-blue-500 flex items-center justify-center mx-auto md:mx-0 ring-4 ring-indigo-500/30">
-                    <User className="w-10 h-10 text-white" />
-                  </div>
-                  <div className="mt-3 font-semibold">You</div>
-                  <div className="text-3xl font-semibold tabular-nums mt-1">427</div>
-                  <div className="text-xs opacity-50">points</div>
+      {/* FEATURE 1 — DEBT BOSSES --------------------------------------------- */}
+      <section className="px-6 py-20">
+        <div className="max-w-[1200px] mx-auto grid lg:grid-cols-2 gap-12 items-center">
+          <div>
+            <div className="text-[#ff3e00] text-[13px] font-medium tracking-[0.04em] uppercase mb-4">Debt, redrawn</div>
+            <h2 className="family-heading-lg">Every debt is a <span style={{ color: "#ff3e00" }}>boss fight</span>.</h2>
+            <p className="family-body mt-5 max-w-md">
+              Your credit card has HP equal to the balance. Its APR is regen damage. Every payment you make lands as an attack. Miss a month and the boss heals.
+            </p>
+            <ul className="mt-6 space-y-3 family-body-sm">
+              {["Auto-calculated avalanche or snowball strategy", "6-month interest projection at your current pace", "Neglect badge if you go 30 days without an attack", "Karma reward when a boss is finally defeated"].map((line) => (
+                <li key={line} className="flex items-start gap-2"><Check className="w-4 h-4 mt-0.5 text-[#00ca48] shrink-0" /><span>{line}</span></li>
+              ))}
+            </ul>
+            <Link href="/learn" className="family-link mt-6">Read the strategy guide <ArrowRight className="w-4 h-4" /></Link>
+          </div>
+          <div className="family-card-cream relative h-[360px] flex items-center justify-center overflow-hidden">
+            <div className="absolute -top-6 -right-6"><BlobOrange size={120} className="family-character" style={{ ["--rot" as string]: "8deg" } as React.CSSProperties} /></div>
+            <div className="bg-white rounded-xl p-6 w-[300px]" style={{ boxShadow: "var(--shadow-subtle)" }}>
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-[11px] uppercase tracking-wider text-[#848281]">Boss</div>
+                  <div className="text-[#121212] font-semibold">Vael'goth</div>
                 </div>
-
-                <div className="text-center">
-                  <Swords className="w-8 h-8 mx-auto opacity-50" />
-                  <div className="mt-3 text-xs uppercase tracking-[0.3em] opacity-60">Hawaii Sprint</div>
-                  <div className="mt-2 h-3 rounded-full bg-black/10 dark:bg-white/10 overflow-hidden max-w-xs mx-auto">
-                    <div className="h-full bg-gradient-to-r from-indigo-500 to-fuchsia-500" style={{ width: "62%" }} />
-                  </div>
-                  <div className="mt-2 text-xs opacity-50">3 days remaining</div>
-                </div>
-
-                <div className="text-center md:text-right">
-                  <div className="w-20 h-20 rounded-full bg-gradient-to-br from-fuchsia-500 to-rose-500 flex items-center justify-center mx-auto md:ml-auto md:mr-0 ring-4 ring-fuchsia-500/30">
-                    <User className="w-10 h-10 text-white" />
-                  </div>
-                  <div className="mt-3 font-semibold">Partner</div>
-                  <div className="text-3xl font-semibold tabular-nums mt-1">385</div>
-                  <div className="text-xs opacity-50">points</div>
-                </div>
+                <SwordIcon size={36} />
               </div>
-
-              <div className="relative mt-10 grid md:grid-cols-3 gap-4">
-                {[
-                  { icon: Trophy, title: "Pick a stake", body: "Loser plans the next trip — or auto-transfers a wager." },
-                  { icon: Sparkles, title: "Daily contributions", body: "Each save earns points. Streaks and themes multiply rewards." },
-                  { icon: Bot, title: "Or spar solo", body: "Practice mode against a smart bot, no partner required." },
-                ].map((f) => (
-                  <div key={f.title} className="card p-5 bg-white/40 dark:bg-black/40">
-                    <f.icon className="w-5 h-5" />
-                    <div className="mt-3 font-medium text-sm">{f.title}</div>
-                    <div className="text-xs opacity-60 mt-1">{f.body}</div>
-                  </div>
-                ))}
+              <div className="mt-4 text-[12px] text-[#848281]">HP</div>
+              <div className="mt-1 h-3 rounded-full bg-[#f2f0ed] overflow-hidden">
+                <div className="h-full bg-[#ff3e00]" style={{ width: "62%" }} />
+              </div>
+              <div className="mt-2 flex justify-between text-[12px] text-[#474645]">
+                <span>$3,120 / $5,000</span>
+                <span>24% APR</span>
+              </div>
+              <div className="mt-4 grid grid-cols-3 gap-2 text-center">
+                <div className="bg-[#f8f7f4] rounded-md py-2"><div className="text-[10px] text-[#848281]">DPS</div><div className="text-[13px] font-semibold">$320</div></div>
+                <div className="bg-[#f8f7f4] rounded-md py-2"><div className="text-[10px] text-[#848281]">ETA</div><div className="text-[13px] font-semibold">10 mo</div></div>
+                <div className="bg-[#f8f7f4] rounded-md py-2"><div className="text-[10px] text-[#848281]">Streak</div><div className="text-[13px] font-semibold">4 mo</div></div>
               </div>
             </div>
-          </motion.div>
+          </div>
         </div>
       </section>
 
-      {/* Built for couples */}
-      <section className="relative py-20 px-6">
-        <div className="mx-auto max-w-6xl">
-          <div className="text-xs uppercase tracking-[0.3em] opacity-50 mb-3 text-center">Built for couples</div>
-          <h3 className="text-center text-3xl md:text-5xl font-semibold tracking-[-0.03em] max-w-3xl mx-auto">A transparency layer for two.</h3>
-          <p className="text-center mt-4 opacity-60 max-w-xl mx-auto">
-            40% of partners hide spending. Finance Wars makes that impossible — gently.
-          </p>
-          <div className="mt-10 grid grid-cols-1 md:grid-cols-4 gap-3">
+      {/* FEATURE 2 — MONEY MIND ---------------------------------------------- */}
+      <section className="px-6 py-20 bg-[#f8f7f4]">
+        <div className="max-w-[1200px] mx-auto grid lg:grid-cols-2 gap-12 items-center">
+          <div className="order-2 lg:order-1 family-card relative h-[360px] flex items-center justify-center overflow-hidden">
+            <div className="absolute -top-4 -left-4"><BlobBlue size={90} className="family-character" /></div>
+            <div className="absolute -bottom-4 -right-4"><BlobGreen size={90} className="family-character" style={{ ["--rot" as string]: "-8deg" } as React.CSSProperties} /></div>
+            <div className="text-center max-w-[260px]">
+              <div className="text-[11px] uppercase tracking-wider text-[#848281]">Alignment with Sam</div>
+              <div className="family-display mt-1" style={{ fontSize: 84, color: "#00ca48" }}>76<span style={{ fontSize: 32 }}>%</span></div>
+              <div className="text-[13px] text-[#474645] mt-2">Mostly aligned · 2 conversations worth having</div>
+            </div>
+          </div>
+          <div className="order-1 lg:order-2">
+            <div className="text-[#ff3e00] text-[13px] font-medium tracking-[0.04em] uppercase mb-4">For two</div>
+            <h2 className="family-heading-lg">Find out what you each <span style={{ color: "#ff3e00" }}>really think</span>.</h2>
+            <p className="family-body mt-5 max-w-md">
+              Both partners privately answer 10 honest money questions. No one sees the other's answers until you reveal together. Surfaces the disagreements that quietly become fights.
+            </p>
+            <ul className="mt-6 space-y-3 family-body-sm">
+              {["Spending guilt, security runway, debt tolerance, hidden secrets", "Research-grounded conversation starters for the biggest gaps", "Designed so the quieter partner can finally say the real thing", "+15 SC each — vulnerability is rewarded, not graded"].map((line) => (
+                <li key={line} className="flex items-start gap-2"><Check className="w-4 h-4 mt-0.5 text-[#00ca48] shrink-0" /><span>{line}</span></li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      {/* FREE TOOLS ----------------------------------------------------------- */}
+      <section className="px-6 py-24">
+        <div className="max-w-[1200px] mx-auto text-center">
+          <div className="text-[#ff3e00] text-[13px] font-medium tracking-[0.04em] uppercase mb-4">Free, no signup</div>
+          <h2 className="family-heading-lg max-w-3xl mx-auto">Run the numbers before you commit.</h2>
+          <p className="family-body mt-5 max-w-xl mx-auto">Calculators that work right here. Bookmark them, share them, use them for life.</p>
+
+          <div className="mt-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-left">
             {[
-              { title: "Pact", body: "Co-author thresholds and allowances. Both sign." },
-              { title: "Money Date", body: "Weekly 30-min review with an auto-built agenda." },
-              { title: "Pre-flight", body: "Big purchases pause for a quick partner check." },
-              { title: "Allowance", body: "Personal spending lanes. No questions asked." },
-            ].map((m) => (
-              <div key={m.title} className="card p-5">
-                <div className="font-semibold text-sm">{m.title}</div>
-                <div className="mt-1 text-xs opacity-55">{m.body}</div>
-              </div>
+              { href: "/tools/debt-calculator", icon: <SwordIcon size={36} />, title: "Debt Calculator", desc: "Avalanche vs snowball, with savings" },
+              { href: "/tools/50-30-20", icon: <CoinStack size={36} />, title: "50/30/20 Budget", desc: "Instant bucket split from income" },
+              { href: "/tools/compound-interest", icon: <Star size={36} color="#0090ff" />, title: "Compound Interest", desc: "What $100/mo becomes in 30 years" },
+              { href: "/tools/emergency-fund", icon: <ShieldVault size={36} />, title: "Emergency Fund", desc: "Risk-profile-based target" },
+            ].map((t) => (
+              <Link key={t.href} href={t.href} className="family-card family-card-hover block">
+                <div className="mb-3">{t.icon}</div>
+                <div className="family-heading-sm text-[#121212]">{t.title}</div>
+                <div className="family-body-sm mt-1">{t.desc}</div>
+                <span className="family-link mt-3 text-[13px]">Open <ArrowRight className="w-3 h-3" /></span>
+              </Link>
             ))}
           </div>
         </div>
       </section>
 
-      <section className="relative py-32 px-6">
-        <div className="mx-auto max-w-6xl grid md:grid-cols-2 gap-12 items-center">
-          <motion.div initial={{ opacity: 0, x: -20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ type: "spring", stiffness: 60, damping: 20 }}>
-            <PieChart className="w-7 h-7 opacity-70 mb-4" />
-            <h3 className="text-4xl md:text-5xl font-semibold tracking-[-0.03em]">Designed for clarity.</h3>
-            <p className="mt-5 opacity-60 text-lg leading-relaxed">A calm canvas. Big numbers. Quiet typography. Finance Wars puts the signal first, so you spend less time managing money and more time using it.</p>
-          </motion.div>
-          <motion.div initial={{ opacity: 0, x: 20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ type: "spring", stiffness: 60, damping: 20 }} className="card p-8">
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="text-xs opacity-50">Emergency Fund</div>
-                <div className="mt-2 text-4xl font-semibold tracking-tight">$9,200</div>
-                <div className="text-xs opacity-40">of $15,000 target</div>
+      {/* TESTIMONIALS / RULES TEASE ------------------------------------------ */}
+      <section className="px-6 py-24 bg-[#f8f7f4] relative overflow-hidden">
+        <div className="absolute top-10 left-10 opacity-80 hidden md:block"><BlobYellow size={80} className="family-character" /></div>
+        <div className="absolute bottom-10 right-10 opacity-80 hidden md:block"><BlobOrange size={70} className="family-character" style={{ ["--rot" as string]: "-10deg" } as React.CSSProperties} /></div>
+        <div className="max-w-[1200px] mx-auto text-center relative">
+          <div className="text-[#ff3e00] text-[13px] font-medium tracking-[0.04em] uppercase mb-4">Seven rules</div>
+          <h2 className="family-heading-lg max-w-3xl mx-auto">A game with rules. Non-negotiable. Short.</h2>
+          <div className="mt-10 grid md:grid-cols-2 gap-4 max-w-3xl mx-auto text-left">
+            {[
+              ["01", "Every dollar gets a job."],
+              ["02", "Debts are bosses. Treat them like fights."],
+              ["03", "Tax the things you can't quit."],
+              ["04", "Show up weekly. Always read the recap."],
+            ].map(([n, t]) => (
+              <div key={n} className="family-card flex gap-4">
+                <div className="text-[#ff3e00] font-semibold text-[28px] leading-none">{n}</div>
+                <div className="family-heading-sm text-[#121212] pt-1">{t}</div>
               </div>
-              <div className="relative w-24 h-24">
-                <svg viewBox="0 0 40 40" className="w-full h-full -rotate-90">
-                  <circle cx="20" cy="20" r="16" stroke="currentColor" strokeOpacity="0.1" strokeWidth="3" fill="none" />
-                  <circle cx="20" cy="20" r="16" stroke="currentColor" strokeWidth="3" fill="none" strokeDasharray={`${(9200/15000)*100} 100`} strokeLinecap="round" pathLength={100} />
-                </svg>
-                <div className="absolute inset-0 flex items-center justify-center text-sm">{Math.round(9200/15000*100)}%</div>
-              </div>
-            </div>
-          </motion.div>
+            ))}
+          </div>
+          <Link href="/rules" className="family-link mt-8 inline-flex">Read all seven <ArrowRight className="w-4 h-4" /></Link>
         </div>
       </section>
 
-      <section className="relative py-40 px-6">
-        <div className="absolute inset-0 glow-radial pointer-events-none opacity-60" />
-        <div className="relative mx-auto max-w-4xl text-center">
-          <ShieldCheck className="w-8 h-8 mx-auto opacity-60" />
-          <motion.h2 initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ type: "spring", stiffness: 80, damping: 18 }} className="mt-6 text-5xl md:text-7xl font-semibold tracking-[-0.04em]">
-            Your money.<br />Beautifully in view.
-          </motion.h2>
-          <p className="mt-6 opacity-60 text-lg">Free to try. Set up your dashboard in under a minute.</p>
-          <div className="mt-10 flex justify-center gap-3">
-            <Link href="/signup" className="btn-primary">Create your account <ArrowRight className="w-4 h-4" /></Link>
-            <Link href="/login" className="btn-secondary">Sign in</Link>
+      {/* FINAL CTA ------------------------------------------------------------ */}
+      <section className="px-6 py-32 relative overflow-hidden">
+        <div className="absolute inset-0 pointer-events-none hidden md:block">
+          <BlobBlue size={90} className="family-character absolute" style={{ top: 60, left: "10%", ["--delay" as string]: "0.4s" }} />
+          <BlobOrange size={90} className="family-character absolute" style={{ top: 100, right: "10%", ["--delay" as string]: "0.9s" }} />
+          <Star size={36} className="absolute" style={{ top: 220, left: "30%" }} />
+          <Heart size={32} className="absolute" style={{ top: 240, right: "30%" }} />
+        </div>
+        <div className="max-w-2xl mx-auto text-center relative">
+          <h2 className="family-display" style={{ fontSize: 56 }}>Ready to play?</h2>
+          <p className="family-body mt-5">Free forever tier. No bank login. No upsell. Just the game.</p>
+          <div className="mt-8 flex items-center justify-center gap-3 flex-wrap">
+            <Link href="/signup" className="family-btn-dark">Get started <ArrowRight className="w-4 h-4" /></Link>
+            <Link href="/mission" className="family-btn-light">Read the mission</Link>
           </div>
         </div>
       </section>
 
-      <footer className="border-t border-black/5 dark:border-white/5 py-10 text-center text-xs opacity-50">
-        <div className="flex items-center justify-center gap-5 mb-3">
-          <Link href="/mission" className="hover:opacity-100 opacity-70">Mission</Link>
-          <Link href="/rules" className="hover:opacity-100 opacity-70">Rules</Link>
-          <Link href="/login" className="hover:opacity-100 opacity-70">Sign in</Link>
-        </div>
-        <div className="opacity-60">Finance Wars © {new Date().getFullYear()}</div>
-      </footer>
+      <FamilyFooter />
     </div>
   );
 }

@@ -146,3 +146,218 @@ html:not(.dark) .btn-ghost:hover { color: black; background: rgba(0,0,0,0.04); }
   transition: opacity 0.9s ease-out, transform 0.9s ease-out;
 }
 .reveal.visible { opacity: 1; transform: translateY(0); }
+
+/* ============================================================================
+   Family — Style Reference
+   Pixar storyboard on cream paper. Scoped to .family-theme so it never leaks
+   into the dashboard chrome. Apply to the <body> on public pages.
+   ============================================================================ */
+
+.family-theme {
+  /* Tokens */
+  --color-warm-canvas: #fbfaf9;
+  --color-stone-surface: #f2f0ed;
+  --color-parchment-card: #f8f7f4;
+  --color-graphite: #474645;
+  --color-charcoal-primary: #343433;
+  --color-midnight: #121212;
+  --color-obsidian: #000000;
+  --color-ash: #848281;
+  --color-fog: #c6c6c6;
+  --color-smoke: #a7a7a7;
+  --color-pepper: #282624;
+  --color-ember-orange: #ff3e00;
+  --color-meadow-green: #00ca48;
+  --color-sky-blue: #0090ff;
+  --color-sunburst-yellow: #ffbb26;
+  --color-deep-amber: #d48f00;
+  --color-ocean-blue: #0086fc;
+  --color-ice-blue: #64c6ff;
+  --color-spearmint: #00c978;
+  --color-flamingo: #ff58ae;
+  --color-violet-pop: #9f4fff;
+  --color-coral-red: #ff2b3a;
+
+  --shadow-subtle: 0 0 0 1px #f2f0ed inset;
+  --shadow-lg: rgba(0, 0, 0, 0.15) 0 0 24px 0;
+  --shadow-nav: rgba(0, 0, 0, 0.04) 0 0 0 1px;
+  --shadow-hover: rgba(0, 0, 0, 0.04) 0 1px 6px 0, rgba(0, 0, 0, 0.05) 0 0 24px 0;
+
+  background: var(--color-warm-canvas);
+  color: var(--color-graphite);
+  font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  letter-spacing: -0.012em;
+  color-scheme: light;
+}
+
+.family-theme *::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.10); }
+.family-theme * { border-color: rgba(0,0,0,0.06); }
+
+/* Typography ---------------------------------------------------------------- */
+.family-display {
+  font-family: var(--font-family), "Fraunces", ui-serif, Georgia, serif;
+  font-weight: 500;
+  font-size: clamp(2.5rem, 6.5vw, 68px);
+  line-height: 1.09;
+  letter-spacing: -0.031em;
+  color: var(--color-charcoal-primary);
+}
+.family-heading-lg {
+  font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  font-weight: 600;
+  font-size: clamp(2rem, 4.5vw, 44px);
+  line-height: 1.09;
+  letter-spacing: -0.026em;
+  color: var(--color-midnight);
+}
+.family-heading {
+  font-size: 23px;
+  line-height: 1.2;
+  letter-spacing: -0.019em;
+  font-weight: 600;
+  color: var(--color-charcoal-primary);
+}
+.family-heading-sm {
+  font-size: 19px;
+  line-height: 1.38;
+  letter-spacing: -0.013em;
+  font-weight: 600;
+  color: var(--color-charcoal-primary);
+}
+.family-body {
+  font-size: 17px;
+  line-height: 1.5;
+  letter-spacing: -0.013em;
+  color: var(--color-graphite);
+}
+.family-body-sm {
+  font-size: 15px;
+  line-height: 1.47;
+  letter-spacing: -0.013em;
+  color: var(--color-graphite);
+}
+.family-caption {
+  font-size: 12px;
+  line-height: 1.58;
+  letter-spacing: -0.012em;
+  color: var(--color-ash);
+}
+
+/* Surfaces ------------------------------------------------------------------ */
+.family-card {
+  background: #ffffff;
+  border-radius: 10px;
+  box-shadow: var(--shadow-subtle);
+  padding: 32px;
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+.family-card-hover:hover {
+  box-shadow: var(--shadow-hover);
+  transform: translateY(-2px);
+}
+.family-card-cream {
+  background: var(--color-parchment-card);
+  border-radius: 12px;
+  padding: 24px;
+}
+.family-card-dark {
+  background: var(--color-obsidian);
+  color: #fff;
+  border-radius: 24px;
+  box-shadow: var(--shadow-lg);
+  padding: 24px;
+}
+
+/* Buttons ------------------------------------------------------------------- */
+.family-btn-dark {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--color-midnight);
+  color: #ffffff;
+  border-radius: 32px;
+  padding: 14px 22px;
+  font-weight: 600;
+  font-size: 14px;
+  letter-spacing: -0.013em;
+  border: 0;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+.family-btn-dark:hover { background: #2a2a29; transform: translateY(-1px); }
+
+.family-btn-light {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #f6f4ef;
+  color: var(--color-midnight);
+  border-radius: 32px;
+  padding: 14px 22px;
+  font-weight: 500;
+  font-size: 14px;
+  letter-spacing: -0.013em;
+  border: 0;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+.family-btn-light:hover { background: #ecebe5; transform: translateY(-1px); }
+
+.family-link {
+  color: var(--color-ember-orange);
+  font-weight: 500;
+  font-size: 15px;
+  letter-spacing: -0.013em;
+  transition: opacity 0.2s ease;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.family-link:hover { opacity: 0.75; }
+
+/* Inputs (cream-themed) ----------------------------------------------------- */
+.family-input {
+  background: #ffffff;
+  color: var(--color-charcoal-primary);
+  border-radius: 10px;
+  box-shadow: var(--shadow-subtle);
+  padding: 12px 16px;
+  font-size: 15px;
+  letter-spacing: -0.013em;
+  width: 100%;
+  transition: box-shadow 0.2s ease;
+  border: 0;
+}
+.family-input:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--color-ember-orange);
+}
+
+/* Nav ----------------------------------------------------------------------- */
+.family-nav {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: var(--color-warm-canvas);
+  box-shadow: var(--shadow-nav);
+  backdrop-filter: blur(8px);
+}
+
+/* Character float animation ------------------------------------------------- */
+@keyframes familyFloat {
+  0%, 100% { transform: translateY(0) rotate(var(--rot, 0deg)); }
+  50% { transform: translateY(-8px) rotate(calc(var(--rot, 0deg) + 1deg)); }
+}
+.family-character {
+  animation: familyFloat 5s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+  animation-delay: var(--delay, 0s);
+  will-change: transform;
+}
+
+@keyframes familyPop {
+  0% { opacity: 0; transform: scale(0.6) rotate(var(--rot, 0deg)); }
+  60% { opacity: 1; transform: scale(1.08) rotate(var(--rot, 0deg)); }
+  100% { opacity: 1; transform: scale(1) rotate(var(--rot, 0deg)); }
+}
+.family-pop { animation: familyPop 0.9s cubic-bezier(0.19, 1, 0.22, 1) both; }

@@ -1,7 +1,9 @@
 "use client";
 import { useState, useMemo } from "react";
 import Link from "next/link";
-import { ArrowLeft, ArrowRight, Plus, Trash2, Swords } from "lucide-react";
+import { ArrowRight, Plus, Trash2 } from "lucide-react";
+import ToolLayout from "@/app/_family/ToolLayout";
+import { SwordIcon, BlobOrange } from "@/app/_family/Characters";
 
 type Debt = { id: number; name: string; balance: number; apr: number; minPayment: number };
 
@@ -14,9 +16,7 @@ function simulate(debts: Debt[], extra: number, strategy: "avalanche" | "snowbal
   type S = { name: string; bal: number; apr: number; min: number };
   const state: S[] = debts.filter((d) => d.balance > 0).map((d) => ({ name: d.name || "Debt", bal: d.balance, apr: d.apr, min: d.minPayment }));
   if (state.length === 0) return { months: 0, totalInterest: 0, totalPaid: 0 };
-  let months = 0;
-  let totalInterest = 0;
-  let totalPaid = 0;
+  let months = 0, totalInterest = 0, totalPaid = 0;
   const MAX = 600;
   while (state.some((s) => s.bal > 0.01) && months < MAX) {
     months++;
@@ -26,13 +26,11 @@ function simulate(debts: Debt[], extra: number, strategy: "avalanche" | "snowbal
       s.bal += interest;
       totalInterest += interest;
     }
-    let remaining = state.reduce((s, d) => s + (d.bal > 0 ? d.min : 0), 0) + extra;
+    let remaining = state.reduce((sum, d) => sum + (d.bal > 0 ? d.min : 0), 0) + extra;
     for (const s of state) {
       if (s.bal <= 0) continue;
       const pay = Math.min(s.bal, s.min);
-      s.bal -= pay;
-      remaining -= pay;
-      totalPaid += pay;
+      s.bal -= pay; remaining -= pay; totalPaid += pay;
     }
     const alive = state.filter((s) => s.bal > 0);
     if (alive.length === 0 || remaining <= 0) continue;
@@ -42,9 +40,7 @@ function simulate(debts: Debt[], extra: number, strategy: "avalanche" | "snowbal
     for (const t of sorted) {
       if (remaining <= 0) break;
       const pay = Math.min(t.bal, remaining);
-      t.bal -= pay;
-      remaining -= pay;
-      totalPaid += pay;
+      t.bal -= pay; remaining -= pay; totalPaid += pay;
     }
   }
   return { months, totalInterest: Math.round(totalInterest), totalPaid: Math.round(totalPaid) };
@@ -65,91 +61,61 @@ export default function DebtCalculatorPage() {
   const noExtra = useMemo(() => simulate(debts, 0, "avalanche"), [debts]);
 
   return (
-    <div className="min-h-screen bg-white dark:bg-black text-black dark:text-white">
-      <nav className="fixed top-0 inset-x-0 z-50 backdrop-blur-xl bg-white/60 dark:bg-black/60 border-b border-black/5 dark:border-white/5">
-        <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between text-[13px]">
-          <Link href="/" className="font-semibold tracking-tight">Finance Wars</Link>
-          <Link href="/signup" className="px-3 py-1.5 rounded-full bg-black text-white dark:bg-white dark:text-black font-medium">Get started</Link>
-        </div>
-      </nav>
-
-      <main className="max-w-3xl mx-auto px-6 pt-32 pb-20">
-        <Link href="/learn" className="text-xs opacity-50 hover:opacity-100 inline-flex items-center gap-1">
-          <ArrowLeft className="w-3 h-3" />All tools
-        </Link>
-        <h1 className="mt-6 text-4xl font-semibold tracking-[-0.03em] flex items-center gap-3">
-          <Swords className="w-8 h-8" /> Debt Payoff Calculator
-        </h1>
-        <p className="mt-2 text-sm text-black/50 dark:text-white/50">Avalanche vs Snowball. Enter your debts. See the difference an extra $100/mo makes.</p>
-
-        <div className="mt-8 space-y-3">
-          {debts.map((d) => (
-            <div key={d.id} className="card p-4 grid grid-cols-2 sm:grid-cols-5 gap-3 items-end">
-              <div>
-                <label className="text-xs text-black/50 dark:text-white/50">Name</label>
-                <input className="input mt-1" value={d.name} onChange={(e) => update(d.id, "name", e.target.value)} placeholder="e.g. Visa" />
-              </div>
-              <div>
-                <label className="text-xs text-black/50 dark:text-white/50">Balance</label>
-                <input className="input mt-1" type="number" min={0} value={d.balance} onChange={(e) => update(d.id, "balance", Number(e.target.value))} />
-              </div>
-              <div>
-                <label className="text-xs text-black/50 dark:text-white/50">APR %</label>
-                <input className="input mt-1" type="number" min={0} step={0.01} value={d.apr} onChange={(e) => update(d.id, "apr", Number(e.target.value))} />
-              </div>
-              <div>
-                <label className="text-xs text-black/50 dark:text-white/50">Min payment</label>
-                <input className="input mt-1" type="number" min={0} value={d.minPayment} onChange={(e) => update(d.id, "minPayment", Number(e.target.value))} />
-              </div>
-              <button onClick={() => setDebts((p) => p.filter((x) => x.id !== d.id))} className="btn-ghost text-red-500 justify-self-end">
-                <Trash2 className="w-4 h-4" />
-              </button>
+    <ToolLayout
+      title="Debt Payoff Calculator"
+      subtitle="Avalanche vs Snowball. Enter your debts. See the difference an extra $100/mo makes."
+      icon={<SwordIcon size={80} />}
+      character={<BlobOrange size={64} className="family-character" />}
+    >
+      <div className="space-y-3">
+        {debts.map((d) => (
+          <div key={d.id} className="family-card grid grid-cols-2 sm:grid-cols-5 gap-3 items-end">
+            <div>
+              <label className="family-caption block mb-1">Name</label>
+              <input className="family-input" value={d.name} onChange={(e) => update(d.id, "name", e.target.value)} placeholder="e.g. Visa" />
             </div>
-          ))}
-          <button onClick={() => setDebts((p) => [...p, blank()])} className="btn-ghost text-sm"><Plus className="w-4 h-4" />Add debt</button>
-        </div>
+            <div>
+              <label className="family-caption block mb-1">Balance</label>
+              <input className="family-input" type="number" min={0} value={d.balance} onChange={(e) => update(d.id, "balance", Number(e.target.value))} />
+            </div>
+            <div>
+              <label className="family-caption block mb-1">APR %</label>
+              <input className="family-input" type="number" min={0} step={0.01} value={d.apr} onChange={(e) => update(d.id, "apr", Number(e.target.value))} />
+            </div>
+            <div>
+              <label className="family-caption block mb-1">Min payment</label>
+              <input className="family-input" type="number" min={0} value={d.minPayment} onChange={(e) => update(d.id, "minPayment", Number(e.target.value))} />
+            </div>
+            <button onClick={() => setDebts((p) => p.filter((x) => x.id !== d.id))} className="family-btn-light justify-self-end" style={{ background: "#fff2f0", color: "#ff2b3a" }}>
+              <Trash2 className="w-4 h-4" />
+            </button>
+          </div>
+        ))}
+        <button onClick={() => setDebts((p) => [...p, blank()])} className="family-link"><Plus className="w-4 h-4" />Add debt</button>
+      </div>
 
-        <div className="mt-6 card p-4">
-          <label className="text-xs text-black/50 dark:text-white/50 flex items-center justify-between">
-            <span>Extra monthly payment</span>
-            <span className="font-mono text-black dark:text-white">${extra}</span>
-          </label>
-          <input type="range" min={0} max={2000} step={25} value={extra} onChange={(e) => setExtra(Number(e.target.value))} className="w-full mt-2 accent-violet-500" />
-        </div>
+      <div className="mt-6 family-card">
+        <label className="family-caption flex items-center justify-between mb-2">
+          <span>Extra monthly payment</span>
+          <span className="font-mono text-[#121212] text-[15px] font-semibold">${extra}</span>
+        </label>
+        <input type="range" min={0} max={2000} step={25} value={extra} onChange={(e) => setExtra(Number(e.target.value))} className="w-full accent-[#ff3e00]" />
+      </div>
 
-        <div className="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <ResultCard
-            title="Minimum only"
-            months={noExtra.months}
-            interest={noExtra.totalInterest}
-            muted
-          />
-          <ResultCard
-            title="Avalanche"
-            months={avalanche.months}
-            interest={avalanche.totalInterest}
-            saved={noExtra.totalInterest - avalanche.totalInterest}
-            monthsSaved={noExtra.months - avalanche.months}
-            highlight
-          />
-          <ResultCard
-            title="Snowball"
-            months={snowball.months}
-            interest={snowball.totalInterest}
-            saved={noExtra.totalInterest - snowball.totalInterest}
-            monthsSaved={noExtra.months - snowball.months}
-          />
-        </div>
+      <div className="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <ResultCard title="Minimum only" months={noExtra.months} interest={noExtra.totalInterest} muted />
+        <ResultCard title="Avalanche" months={avalanche.months} interest={avalanche.totalInterest} saved={noExtra.totalInterest - avalanche.totalInterest} monthsSaved={noExtra.months - avalanche.months} highlight />
+        <ResultCard title="Snowball" months={snowball.months} interest={snowball.totalInterest} saved={noExtra.totalInterest - snowball.totalInterest} monthsSaved={noExtra.months - snowball.months} />
+      </div>
 
-        <div className="mt-10 card p-5 bg-violet-500/5 border-violet-500/20 text-sm leading-relaxed">
-          This calculator runs locally in your browser. Nothing is stored or sent anywhere.
+      <div className="mt-10 family-card-cream">
+        <p className="family-body-sm">
+          This calculator runs locally in your browser. Nothing is stored or sent.
           Want to track your real debts as boss fights with HP bars, interest accrual, and streak rewards?
-          <Link href="/signup" className="inline-flex items-center gap-1 ml-1 text-violet-500 font-medium hover:underline">
-            Start playing Finance Wars <ArrowRight className="w-3 h-3" />
-          </Link>
-        </div>
-      </main>
-    </div>
+          <Link href="/signup" className="family-link ml-2">Start playing <ArrowRight className="w-3 h-3" /></Link>
+        </p>
+      </div>
+    </ToolLayout>
   );
 }
 
@@ -157,12 +123,12 @@ function ResultCard({ title, months, interest, saved, monthsSaved, highlight, mu
   title: string; months: number; interest: number; saved?: number; monthsSaved?: number; highlight?: boolean; muted?: boolean;
 }) {
   return (
-    <div className={`card p-5 ${highlight ? "ring-1 ring-violet-500/40 bg-violet-500/5" : ""} ${muted ? "opacity-60" : ""}`}>
-      <div className="text-xs uppercase tracking-wider text-black/50 dark:text-white/50">{title}</div>
-      <div className="text-3xl font-semibold mt-2">{months >= 600 ? "50+ yr" : `${months} mo`}</div>
-      <div className="text-sm text-black/50 dark:text-white/50 mt-1">${interest.toLocaleString()} interest</div>
+    <div className={`family-card ${muted ? "opacity-60" : ""}`} style={highlight ? { boxShadow: "0 0 0 2px #ff3e00" } : undefined}>
+      <div className="family-caption uppercase tracking-wider">{title}</div>
+      <div className="text-[28px] font-semibold tracking-[-0.026em] mt-1 text-[#121212]">{months >= 600 ? "50+ yr" : `${months} mo`}</div>
+      <div className="family-body-sm mt-1">${interest.toLocaleString()} interest</div>
       {saved != null && saved > 0 && (
-        <div className="mt-2 text-xs text-emerald-500 font-medium">
+        <div className="mt-2 text-[12px] text-[#00ca48] font-medium">
           Saves ${saved.toLocaleString()}{monthsSaved != null && monthsSaved > 0 ? ` · ${monthsSaved} mo faster` : ""}
         </div>
       )}
