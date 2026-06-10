@@ -58,6 +58,8 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   { slug: "debt-free", name: "Debt Free", description: "Defeat every debt boss you've spawned.", icon: "Trophy", xp: 500, category: "savings", tier: 4 },
   { slug: "boss-streak-3", name: "Relentless", description: "Attack the same debt boss 3 months in a row.", icon: "Flame", xp: 75, category: "savings", tier: 1 },
   { slug: "boss-streak-12", name: "Year of Pain", description: "Attack the same debt boss 12 months in a row.", icon: "Flame", xp: 300, category: "savings", tier: 3 },
+  { slug: "first-raid-won", name: "Raid Cleared", description: "Defeat a Goal Raid boss before its deadline.", icon: "Swords", xp: 200, category: "savings", tier: 3 },
+  { slug: "raid-veteran", name: "Raid Veteran", description: "Win 5 Goal Raids.", icon: "Trophy", xp: 400, category: "savings", tier: 4 },
 ];
 
 export const ACHIEVEMENTS_BY_SLUG: Record<string, AchievementDef> = Object.fromEntries(

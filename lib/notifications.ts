@@ -28,6 +28,9 @@ export const NOTIFICATION_KINDS = [
   "DUEL_COMPLETE",
   "DEBT_BOSS_KO",
   "VICE_TAX_HIT",
+  "RAID_VICTORY",
+  "RAID_EXPIRING",
+  "RAID_EXPIRED",
 ] as const;
 export type NotificationKind = (typeof NOTIFICATION_KINDS)[number];
 

@@ -29,7 +29,8 @@ export type AchievementEvent =
   | { type: "vice-tax-created" }
   | { type: "vice-tax-total"; total: number }
   | { type: "debt-ko"; remainingBosses: number }
-  | { type: "debt-streak"; months: number };
+  | { type: "debt-streak"; months: number }
+  | { type: "raid-won"; totalRaidsWon: number };
 
 async function unlock(userId: string, slug: string) {
   const def = ACHIEVEMENTS_BY_SLUG[slug];
@@ -164,6 +165,10 @@ export async function evaluate(userId: string, event: AchievementEvent) {
       case "debt-streak":
         if (event.months >= 3 && !(await alreadyHas(userId, "boss-streak-3"))) await unlock(userId, "boss-streak-3");
         if (event.months >= 12 && !(await alreadyHas(userId, "boss-streak-12"))) await unlock(userId, "boss-streak-12");
+        break;
+      case "raid-won":
+        if (!(await alreadyHas(userId, "first-raid-won"))) await unlock(userId, "first-raid-won");
+        if (event.totalRaidsWon >= 5 && !(await alreadyHas(userId, "raid-veteran"))) await unlock(userId, "raid-veteran");
         break;
     }
   } catch {

@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { log } from "@/lib/audit";
 import { rateLimit, DEFAULT_MUTATION } from "@/lib/ratelimit";
 import { getActiveHousehold } from "@/lib/household";
+import { processRaidsForUser } from "@/lib/goalRaidLifecycle";
 import {
   RAID_THEMES, isRaidEligible, pickTheme, buildBoss, syncRaid,
   daysRemaining, raidPace, stageFor, type RaidTheme,
@@ -22,6 +23,9 @@ const createSchema = z.object({
 export async function GET(req: NextRequest) {
   const r = await resolveRequestUser(req);
   if (!r) return bad("Unauthorized", 401);
+
+  // Detect victories / expirations on visit so state is fresh even without cron.
+  await processRaidsForUser(r.user.id).catch(() => {});
 
   const raids = await prisma.goalRaid.findMany({
     where: { userId: r.user.id },

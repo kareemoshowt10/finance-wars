@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   pickTheme, isRaidEligible, daysRemaining, raidPace, stageFor, buildBoss,
 } from "@/lib/goalRaid";
+import { victoryBonus } from "@/lib/goalRaidLifecycle";
 
 const inDays = (d: number) => new Date(Date.now() + d * 86_400_000);
 
@@ -47,5 +48,14 @@ describe("goalRaid", () => {
     expect(boss.bossTitle).toContain("Deep");
     expect(boss.lore).toContain("Trip to Japan");
     expect(boss.lore).toContain("$5,000");
+  });
+
+  it("scales victory bonus by how early the raid is cleared", () => {
+    expect(victoryBonus(45)).toBe(25); // a month+ early
+    expect(victoryBonus(30)).toBe(25);
+    expect(victoryBonus(14)).toBe(15); // a week+ early
+    expect(victoryBonus(7)).toBe(15);
+    expect(victoryBonus(2)).toBe(10);  // just in time
+    expect(victoryBonus(0)).toBe(10);
   });
 });
