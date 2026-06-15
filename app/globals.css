@@ -361,3 +361,194 @@ html:not(.dark) .btn-ghost:hover { color: black; background: rgba(0,0,0,0.04); }
   100% { opacity: 1; transform: scale(1) rotate(var(--rot, 0deg)); }
 }
 .family-pop { animation: familyPop 0.9s cubic-bezier(0.19, 1, 0.22, 1) both; }
+
+/* ============================================================================
+   Blueprint — for serious couples building toward homeownership/car-ownership.
+   Architectural drafting paper meets financial broadsheet. Scoped to
+   .blueprint-theme so it never bleeds into the dashboard.
+   ============================================================================ */
+
+.blueprint-theme {
+  --bp-paper: #efebe0;
+  --bp-ink: #0e0f12;
+  --bp-blueprint: #1b4fa0;
+  --bp-signal: #b85c28;
+  --bp-mute: #6b6864;
+  --bp-rule: #1a1a1a;
+  --bp-rule-faint: rgba(14,15,18,0.10);
+  --bp-strike: #16a34a;
+
+  background: var(--bp-paper);
+  color: var(--bp-ink);
+  font-family: var(--font-inter), system-ui, sans-serif;
+  letter-spacing: -0.011em;
+  color-scheme: light;
+  /* subtle blueprint grid */
+  background-image:
+    linear-gradient(to right, rgba(14,15,18,0.025) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(14,15,18,0.025) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+.blueprint-theme *::-webkit-scrollbar-thumb { background: rgba(14,15,18,0.15); }
+.blueprint-theme * { border-color: var(--bp-rule-faint); }
+
+/* Typography ---------------------------------------------------------------- */
+.bp-eyebrow {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-weight: 500;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--bp-mute);
+}
+.bp-display {
+  font-family: var(--font-display), var(--font-inter), sans-serif;
+  font-weight: 600;
+  font-size: clamp(2.75rem, 7vw, 5.5rem);
+  line-height: 0.96;
+  letter-spacing: -0.035em;
+  color: var(--bp-ink);
+}
+.bp-display-italic {
+  font-style: italic;
+  font-weight: 500;
+}
+.bp-h2 {
+  font-family: var(--font-display), var(--font-inter), sans-serif;
+  font-weight: 600;
+  font-size: clamp(2rem, 4.5vw, 3rem);
+  line-height: 1;
+  letter-spacing: -0.028em;
+  color: var(--bp-ink);
+}
+.bp-h3 {
+  font-family: var(--font-display), var(--font-inter), sans-serif;
+  font-weight: 600;
+  font-size: 22px;
+  line-height: 1.15;
+  letter-spacing: -0.022em;
+  color: var(--bp-ink);
+}
+.bp-body {
+  font-size: 17px;
+  line-height: 1.55;
+  color: var(--bp-ink);
+}
+.bp-body-sm { font-size: 14px; line-height: 1.55; color: var(--bp-mute); }
+.bp-fig {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-feature-settings: "tnum" 1, "lnum" 1;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+.bp-callsign {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  color: var(--bp-mute);
+  text-transform: uppercase;
+}
+
+/* Surfaces ------------------------------------------------------------------ */
+.bp-card {
+  background: rgba(255,255,255,0.55);
+  border: 1px solid var(--bp-rule-faint);
+  border-radius: 4px;
+  padding: 28px;
+}
+.bp-panel {
+  background: var(--bp-paper);
+  border: 1px solid var(--bp-rule);
+  border-radius: 0;
+  padding: 32px;
+}
+
+/* Hairline rules + labels -------------------------------------------------- */
+.bp-rule { border-top: 1px solid var(--bp-rule); }
+.bp-rule-faint { border-top: 1px solid var(--bp-rule-faint); }
+.bp-section-marker {
+  display: flex; align-items: center; gap: 16px;
+  font-family: var(--font-mono), monospace;
+  font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase;
+  color: var(--bp-ink); padding-bottom: 14px;
+}
+.bp-section-marker::after {
+  content: ""; flex: 1; border-top: 1px solid var(--bp-rule);
+}
+
+/* Buttons (rectangular, intentionally architectural) ---------------------- */
+.bp-btn-primary {
+  display: inline-flex; align-items: center; gap: 10px;
+  background: var(--bp-ink); color: var(--bp-paper);
+  border-radius: 0; padding: 14px 22px;
+  font-family: var(--font-mono), monospace;
+  font-size: 12px; font-weight: 500;
+  letter-spacing: 0.10em; text-transform: uppercase;
+  border: 1px solid var(--bp-ink); cursor: pointer;
+  transition: background 0.18s ease, color 0.18s ease;
+}
+.bp-btn-primary:hover { background: var(--bp-signal); border-color: var(--bp-signal); color: #fff; }
+.bp-btn-secondary {
+  display: inline-flex; align-items: center; gap: 10px;
+  background: transparent; color: var(--bp-ink);
+  border-radius: 0; padding: 14px 22px;
+  font-family: var(--font-mono), monospace;
+  font-size: 12px; font-weight: 500;
+  letter-spacing: 0.10em; text-transform: uppercase;
+  border: 1px solid var(--bp-ink); cursor: pointer;
+  transition: background 0.18s ease;
+}
+.bp-btn-secondary:hover { background: rgba(14,15,18,0.06); }
+.bp-link {
+  font-family: var(--font-mono), monospace;
+  font-size: 12px; font-weight: 500;
+  letter-spacing: 0.10em; text-transform: uppercase;
+  color: var(--bp-signal); text-decoration: none;
+  border-bottom: 1px solid var(--bp-signal); padding-bottom: 2px;
+  display: inline-flex; align-items: center; gap: 6px;
+}
+.bp-link:hover { color: var(--bp-ink); border-color: var(--bp-ink); }
+
+/* Inputs (paper feel, focus = blueprint blue) ----------------------------- */
+.bp-input {
+  background: rgba(255,255,255,0.6);
+  border: 1px solid var(--bp-rule-faint);
+  border-radius: 0;
+  padding: 12px 14px;
+  font-family: var(--font-mono), monospace;
+  font-size: 15px;
+  color: var(--bp-ink);
+  width: 100%;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+.bp-input:focus {
+  outline: none;
+  border-color: var(--bp-blueprint);
+  background: #fff;
+}
+.bp-input::placeholder { color: var(--bp-mute); }
+
+/* Nav ---------------------------------------------------------------------- */
+.bp-nav {
+  position: sticky; top: 0; z-index: 50;
+  background: rgba(239,235,224,0.92);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--bp-rule);
+}
+
+/* Progress bar (e.g. down payment toward target) -------------------------- */
+.bp-progress {
+  height: 10px;
+  background: rgba(14,15,18,0.08);
+  border: 1px solid var(--bp-rule-faint);
+  position: relative; overflow: hidden;
+}
+.bp-progress-fill {
+  height: 100%;
+  background: repeating-linear-gradient(
+    45deg,
+    var(--bp-ink) 0px, var(--bp-ink) 6px,
+    transparent 6px, transparent 12px
+  );
+}

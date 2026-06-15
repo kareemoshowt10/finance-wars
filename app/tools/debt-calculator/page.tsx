@@ -1,9 +1,8 @@
 "use client";
 import { useState, useMemo } from "react";
 import Link from "next/link";
-import { ArrowRight, Plus, Trash2 } from "lucide-react";
-import ToolLayout from "@/app/_family/ToolLayout";
-import { SwordIcon, BlobOrange } from "@/app/_family/Characters";
+import { Plus, Trash2 } from "lucide-react";
+import BlueprintToolLayout, { BPField, BPSection } from "@/app/_blueprint/BlueprintToolLayout";
 
 type Debt = { id: number; name: string; balance: number; apr: number; minPayment: number };
 
@@ -46,6 +45,8 @@ function simulate(debts: Debt[], extra: number, strategy: "avalanche" | "snowbal
   return { months, totalInterest: Math.round(totalInterest), totalPaid: Math.round(totalPaid) };
 }
 
+const fmt = (n: number) => `$${Math.round(n).toLocaleString()}`;
+
 export default function DebtCalculatorPage() {
   const [debts, setDebts] = useState<Debt[]>([
     { id: nextId++, name: "Credit Card", balance: 5000, apr: 24.99, minPayment: 100 },
@@ -61,75 +62,101 @@ export default function DebtCalculatorPage() {
   const noExtra = useMemo(() => simulate(debts, 0, "avalanche"), [debts]);
 
   return (
-    <ToolLayout
-      title="Debt Payoff Calculator"
-      subtitle="Avalanche vs Snowball. Enter your debts. See the difference an extra $100/mo makes."
-      icon={<SwordIcon size={80} />}
-      character={<BlobOrange size={64} className="family-character" />}
+    <BlueprintToolLayout
+      number="05"
+      callsign="DEBT / PAYOFF STRATEGY"
+      title="Avalanche or snowball, with the difference quantified."
+      subtitle="Enter your debts. See exactly how many months and dollars an extra payment cuts — and which method wins for your specific mix."
     >
-      <div className="space-y-3">
-        {debts.map((d) => (
-          <div key={d.id} className="family-card grid grid-cols-2 sm:grid-cols-5 gap-3 items-end">
-            <div>
-              <label className="family-caption block mb-1">Name</label>
-              <input className="family-input" value={d.name} onChange={(e) => update(d.id, "name", e.target.value)} placeholder="e.g. Visa" />
+      <BPSection label="§ YOUR DEBTS">
+        <div className="space-y-3">
+          {debts.map((d) => (
+            <div key={d.id} className="bp-card grid grid-cols-2 sm:grid-cols-5 gap-3 items-end">
+              <BPField label="Name">
+                <input className="bp-input" value={d.name} onChange={(e) => update(d.id, "name", e.target.value)} placeholder="e.g. Visa" />
+              </BPField>
+              <BPField label="Balance">
+                <input className="bp-input" type="number" min={0} value={d.balance} onChange={(e) => update(d.id, "balance", Number(e.target.value))} />
+              </BPField>
+              <BPField label="APR %">
+                <input className="bp-input" type="number" min={0} step={0.01} value={d.apr} onChange={(e) => update(d.id, "apr", Number(e.target.value))} />
+              </BPField>
+              <BPField label="Min payment">
+                <input className="bp-input" type="number" min={0} value={d.minPayment} onChange={(e) => update(d.id, "minPayment", Number(e.target.value))} />
+              </BPField>
+              <button
+                onClick={() => setDebts((p) => p.filter((x) => x.id !== d.id))}
+                className="bp-btn-secondary justify-self-end"
+                style={{ color: "var(--bp-signal)", borderColor: "var(--bp-signal)" }}
+                title="Remove"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
             </div>
-            <div>
-              <label className="family-caption block mb-1">Balance</label>
-              <input className="family-input" type="number" min={0} value={d.balance} onChange={(e) => update(d.id, "balance", Number(e.target.value))} />
-            </div>
-            <div>
-              <label className="family-caption block mb-1">APR %</label>
-              <input className="family-input" type="number" min={0} step={0.01} value={d.apr} onChange={(e) => update(d.id, "apr", Number(e.target.value))} />
-            </div>
-            <div>
-              <label className="family-caption block mb-1">Min payment</label>
-              <input className="family-input" type="number" min={0} value={d.minPayment} onChange={(e) => update(d.id, "minPayment", Number(e.target.value))} />
-            </div>
-            <button onClick={() => setDebts((p) => p.filter((x) => x.id !== d.id))} className="family-btn-light justify-self-end" style={{ background: "#fff2f0", color: "#ff2b3a" }}>
-              <Trash2 className="w-4 h-4" />
-            </button>
+          ))}
+          <button onClick={() => setDebts((p) => [...p, blank()])} className="bp-link inline-flex"><Plus className="w-4 h-4" />Add debt</button>
+        </div>
+      </BPSection>
+
+      <BPSection label="§ EXTRA MONTHLY">
+        <div className="bp-card">
+          <div className="flex items-baseline justify-between mb-2">
+            <span className="bp-callsign">EXTRA / MO</span>
+            <span className="bp-fig text-[18px]">{fmt(extra)}</span>
           </div>
-        ))}
-        <button onClick={() => setDebts((p) => [...p, blank()])} className="family-link"><Plus className="w-4 h-4" />Add debt</button>
-      </div>
+          <input
+            type="range" min={0} max={2000} step={25} value={extra}
+            onChange={(e) => setExtra(Number(e.target.value))}
+            className="w-full accent-[var(--bp-signal)]"
+          />
+        </div>
+      </BPSection>
 
-      <div className="mt-6 family-card">
-        <label className="family-caption flex items-center justify-between mb-2">
-          <span>Extra monthly payment</span>
-          <span className="font-mono text-[#121212] text-[15px] font-semibold">${extra}</span>
-        </label>
-        <input type="range" min={0} max={2000} step={25} value={extra} onChange={(e) => setExtra(Number(e.target.value))} className="w-full accent-[#ff3e00]" />
-      </div>
+      <BPSection label="§ COMPARISON">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <Result title="MINIMUM ONLY" months={noExtra.months} interest={noExtra.totalInterest} muted />
+          <Result
+            title="AVALANCHE"
+            months={avalanche.months}
+            interest={avalanche.totalInterest}
+            saved={noExtra.totalInterest - avalanche.totalInterest}
+            monthsSaved={noExtra.months - avalanche.months}
+            highlight
+          />
+          <Result
+            title="SNOWBALL"
+            months={snowball.months}
+            interest={snowball.totalInterest}
+            saved={noExtra.totalInterest - snowball.totalInterest}
+            monthsSaved={noExtra.months - snowball.months}
+          />
+        </div>
+      </BPSection>
 
-      <div className="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <ResultCard title="Minimum only" months={noExtra.months} interest={noExtra.totalInterest} muted />
-        <ResultCard title="Avalanche" months={avalanche.months} interest={avalanche.totalInterest} saved={noExtra.totalInterest - avalanche.totalInterest} monthsSaved={noExtra.months - avalanche.months} highlight />
-        <ResultCard title="Snowball" months={snowball.months} interest={snowball.totalInterest} saved={noExtra.totalInterest - snowball.totalInterest} monthsSaved={noExtra.months - snowball.months} />
-      </div>
-
-      <div className="mt-10 family-card-cream">
-        <p className="family-body-sm">
-          This calculator runs locally in your browser. Nothing is stored or sent.
-          Want to track your real debts as boss fights with HP bars, interest accrual, and streak rewards?
-          <Link href="/signup" className="family-link ml-2">Start playing <ArrowRight className="w-3 h-3" /></Link>
+      <BPSection label="§ NOTE">
+        <p className="bp-body-sm">
+          Runs locally in your browser. Nothing is stored or sent. To track real debts as boss fights with
+          HP bars, interest accrual, and streak rewards, <Link href="/signup" className="bp-link inline-flex">enlist →</Link>
         </p>
-      </div>
-    </ToolLayout>
+      </BPSection>
+    </BlueprintToolLayout>
   );
 }
 
-function ResultCard({ title, months, interest, saved, monthsSaved, highlight, muted }: {
+function Result({ title, months, interest, saved, monthsSaved, highlight, muted }: {
   title: string; months: number; interest: number; saved?: number; monthsSaved?: number; highlight?: boolean; muted?: boolean;
 }) {
   return (
-    <div className={`family-card ${muted ? "opacity-60" : ""}`} style={highlight ? { boxShadow: "0 0 0 2px #ff3e00" } : undefined}>
-      <div className="family-caption uppercase tracking-wider">{title}</div>
-      <div className="text-[28px] font-semibold tracking-[-0.026em] mt-1 text-[#121212]">{months >= 600 ? "50+ yr" : `${months} mo`}</div>
-      <div className="family-body-sm mt-1">${interest.toLocaleString()} interest</div>
+    <div className="bp-card" style={{
+      opacity: muted ? 0.6 : 1,
+      borderColor: highlight ? "var(--bp-signal)" : undefined,
+    }}>
+      <div className="bp-callsign" style={{ color: highlight ? "var(--bp-signal)" : undefined }}>{title}</div>
+      <div className="bp-fig mt-2" style={{ fontSize: 28 }}>{months >= 600 ? "50+ yr" : `${months} mo`}</div>
+      <div className="bp-body-sm mt-1">{fmt(interest)} interest</div>
       {saved != null && saved > 0 && (
-        <div className="mt-2 text-[12px] text-[#00ca48] font-medium">
-          Saves ${saved.toLocaleString()}{monthsSaved != null && monthsSaved > 0 ? ` · ${monthsSaved} mo faster` : ""}
+        <div className="bp-callsign mt-3" style={{ color: "var(--bp-strike)" }}>
+          SAVES {fmt(saved)}{monthsSaved != null && monthsSaved > 0 ? ` · ${monthsSaved} MO FASTER` : ""}
         </div>
       )}
     </div>

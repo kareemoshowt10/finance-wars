@@ -1,9 +1,9 @@
 "use client";
 import { useState, useMemo } from "react";
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
-import ToolLayout from "@/app/_family/ToolLayout";
-import { CoinStack, BlobYellow } from "@/app/_family/Characters";
+import BlueprintToolLayout, { BPField, BPSection } from "@/app/_blueprint/BlueprintToolLayout";
+
+const fmt = (n: number) => `$${Math.round(n).toLocaleString()}`;
 
 export default function BudgetBuilderPage() {
   const [income, setIncome] = useState(5000);
@@ -17,74 +17,65 @@ export default function BudgetBuilderPage() {
   }), [monthly]);
 
   return (
-    <ToolLayout
-      title="50/30/20 Budget Builder"
-      subtitle="Enter your income. Get your budget targets instantly."
-      icon={<CoinStack size={80} />}
-      character={<BlobYellow size={64} className="family-character" />}
+    <BlueprintToolLayout
+      number="06"
+      callsign="FOUNDATION / 50-30-20"
+      title="A budget that fits on a napkin."
+      subtitle="Half on needs. A third on wants. A fifth on the future. The framework you can set up in 30 seconds and run for a decade."
     >
-      <div className="family-card space-y-4">
-        <div>
-          <label className="family-caption block mb-1">Take-home income</label>
-          <div className="flex gap-2">
-            <input className="family-input" type="number" min={0} value={income} onChange={(e) => setIncome(Number(e.target.value))} />
-            <select className="family-input w-32" value={period} onChange={(e) => setPeriod(e.target.value as "monthly" | "annual")}>
-              <option value="monthly">Monthly</option>
-              <option value="annual">Annual</option>
-            </select>
+      <BPSection label="§ INPUT">
+        <div className="bp-card max-w-md">
+          <BPField label="Take-home income">
+            <div className="flex gap-2 mt-1">
+              <input className="bp-input flex-1" type="number" min={0} value={income} onChange={(e) => setIncome(Number(e.target.value))} />
+              <select className="bp-input w-32" value={period} onChange={(e) => setPeriod(e.target.value as "monthly" | "annual")}>
+                <option value="monthly">Monthly</option>
+                <option value="annual">Annual</option>
+              </select>
+            </div>
+          </BPField>
+          {period === "annual" && (
+            <div className="bp-callsign mt-3">MONTHLY EQUIVALENT · <span className="bp-fig text-[var(--bp-ink)]">{fmt(monthly)}</span></div>
+          )}
+        </div>
+      </BPSection>
+
+      <BPSection label="§ ALLOCATION">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <Bucket pct={50} label="NEEDS" amount={splits.needs} items={["Rent / mortgage", "Utilities", "Groceries", "Insurance", "Min debt payments", "Transport"]} />
+          <Bucket pct={30} label="WANTS" amount={splits.wants} items={["Dining out", "Subscriptions", "Shopping", "Entertainment", "Travel", "Hobbies"]} />
+          <Bucket pct={20} label="SAVINGS & DEBT" amount={splits.savings} accent items={["Emergency fund", "Extra debt", "Retirement", "Investments", "Goal savings"]} />
+        </div>
+
+        <div className="mt-6 bp-card">
+          <div className="flex h-3 border border-[var(--bp-ink)]">
+            <div style={{ background: "var(--bp-ink)", width: "50%" }} />
+            <div style={{ background: "var(--bp-mute)", width: "30%" }} />
+            <div style={{ background: "var(--bp-signal)", width: "20%" }} />
+          </div>
+          <div className="flex justify-between mt-2 bp-callsign">
+            <span>50% NEEDS</span><span>30% WANTS</span><span style={{ color: "var(--bp-signal)" }}>20% SAVINGS</span>
           </div>
         </div>
-        {period === "annual" && (
-          <div className="family-caption">Monthly: <span className="text-[#121212] font-medium">${monthly.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span></div>
-        )}
-      </div>
+      </BPSection>
 
-      <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <BucketCard pct={50} label="Needs" amount={splits.needs} color="#0090ff" items={["Rent / mortgage", "Utilities", "Groceries", "Insurance", "Minimum debt payments", "Transport"]} />
-        <BucketCard pct={30} label="Wants" amount={splits.wants} color="#ff58ae" items={["Dining out", "Subscriptions", "Shopping", "Entertainment", "Travel", "Hobbies"]} />
-        <BucketCard pct={20} label="Savings & debt" amount={splits.savings} color="#00ca48" items={["Emergency fund", "Extra debt payments", "Retirement", "Investments", "Goal savings"]} />
-      </div>
-
-      <div className="mt-6 family-card">
-        <div className="flex h-4 rounded-full overflow-hidden">
-          <div style={{ background: "#0090ff", width: "50%" }} />
-          <div style={{ background: "#ff58ae", width: "30%" }} />
-          <div style={{ background: "#00ca48", width: "20%" }} />
-        </div>
-        <div className="flex justify-between mt-2 family-caption">
-          <span>50% Needs</span><span>30% Wants</span><span>20% Savings</span>
-        </div>
-      </div>
-
-      <div className="mt-6 family-card-cream">
-        <p className="family-body-sm">
-          <strong className="text-[#121212]">Pro tip:</strong> If your needs exceed 50%, don't panic — reduce fixed costs first (negotiate
-          bills, refinance, downsize). If your savings are above 20%, you're winning. Route the
-          extra into a Vice Tax or debt payoff.
+      <BPSection label="§ NOTE">
+        <p className="bp-body-sm">
+          If needs exceed 50%, reduce fixed costs first — negotiate bills, refinance, downsize. If savings exceed 20%, you're winning. Route the surplus into a <Link href="/dashboard/vice-tax" className="bp-link inline-flex">Vice Tax</Link> or accelerated debt payoff.
         </p>
-      </div>
-
-      <div className="mt-8 family-card" style={{ background: "linear-gradient(135deg, #fff8f5 0%, #fffaee 100%)" }}>
-        <p className="family-body-sm">
-          Want to track these buckets automatically? Finance Wars categorizes every transaction and tells you when you overspend.
-          <Link href="/signup" className="family-link ml-2">Start for free <ArrowRight className="w-3 h-3" /></Link>
-        </p>
-      </div>
-    </ToolLayout>
+      </BPSection>
+    </BlueprintToolLayout>
   );
 }
 
-function BucketCard({ pct, label, amount, color, items }: { pct: number; label: string; amount: number; color: string; items: string[] }) {
+function Bucket({ pct, label, amount, items, accent }: { pct: number; label: string; amount: number; items: string[]; accent?: boolean }) {
   return (
-    <div className="family-card">
-      <div className="flex items-baseline gap-2">
-        <span className="w-3 h-3 rounded-full" style={{ background: color }} />
-        <span className="family-heading-sm text-[#121212]">{pct}% {label}</span>
-      </div>
-      <div className="text-[28px] font-semibold tracking-[-0.026em] mt-2 text-[#121212]">${amount.toLocaleString()}</div>
-      <div className="family-caption mt-0.5">per month</div>
-      <ul className="mt-3 space-y-1 family-body-sm text-[13px]">
-        {items.map((i) => <li key={i}>• {i}</li>)}
+    <div className="bp-card" style={accent ? { borderColor: "var(--bp-signal)" } : undefined}>
+      <div className="bp-callsign" style={accent ? { color: "var(--bp-signal)" } : undefined}>{pct}% {label}</div>
+      <div className="bp-fig mt-2" style={{ fontSize: 32 }}>{`$${amount.toLocaleString()}`}</div>
+      <div className="bp-callsign mt-1" style={{ color: "var(--bp-mute)" }}>PER MONTH</div>
+      <ul className="mt-4 space-y-1 text-[13px] text-[var(--bp-ink)]">
+        {items.map((i) => <li key={i}>· {i}</li>)}
       </ul>
     </div>
   );

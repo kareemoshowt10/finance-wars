@@ -1,116 +1,116 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowLeft, ArrowRight, BookOpen, Calculator } from "lucide-react";
-import { FamilyNav, FamilyFooter } from "@/app/_family/FamilyShell";
-import FamilyThemeBoundary from "@/app/_family/FamilyThemeBoundary";
-import {
-  BlobOrange, BlobGreen, BlobBlue, BlobYellow,
-  CoinStack, Star, ShieldVault, SwordIcon, Heart, Sparkle,
-} from "@/app/_family/Characters";
+import { BlueprintNav, BlueprintFooter } from "@/app/_blueprint/BlueprintShell";
+import { BlueprintThemeBoundary } from "@/app/_blueprint/BlueprintShell";
 
 export const metadata: Metadata = {
-  title: "Learn & Free Tools — Finance Wars",
-  description: "Free financial calculators, guides, and resources. Debt payoff calculator, 50/30/20 budgeter, compound interest simulator, and more. No signup required.",
+  title: "Tools & Guides — Finance Wars",
+  description: "Free calculators for couples building toward homeownership and car ownership. Home affordability, mortgage payoff, down payment plans, car affordability, debt payoff. Plus mental-model guides.",
   openGraph: {
-    title: "Free Finance Tools & Resources — Finance Wars",
-    description: "Calculators, guides, and mental models. No signup. No catch.",
+    title: "Free Tools for Serious Couples — Finance Wars",
+    description: "Calculators and guides for partners planning the big purchases.",
   },
 };
 
-const TOOLS = [
-  { href: "/tools/debt-calculator", icon: <SwordIcon size={56} />, title: "Debt Payoff Calculator", desc: "Compare avalanche vs snowball. See how much extra payments save you." },
-  { href: "/tools/50-30-20", icon: <CoinStack size={56} />, title: "50/30/20 Budget Builder", desc: "Enter your income. Get your needs, wants, and savings targets instantly." },
-  { href: "/tools/compound-interest", icon: <Star size={56} color="#0090ff" />, title: "Compound Interest Simulator", desc: "See what $100/mo becomes in 10, 20, 30 years at different rates." },
-  { href: "/tools/emergency-fund", icon: <ShieldVault size={56} />, title: "Emergency Fund Calculator", desc: "How many months do you need? Based on your actual expenses and risk profile." },
+const HOMEOWNER = [
+  { num: "T.01", href: "/tools/home-affordability", title: "Home Affordability", body: "What you can actually afford using 28/36, with property tax, insurance, HOA and PMI factored in." },
+  { num: "T.02", href: "/tools/down-payment", title: "Down Payment Plan", body: "Target home price → required savings → months to ready, with HYSA interest." },
+  { num: "T.03", href: "/tools/mortgage", title: "Mortgage Payoff", body: "Years cut and interest saved for every extra dollar of monthly principal." },
+];
+
+const CAR = [
+  { num: "T.04", href: "/tools/car-affordability", title: "Car Affordability", body: "The 20/4/10 rule with real total cost of ownership — loan plus insurance, fuel, maintenance." },
+  { num: "T.05", href: "/tools/debt-calculator", title: "Debt Payoff", body: "Compare avalanche vs snowball. See what an extra $100/mo really saves you." },
+];
+
+const FOUNDATION = [
+  { num: "T.06", href: "/tools/50-30-20", title: "50/30/20 Budget", body: "Instant bucket split from income — the budget framework that takes 30 seconds to set up." },
+  { num: "T.07", href: "/tools/emergency-fund", title: "Emergency Fund", body: "Risk-profile-based target with a month-by-month progress chart." },
+  { num: "T.08", href: "/tools/compound-interest", title: "Compound Interest", body: "What $100/mo really becomes in 10, 20, 30 years at different rates." },
 ];
 
 const GUIDES = [
-  { color: "#ff3e00", title: "Avalanche vs Snowball: Which Is Right for You?", body: "Avalanche saves you the most money. Snowball gives you the fastest psychological win. Use avalanche if your largest-APR debt is also your most expensive. Use snowball if you've tried and failed before — momentum matters more than math if you quit." },
-  { color: "#ffbb26", title: "The Vice Tax Mental Model", body: "You don't fix a leak by staring at it. You fix it by redirecting it. Pick the category you overspend on most, set a 10-20% tax, and route it to a savings goal. You won't notice $3 per DoorDash order. Your goal will." },
-  { color: "#00ca48", title: "The One-Number Budget", body: "Forget 47 categories. After fixed costs and savings are auto-transferred, you have one number left. That's your weekly spend. If you can stay under it 4 weeks in a row, you win the month. If not, reduce it by 10% and try again." },
-  { color: "#0090ff", title: "The 72-Hour Rule", body: "Before any non-essential purchase over $100, wait 72 hours. Write it down. If you still want it after 3 days, buy it guilt-free. You'll cancel 60% of them and never miss what you didn't buy." },
-  { color: "#9f4fff", title: "Emergency Fund Tiers", body: "Tier 1: $1,000 starter fund (before attacking debt). Tier 2: 1 month of expenses (after highest-APR debt is gone). Tier 3: 3-6 months (after all consumer debt). Don't skip Tier 1 even if your debt feels urgent — one flat tire without it resets everything." },
-  { color: "#ff58ae", title: "The Real Cost of Minimum Payments", body: "A $5,000 credit card at 24% APR with $100 minimum payments takes 9+ years and costs $6,000+ in interest. Doubling the payment to $200 cuts it to 2.5 years and saves $4,000. The calculator above will prove it to you." },
+  { tag: "G.01", title: "Avalanche vs Snowball, decided in 60 seconds", body: "Avalanche saves more money. Snowball gives you a win first. Pick avalanche if your highest-APR debt is also your biggest balance; pick snowball if you've tried and quit before — momentum beats math when willpower is the variable." },
+  { tag: "G.02", title: "The 28/36 rule in plain English", body: "Lenders look at two ratios: housing should be ≤28% of gross monthly income (front-end), and total monthly debt ≤36% (back-end). Hit both and most lenders approve. Miss the back-end and you'll get a higher rate or denial — pay down a card first." },
+  { tag: "G.03", title: "Why 20% down isn't just about PMI", body: "Less than 20% down means private mortgage insurance, which adds hundreds per month. But it also means starting underwater on a depreciating market shift, less equity to refinance, and a higher monthly payment forever. The math compounds against you." },
+  { tag: "G.04", title: "The Vice Tax mental model", body: "You won't stop ordering DoorDash. Fine. Set a 15% Vice Tax on it. Every order automatically routes a slice into a savings goal. You don't notice $4 per order. Your down payment notices." },
+  { tag: "G.05", title: "Why couples fight about money (and how to stop)", body: "Almost never about the math. Almost always about undisclosed values — what 'safe' means, what 'enough' means, whether spending guilt is real for you. Money Mind surfaces these without forcing the fight." },
+  { tag: "G.06", title: "The 72-hour rule for big purchases", body: "Before any non-essential >$100 buy, wait three days. Write it down. You'll cancel ~60% of them and never miss what you didn't buy. The remaining 40% will feel obviously right." },
 ];
 
 export default function LearnPage() {
   return (
     <div className="min-h-screen">
-      <FamilyThemeBoundary />
-      <FamilyNav active="learn" />
+      <BlueprintThemeBoundary />
+      <BlueprintNav active="tools" />
 
-      <main className="max-w-[1200px] mx-auto px-6 pt-16 pb-16">
-        <Link href="/" className="family-link text-[13px]"><ArrowLeft className="w-3 h-3" />Back home</Link>
+      <main className="max-w-[1240px] mx-auto px-6 pt-16 pb-20">
+        <Link href="/" className="bp-callsign hover:text-[var(--bp-signal)]">← HOME</Link>
 
-        <header className="relative pt-4 pb-12 max-w-3xl">
-          <div className="absolute -top-6 right-0 hidden md:flex gap-6 items-center">
-            <BlobOrange size={72} className="family-character" style={{ ["--rot" as string]: "-6deg" } as React.CSSProperties} />
-            <BlobBlue size={68} className="family-character" style={{ ["--rot" as string]: "8deg", ["--delay" as string]: "0.6s" } as React.CSSProperties} />
-            <BlobYellow size={64} className="family-character" style={{ ["--rot" as string]: "-10deg", ["--delay" as string]: "1.2s" } as React.CSSProperties} />
-          </div>
-          <h1 className="family-display family-pop">Learn. Use.<br />No signup.</h1>
-          <p className="family-body mt-6 max-w-xl">
-            Free calculators and guides that work right here, right now. No account needed. No email gate.
-            Use them, bookmark them, share them. If they help, the app will help more.
+        <header className="mt-10 pb-12 border-b border-[var(--bp-rule)]">
+          <div className="bp-callsign mb-6">INDEX / 00</div>
+          <h1 className="bp-display">Tools. Guides.<br /><span className="bp-display-italic">No signup.</span></h1>
+          <p className="bp-body mt-6 max-w-2xl">
+            Calculators that run right here, right now. Use them for life. The same engines power
+            the in-app tracking — they're not stripped-down demos. If they help, the dashboard helps more.
           </p>
         </header>
 
-        {/* Tools grid */}
-        <section className="mt-10">
-          <div className="flex items-center gap-2 mb-2">
-            <Calculator className="w-5 h-5 text-[#ff3e00]" />
-            <h2 className="family-heading text-[#121212]">Free Tools</h2>
-          </div>
-          <p className="family-body-sm text-[#848281] mb-6">Interactive calculators. Run them as many times as you want.</p>
+        <Section label="§A — HOMEOWNER" items={HOMEOWNER} />
+        <Section label="§B — CAR OWNER" items={CAR} />
+        <Section label="§C — FOUNDATION" items={FOUNDATION} />
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            {TOOLS.map((t) => (
-              <Link key={t.href} href={t.href} className="family-card family-card-hover flex gap-5 group">
-                <div className="shrink-0">{t.icon}</div>
-                <div>
-                  <h3 className="family-heading-sm text-[#121212] group-hover:text-[#ff3e00] transition">{t.title}</h3>
-                  <p className="family-body-sm mt-2">{t.desc}</p>
-                  <span className="family-link mt-3 text-[13px]">Open tool <ArrowRight className="w-3 h-3" /></span>
-                </div>
-              </Link>
-            ))}
-          </div>
-        </section>
-
-        {/* Guides */}
         <section className="mt-20">
-          <div className="flex items-center gap-2 mb-2">
-            <BookOpen className="w-5 h-5 text-[#0090ff]" />
-            <h2 className="family-heading text-[#121212]">Guides & Mental Models</h2>
-          </div>
-          <p className="family-body-sm text-[#848281] mb-6">Short reads. No fluff. One idea each.</p>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <div className="bp-section-marker">§D — GUIDES & MENTAL MODELS</div>
+          <div className="grid md:grid-cols-2 gap-px bg-[var(--bp-rule)] border border-[var(--bp-rule)] mt-6">
             {GUIDES.map((g) => (
-              <div key={g.title} className="family-card relative overflow-hidden">
-                <div className="absolute top-0 left-0 w-1 h-full" style={{ background: g.color }} />
-                <h3 className="family-heading-sm text-[#121212]">{g.title}</h3>
-                <p className="family-body-sm mt-2">{g.body}</p>
-              </div>
+              <article key={g.tag} className="bg-[var(--bp-paper)] p-7">
+                <div className="bp-callsign">{g.tag}</div>
+                <h3 className="bp-h3 mt-3">{g.title}</h3>
+                <p className="bp-body-sm mt-3">{g.body}</p>
+              </article>
             ))}
           </div>
         </section>
 
-        {/* Final CTA card */}
-        <section className="mt-20 family-card relative overflow-hidden" style={{ background: "linear-gradient(135deg, #fff8f5 0%, #fffaee 100%)" }}>
-          <div className="absolute -bottom-4 -right-4 hidden md:block opacity-90"><Heart size={60} /></div>
-          <Sparkle size={22} className="absolute top-6 right-12" color="#ff3e00" />
-          <p className="family-body max-w-xl">
-            These tools give you the math. <strong style={{ color: "#121212" }}>Finance Wars gives you the game.</strong> Boss fights, Vice Tax, weekly recaps, and achievements that make the math feel like progress.
-          </p>
-          <div className="mt-5 flex flex-wrap gap-3">
-            <Link href="/signup" className="family-btn-dark">Start playing <ArrowRight className="w-4 h-4" /></Link>
-            <Link href="/mission" className="family-btn-light">Read the mission</Link>
+        <section className="mt-20 bp-panel">
+          <div className="grid md:grid-cols-[1fr_auto] gap-8 items-end">
+            <div>
+              <div className="bp-callsign">END NOTE</div>
+              <p className="bp-h3 mt-2">These tools give you the math. The app gives you the game.</p>
+              <p className="bp-body-sm mt-3 max-w-xl">
+                Boss fights for debt, Vice Tax to redirect leaks, weekly recaps so you can't fool yourself, Money Mind so you can't fool each other.
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-3">
+              <Link href="/signup" className="bp-btn-primary">Enlist</Link>
+              <Link href="/mission" className="bp-btn-secondary">Mission</Link>
+            </div>
           </div>
         </section>
       </main>
 
-      <FamilyFooter />
+      <BlueprintFooter />
     </div>
+  );
+}
+
+type Item = { num: string; href: string; title: string; body: string };
+
+function Section({ label, items }: { label: string; items: Item[] }) {
+  return (
+    <section className="mt-20">
+      <div className="bp-section-marker">{label}</div>
+      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-px bg-[var(--bp-rule)] border border-[var(--bp-rule)] mt-6">
+        {items.map((t) => (
+          <Link key={t.href} href={t.href} className="bg-[var(--bp-paper)] p-7 hover:bg-white transition group flex flex-col">
+            <div className="bp-callsign">{t.num}</div>
+            <div className="bp-h3 mt-4 group-hover:text-[var(--bp-signal)] transition">{t.title}</div>
+            <p className="bp-body-sm mt-3 flex-1">{t.body}</p>
+            <div className="bp-callsign mt-5" style={{ color: "var(--bp-signal)" }}>OPEN →</div>
+          </Link>
+        ))}
+      </div>
+    </section>
   );
 }
