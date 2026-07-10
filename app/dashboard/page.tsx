@@ -8,6 +8,7 @@ import {
 import { ArrowDownRight, ArrowUpRight, TrendingUp, Wallet, Swords, Flame } from "lucide-react";
 import Link from "next/link";
 import { formatCurrency, formatCurrencyFull, formatDate } from "@/lib/utils";
+import QuickCapture from "./_components/QuickCapture";
 
 type Stats = {
   netWorth: number; income: number; spend: number; savingsRate: number;
@@ -57,6 +58,9 @@ export default function OverviewPage() {
         <h1 className="text-4xl md:text-5xl font-semibold tracking-[-0.03em]">Overview</h1>
         <p className="text-black/50 dark:text-white/50 mt-1 text-sm">Your money at a glance.</p>
       </header>
+
+      {/* Capture-first: the one habit everything else runs on. */}
+      <QuickCapture />
 
       {stats.activeDuel && <ActiveDuelCard duel={stats.activeDuel} />}
       {(stats.topBoss || (stats.viceTaxTotal ?? 0) > 0) && (

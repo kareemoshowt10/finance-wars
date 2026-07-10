@@ -62,7 +62,21 @@ npm run dev
 
 ## Recently shipped (newest first)
 
-1. Blueprint design system + homeowner/car-owner toolkit
+1. **Capture Engine + The Compound** — the app's new center of gravity
+   (spec + Supabase reference schema in `docs/capture-engine/`). Sub-5-second
+   income/expense logging: `QuickCapture` component (dashboard overview +
+   standalone phone-first `/capture` page), keyword categorizer with
+   confidence + per-user correction memory (`CategoryOverride`), duplicate
+   nudge, one-tap recurring patterns (`CapturePattern`), lazily-created
+   Wallet account. All entries land in `Transaction` (new fields:
+   `rawDescription`, `categoryConfidence`, `visibility` personal|shared,
+   `source`), so Debt Bosses / Vice Tax / Budgets / Recaps feed off capture
+   automatically. `/dashboard/compound` shows consistency (days logged ÷
+   days active — the north star), 12-week net bars, compounding projection,
+   and the clan view (household shared-only visibility). APIs:
+   `/api/capture`, `/api/capture/correct`, `/api/capture/patterns`,
+   `/api/compound`.
+2. Blueprint design system + homeowner/car-owner toolkit
    (`/tools/home-affordability`, `/down-payment`, `/mortgage`,
    `/car-affordability`) with `lib/bigPurchase.ts` + 19 tests.
 2. Lifestyle Inflation Detector (`/dashboard/inflation`, `/api/inflation`).

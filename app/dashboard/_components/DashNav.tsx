@@ -15,6 +15,7 @@ const linkGroups: { heading?: string; items: { href: string; label: string; icon
   {
     items: [
       { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
+      { href: "/dashboard/compound", label: "The Compound", icon: Sparkles },
       { href: "/dashboard/calendar", label: "Calendar", icon: CalIcon },
     ],
   },
