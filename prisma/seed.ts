@@ -472,6 +472,10 @@ async function seedCouples(demoUserId: string, demoCheckingId: string, partnerId
       name: "The Smiths",
       createdById: demoUserId,
       pactSignedAt: now,
+      // Household HQ, so the seeded interest-bearing loan and 3 household
+      // goals reflect what the top plan actually looks like in use.
+      plan: "household_hq",
+      planUpdatedAt: now,
       members: {
         create: [
           { userId: demoUserId, role: "OWNER", accepted: true, joinedAt: new Date(now.getTime() - 60 * 86400000) },

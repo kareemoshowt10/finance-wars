@@ -7,6 +7,7 @@ import { parseBody } from "@/lib/validate";
 import { rateLimit, DEFAULT_MUTATION } from "@/lib/ratelimit";
 import { log } from "@/lib/audit";
 import { assertMember } from "@/lib/household";
+import { assertMemberLimit } from "@/lib/planEnforcement";
 import { notify } from "@/lib/notifications";
 
 const schema = z.object({ email: z.string().email().toLowerCase() });
@@ -24,6 +25,9 @@ export async function POST(req: NextRequest, { params }: { params: { hid: string
   if (data.email === r.user.email.toLowerCase()) {
     return bad("You can't invite yourself");
   }
+
+  const fbLimit = await assertMemberLimit(params.hid);
+  if (fbLimit) return fbLimit;
 
   const invitedUser = await prisma.user.findUnique({ where: { email: data.email } });
 

@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { Landmark, Plus } from "lucide-react";
 import Modal from "../../_components/Modal";
+import UpgradeNotice, { isUpgradeError } from "../_components/UpgradeNotice";
 import { formatCurrency, formatCurrencyFull, formatDate } from "@/lib/utils";
 import { loanProgress } from "@/lib/loans";
 
@@ -28,6 +29,8 @@ export default function BankView({ hid, meId, currency, members }: { hid: string
   const [loading, setLoading] = useState(true);
   const [showNew, setShowNew] = useState(false);
   const [payingLoan, setPayingLoan] = useState<Loan | null>(null);
+  const [loanLimit, setLoanLimit] = useState<number | null>(null);
+  const [interestAllowed, setInterestAllowed] = useState(true);
 
   async function load() {
     setLoading(true);
@@ -36,7 +39,13 @@ export default function BankView({ hid, meId, currency, members }: { hid: string
     setBankPosition(data.bankPosition || {});
     setLoading(false);
   }
-  useEffect(() => { load(); }, [hid]);
+  async function loadPlan() {
+    const d = await fetch(`/api/households/${hid}/plan`).then((r) => r.json()).catch(() => null);
+    if (!d) return;
+    setLoanLimit(d.limits?.loans ?? null);
+    setInterestAllowed(d.plan?.included?.includes("loan_interest") ?? false);
+  }
+  useEffect(() => { load(); loadPlan(); }, [hid]);
 
   const nameOf = (userId: string) => members.find((m) => m.userId === userId)?.name || "Member";
 
@@ -49,7 +58,14 @@ export default function BankView({ hid, meId, currency, members }: { hid: string
           </h1>
           <p className="mt-2 text-sm text-black/60 dark:text-white/60">Front each other money, track exactly what it's for, and see who owes what.</p>
         </div>
-        <button onClick={() => setShowNew(true)} className="btn-primary"><Plus className="w-4 h-4" /> Issue a loan</button>
+        <div className="flex items-center gap-3">
+          {loanLimit !== null && (
+            <span className="text-xs text-black/40 dark:text-white/40">
+              {loans.filter((l) => l.status === "ACTIVE").length}/{loanLimit} active loans
+            </span>
+          )}
+          <button onClick={() => setShowNew(true)} className="btn-primary"><Plus className="w-4 h-4" /> Issue a loan</button>
+        </div>
       </header>
 
       {Object.keys(bankPosition).length > 0 && (
@@ -117,7 +133,7 @@ export default function BankView({ hid, meId, currency, members }: { hid: string
       )}
 
       {showNew && (
-        <NewLoanModal hid={hid} members={members.filter((m) => m.userId !== meId)} onClose={() => setShowNew(false)} onSaved={async () => { setShowNew(false); await load(); }} />
+        <NewLoanModal hid={hid} members={members.filter((m) => m.userId !== meId)} interestAllowed={interestAllowed} onClose={() => setShowNew(false)} onSaved={async () => { setShowNew(false); await load(); }} />
       )}
       {payingLoan && (
         <PaymentModal hid={hid} loan={payingLoan} currency={currency} onClose={() => setPayingLoan(null)} onSaved={async () => { setPayingLoan(null); await load(); }} />
@@ -126,7 +142,7 @@ export default function BankView({ hid, meId, currency, members }: { hid: string
   );
 }
 
-function NewLoanModal({ hid, members, onClose, onSaved }: { hid: string; members: Member[]; onClose: () => void; onSaved: () => void }) {
+function NewLoanModal({ hid, members, interestAllowed, onClose, onSaved }: { hid: string; members: Member[]; interestAllowed: boolean; onClose: () => void; onSaved: () => void }) {
   const [borrowerUserId, setBorrower] = useState(members[0]?.userId || "");
   const [principal, setPrincipal] = useState("");
   const [purpose, setPurpose] = useState("");
@@ -134,11 +150,13 @@ function NewLoanModal({ hid, members, onClose, onSaved }: { hid: string; members
   const [interestRateApr, setApr] = useState("0");
   const [dueDate, setDueDate] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [upgrade, setUpgrade] = useState(false);
   const [saving, setSaving] = useState(false);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    setUpgrade(false);
     if (!borrowerUserId) return setError("Pick who's borrowing");
     if (!principal || Number(principal) <= 0) return setError("Enter an amount");
     if (!purpose.trim()) return setError("What's this for?");
@@ -150,7 +168,10 @@ function NewLoanModal({ hid, members, onClose, onSaved }: { hid: string; members
         body: JSON.stringify({ borrowerUserId, principal: Number(principal), purpose, category, interestRateApr: Number(interestRateApr) || 0, dueDate: dueDate || undefined }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Save failed");
+      if (!res.ok) {
+        if (isUpgradeError(data)) { setUpgrade(true); setError(data.error); return; }
+        throw new Error(data.error || "Save failed");
+      }
       onSaved();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Save failed");
@@ -185,15 +206,26 @@ function NewLoanModal({ hid, members, onClose, onSaved }: { hid: string; members
         </div>
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="text-xs text-black/50 dark:text-white/50">Interest (APR %, optional)</label>
-            <input className="input mt-1" type="number" step="0.1" min={0} value={interestRateApr} onChange={(e) => setApr(e.target.value)} />
+            <label className="text-xs text-black/50 dark:text-white/50 flex items-center gap-1">
+              Interest (APR %, optional) {!interestAllowed && <span className="text-indigo-500">— Household HQ</span>}
+            </label>
+            <input
+              className="input mt-1 disabled:opacity-50"
+              type="number"
+              step="0.1"
+              min={0}
+              value={interestRateApr}
+              disabled={!interestAllowed}
+              title={!interestAllowed ? "Interest-bearing loans are a Household HQ feature" : undefined}
+              onChange={(e) => setApr(e.target.value)}
+            />
           </div>
           <div>
             <label className="text-xs text-black/50 dark:text-white/50">Due date (optional)</label>
             <input className="input mt-1" type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
           </div>
         </div>
-        {error && <div className="text-sm text-red-400">{error}</div>}
+        {error && (upgrade ? <UpgradeNotice message={error} /> : <div className="text-sm text-red-400">{error}</div>)}
         <div className="flex justify-end gap-2 pt-2">
           <button type="button" onClick={onClose} className="btn-ghost">Cancel</button>
           <button disabled={saving} className="btn-primary">{saving ? "Saving…" : "Issue loan"}</button>

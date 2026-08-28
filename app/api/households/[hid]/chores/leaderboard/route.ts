@@ -4,6 +4,7 @@ import { resolveRequestUser } from "@/lib/auth";
 import { bad, ok } from "@/lib/api";
 import { assertMember, getHouseholdMembers } from "@/lib/household";
 import { buildLeaderboard, mostFrequentDoer } from "@/lib/chores";
+import { planIncludes } from "@/lib/plans";
 
 export const dynamic = "force-dynamic";
 
@@ -15,7 +16,11 @@ export async function GET(req: NextRequest, { params }: { params: { hid: string 
   const fb = await assertMember(r.user.id, params.hid);
   if (fb) return fb;
 
-  const range = req.nextUrl.searchParams.get("range") || "week";
+  let range = req.nextUrl.searchParams.get("range") || "week";
+  if (range !== "week") {
+    const household = await prisma.household.findUnique({ where: { id: params.hid }, select: { plan: true } });
+    if (!planIncludes(household?.plan ?? "free", "full_history")) range = "week";
+  }
   const days = RANGE_DAYS[range] ?? RANGE_DAYS.week;
   const since = new Date(Date.now() - days * 86400000);
 

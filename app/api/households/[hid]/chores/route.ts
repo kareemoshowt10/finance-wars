@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { resolveRequestUser } from "@/lib/auth";
 import { bad, ok } from "@/lib/api";
 import { assertMember, getHouseholdMembers } from "@/lib/household";
+import { assertWithinLimit } from "@/lib/planEnforcement";
 import { log } from "@/lib/audit";
 
 export const dynamic = "force-dynamic";
@@ -54,6 +55,9 @@ export async function POST(req: NextRequest, { params }: { params: { hid: string
 
   const parsed = createSchema.safeParse(await req.json().catch(() => ({})));
   if (!parsed.success) return bad("Invalid input", 400);
+
+  const fbPlan = await assertWithinLimit(params.hid, "chores");
+  if (fbPlan) return fbPlan;
 
   const chore = await prisma.chore.create({
     data: {

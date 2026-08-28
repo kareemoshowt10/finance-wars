@@ -1,7 +1,8 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
-import { CheckCheck, Plus, Crown, Flame, Sparkles } from "lucide-react";
+import { CheckCheck, Plus, Crown, Flame, Sparkles, Lock } from "lucide-react";
 import Modal from "../../_components/Modal";
+import UpgradeNotice, { isUpgradeError } from "../_components/UpgradeNotice";
 import { isChoreDue, computeStreak } from "@/lib/chores";
 
 type Chore = {
@@ -37,6 +38,8 @@ export default function ChoresView({ hid, meId }: { hid: string; meId: string })
   const [showNew, setShowNew] = useState(false);
   const [completing, setCompleting] = useState<string | null>(null);
   const [flash, setFlash] = useState<string | null>(null);
+  const [choreLimit, setChoreLimit] = useState<number | null>(null);
+  const [fullHistory, setFullHistory] = useState(true);
 
   async function load() {
     const data = await fetch(`/api/households/${hid}/chores`).then((r) => r.json());
@@ -45,6 +48,12 @@ export default function ChoresView({ hid, meId }: { hid: string; meId: string })
     setMembers(data.members || []);
     setLoading(false);
   }
+  async function loadPlan() {
+    const d = await fetch(`/api/households/${hid}/plan`).then((r) => r.json()).catch(() => null);
+    if (!d) return;
+    setChoreLimit(d.limits?.chores ?? null);
+    setFullHistory(d.plan?.included?.includes("full_history") ?? false);
+  }
   async function loadLeaderboard() {
     const data = await fetch(`/api/households/${hid}/chores/leaderboard?range=${range}`).then((r) => r.json());
     setLeaderboard(data.leaderboard || []);
@@ -52,6 +61,7 @@ export default function ChoresView({ hid, meId }: { hid: string; meId: string })
   }
   useEffect(() => { setLoading(true); load(); }, [hid]);
   useEffect(() => { loadLeaderboard(); }, [hid, range]);
+  useEffect(() => { loadPlan(); }, [hid]);
 
   const lastDoneAt = useMemo(() => {
     const map = new Map<string, Date>();
@@ -97,7 +107,10 @@ export default function ChoresView({ hid, meId }: { hid: string; meId: string })
             {myStreak > 0 && <span className="ml-2 inline-flex items-center gap-1 text-orange-500 font-medium"><Flame className="w-3.5 h-3.5" /> {myStreak}-day streak</span>}
           </p>
         </div>
-        <button onClick={() => setShowNew(true)} className="btn-primary"><Plus className="w-4 h-4" /> Add chore</button>
+        <div className="flex items-center gap-3">
+          {choreLimit !== null && <span className="text-xs text-black/40 dark:text-white/40">{chores.length}/{choreLimit} chores</span>}
+          <button onClick={() => setShowNew(true)} className="btn-primary"><Plus className="w-4 h-4" /> Add chore</button>
+        </div>
       </header>
 
       {flash && (
@@ -162,15 +175,20 @@ export default function ChoresView({ hid, meId }: { hid: string; meId: string })
         <div className="flex items-center justify-between flex-wrap gap-3">
           <h2 className="text-sm font-medium flex items-center gap-2"><Flame className="w-4 h-4 text-orange-500" /> Leaderboard</h2>
           <div className="flex gap-1 rounded-full bg-black/5 dark:bg-white/5 p-1">
-            {RANGES.map((rg) => (
-              <button
-                key={rg.id}
-                onClick={() => setRange(rg.id)}
-                className={`px-3 py-1 rounded-full text-xs transition ${range === rg.id ? "bg-white dark:bg-black shadow-sm font-medium" : "text-black/50 dark:text-white/50"}`}
-              >
-                {rg.label}
-              </button>
-            ))}
+            {RANGES.map((rg) => {
+              const locked = rg.id !== "week" && !fullHistory;
+              return (
+                <button
+                  key={rg.id}
+                  onClick={() => (locked ? setFlash("Full history is a Rhythm+ feature.") : setRange(rg.id))}
+                  title={locked ? "Upgrade to Rhythm for full history" : undefined}
+                  className={`px-3 py-1 rounded-full text-xs transition flex items-center gap-1 ${range === rg.id ? "bg-white dark:bg-black shadow-sm font-medium" : "text-black/50 dark:text-white/50"} ${locked ? "opacity-60" : ""}`}
+                >
+                  {locked && <Lock className="w-2.5 h-2.5" />}
+                  {rg.label}
+                </button>
+              );
+            })}
           </div>
         </div>
         {leaderboard.length === 0 ? (
@@ -213,11 +231,13 @@ function NewChoreModal({ hid, onClose, onSaved }: { hid: string; onClose: () => 
   const [crownValue, setCrownValue] = useState("10");
   const [xpValue, setXpValue] = useState("5");
   const [error, setError] = useState<string | null>(null);
+  const [upgrade, setUpgrade] = useState(false);
   const [saving, setSaving] = useState(false);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    setUpgrade(false);
     if (!name.trim()) return setError("Name is required");
     setSaving(true);
     try {
@@ -227,7 +247,10 @@ function NewChoreModal({ hid, onClose, onSaved }: { hid: string; onClose: () => 
         body: JSON.stringify({ name, emoji, description: description || undefined, frequency, category, crownValue: Number(crownValue), xpValue: Number(xpValue) }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Save failed");
+      if (!res.ok) {
+        if (isUpgradeError(data)) { setUpgrade(true); setError(data.error); return; }
+        throw new Error(data.error || "Save failed");
+      }
       onSaved();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Save failed");
@@ -278,7 +301,7 @@ function NewChoreModal({ hid, onClose, onSaved }: { hid: string; onClose: () => 
             <input className="input mt-1" type="number" min={0} value={xpValue} onChange={(e) => setXpValue(e.target.value)} />
           </div>
         </div>
-        {error && <div className="text-sm text-red-400">{error}</div>}
+        {error && (upgrade ? <UpgradeNotice message={error} /> : <div className="text-sm text-red-400">{error}</div>)}
         <div className="flex justify-end gap-2 pt-2">
           <button type="button" onClick={onClose} className="btn-ghost">Cancel</button>
           <button disabled={saving} className="btn-primary">{saving ? "Saving…" : "Save"}</button>

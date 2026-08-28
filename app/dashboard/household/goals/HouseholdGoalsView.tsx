@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { HeartHandshake, Plus, ThumbsUp, AlertTriangle, PartyPopper } from "lucide-react";
 import Modal from "../../_components/Modal";
+import UpgradeNotice, { isUpgradeError } from "../_components/UpgradeNotice";
 import { formatCurrency, formatDate } from "@/lib/utils";
 
 type Goal = {
@@ -25,6 +26,7 @@ export default function HouseholdGoalsView({ hid, meId, currency }: { hid: strin
   const [loading, setLoading] = useState(true);
   const [showNew, setShowNew] = useState(false);
   const [contributing, setContributing] = useState<Goal | null>(null);
+  const [goalLimit, setGoalLimit] = useState<number | null>(null);
 
   async function load() {
     setLoading(true);
@@ -32,7 +34,11 @@ export default function HouseholdGoalsView({ hid, meId, currency }: { hid: strin
     setGoals(data.goals || []);
     setLoading(false);
   }
-  useEffect(() => { load(); }, [hid]);
+  async function loadPlan() {
+    const d = await fetch(`/api/households/${hid}/plan`).then((r) => r.json()).catch(() => null);
+    if (d) setGoalLimit(d.limits?.goals ?? null);
+  }
+  useEffect(() => { load(); loadPlan(); }, [hid]);
 
   async function vote(goalId: string) {
     setGoals((gs) => gs.map((g) => (g.id === goalId ? { ...g, myVote: !g.myVote, voteCount: g.voteCount + (g.myVote ? -1 : 1) } : g)));
@@ -53,7 +59,14 @@ export default function HouseholdGoalsView({ hid, meId, currency }: { hid: strin
           </h1>
           <p className="mt-2 text-sm text-black/60 dark:text-white/60">Pool money for what you want, and never let the boring stuff get forgotten.</p>
         </div>
-        <button onClick={() => setShowNew(true)} className="btn-primary"><Plus className="w-4 h-4" /> New goal</button>
+        <div className="flex items-center gap-3">
+          {goalLimit !== null && (
+            <span className="text-xs text-black/40 dark:text-white/40">
+              {elective.length + essential.length}/{goalLimit} active goals
+            </span>
+          )}
+          <button onClick={() => setShowNew(true)} className="btn-primary"><Plus className="w-4 h-4" /> New goal</button>
+        </div>
       </header>
 
       {loading ? (
@@ -156,11 +169,13 @@ function NewGoalModal({ hid, onClose, onSaved }: { hid: string; onClose: () => v
   const [category, setCategory] = useState<"ESSENTIAL" | "ELECTIVE">("ELECTIVE");
   const [deadline, setDeadline] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [upgrade, setUpgrade] = useState(false);
   const [saving, setSaving] = useState(false);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    setUpgrade(false);
     if (!name.trim()) return setError("Name is required");
     if (!targetAmount || Number(targetAmount) <= 0) return setError("Enter a target amount");
     setSaving(true);
@@ -171,7 +186,10 @@ function NewGoalModal({ hid, onClose, onSaved }: { hid: string; onClose: () => v
         body: JSON.stringify({ name, emoji, description: description || undefined, targetAmount: Number(targetAmount), category, deadline: deadline || undefined }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Save failed");
+      if (!res.ok) {
+        if (isUpgradeError(data)) { setUpgrade(true); setError(data.error); return; }
+        throw new Error(data.error || "Save failed");
+      }
       onSaved();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Save failed");
@@ -212,7 +230,7 @@ function NewGoalModal({ hid, onClose, onSaved }: { hid: string; onClose: () => v
           <label className="text-xs text-black/50 dark:text-white/50">Target date (optional)</label>
           <input className="input mt-1" type="date" value={deadline} onChange={(e) => setDeadline(e.target.value)} />
         </div>
-        {error && <div className="text-sm text-red-400">{error}</div>}
+        {error && (upgrade ? <UpgradeNotice message={error} /> : <div className="text-sm text-red-400">{error}</div>)}
         <div className="flex justify-end gap-2 pt-2">
           <button type="button" onClick={onClose} className="btn-ghost">Cancel</button>
           <button disabled={saving} className="btn-primary">{saving ? "Saving…" : "Save"}</button>

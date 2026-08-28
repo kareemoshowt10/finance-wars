@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { resolveRequestUser } from "@/lib/auth";
 import { bad, ok } from "@/lib/api";
 import { assertMember } from "@/lib/household";
+import { assertWithinLimit } from "@/lib/planEnforcement";
 import { isNeglected, rankCompetingGoals } from "@/lib/householdGoals";
 import { evaluate } from "@/lib/achievements/engine";
 import { log } from "@/lib/audit";
@@ -66,6 +67,9 @@ export async function POST(req: NextRequest, { params }: { params: { hid: string
 
   const parsed = createSchema.safeParse(await req.json().catch(() => ({})));
   if (!parsed.success) return bad("Invalid input", 400);
+
+  const fbPlan = await assertWithinLimit(params.hid, "goals");
+  if (fbPlan) return fbPlan;
 
   let deadline: Date | undefined;
   if (parsed.data.deadline) {

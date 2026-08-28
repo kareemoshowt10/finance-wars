@@ -51,6 +51,32 @@ Crowns earned from chores can be spent directly into a Household Goal
 (10 Crowns = $1 of contribution) via `/api/households/[hid]/goals/[id]/contribute`,
 so the two systems reinforce each other: do the chores, fund the goal.
 
+## Business model: three plans, gating what's already built
+
+The path to a real business here is the straightforward one: charge for
+Household HQ. Three plans — carried over unchanged from Chore Wars' original
+pricing sketch — gate the features above instead of Chore Wars' original
+bounty board / cash box:
+
+| Plan | Price | Unlocks |
+|---|---|---|
+| Free | $0 | Up to 4 members, 5 active chores, 7-day leaderboard, 1 active loan (no interest), 1 active goal |
+| Rhythm | $1/mo | Unlimited chores, full chore history, unlimited loans, 3 active goals, 12 members |
+| Household HQ | $20/mo | Unlimited goals, interest-bearing loans, multiple households, 30 members |
+
+See `lib/plans.ts` for the catalog and `lib/planEnforcement.ts` for where
+each limit is actually checked (chore/loan/goal creation, invites, loan
+interest, and the leaderboard's history range).
+
+**Billing is Stripe, with a dev-mode fallback** (`lib/billing.ts`): with no
+`STRIPE_SECRET_KEY` set, "upgrading" a household sets its plan directly —
+no charge, no Stripe account needed — so the whole paywall is testable
+today. Set `STRIPE_SECRET_KEY` / `STRIPE_WEBHOOK_SECRET` / `STRIPE_PRICE_RHYTHM`
+/ `STRIPE_PRICE_HOUSEHOLD_HQ` (see `.env.example`) to start charging for
+real; `/api/billing/webhook` keeps `Household.plan` in sync with Stripe from
+then on. Manage a plan from **Billing & Plan** in the dashboard nav
+(`/dashboard/billing`) — restricted to the household's `OWNER`.
+
 ## Everything else
 
 The rest of this repo — accounts, transactions, budgets, insights, Duels,

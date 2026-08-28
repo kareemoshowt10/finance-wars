@@ -7,7 +7,7 @@ import {
   LayoutDashboard, ArrowLeftRight, Wallet, Target, Trophy, Settings, LogOut, Menu, X,
   Sparkles, Repeat, Tag, Bell, PieChart, Activity, CheckCheck, Filter, TrendingUp, FileText, Swords,
   Calendar as CalIcon, LineChart, MessageCircle, Award, Flame, Users, Store,
-  Home, Landmark, HeartHandshake,
+  Home, Landmark, HeartHandshake, CreditCard,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import ThemeToggle from "./ThemeToggle";
@@ -27,6 +27,7 @@ const linkGroups: { heading?: string; items: { href: string; label: string; icon
       { href: "/dashboard/household/chores", label: "Chores", icon: CheckCheck },
       { href: "/dashboard/household/bank", label: "The Bank", icon: Landmark },
       { href: "/dashboard/household/goals", label: "Household Goals", icon: HeartHandshake },
+      { href: "/dashboard/billing", label: "Billing & Plan", icon: CreditCard },
     ],
   },
   {

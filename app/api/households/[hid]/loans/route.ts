@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { resolveRequestUser } from "@/lib/auth";
 import { bad, ok } from "@/lib/api";
 import { assertMember, getHouseholdMembers } from "@/lib/household";
+import { assertWithinLimit, assertInterestAllowed } from "@/lib/planEnforcement";
 import { accrueLoanById } from "@/lib/loanAccrual";
 import { summarizeBankPosition } from "@/lib/loans";
 import { evaluate } from "@/lib/achievements/engine";
@@ -81,6 +82,14 @@ export async function POST(
     (m) => m.userId === parsed.data.borrowerUserId,
   );
   if (!borrowerIsMember) return bad("Borrower must be a household member");
+
+  const fbLimit = await assertWithinLimit(params.hid, "loans");
+  if (fbLimit) return fbLimit;
+
+  if (parsed.data.interestRateApr > 0) {
+    const fbInterest = await assertInterestAllowed(params.hid);
+    if (fbInterest) return fbInterest;
+  }
 
   let dueDate: Date | undefined;
   if (parsed.data.dueDate) {

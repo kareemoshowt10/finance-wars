@@ -273,6 +273,17 @@ model Household {
   pactSignedAt  DateTime?
   createdAt     DateTime  @default(now())
 
+  // Billing — see lib/plans.ts for the plan catalog and lib/billing.ts for
+  // the Stripe integration. "free" is the default for every household that
+  // predates billing.
+  plan                 String    @default("free") // free | rhythm | household_hq
+  planUpdatedAt        DateTime?
+  stripeCustomerId     String?   @unique
+  stripeSubscriptionId String?   @unique
+  stripePriceId        String?
+  planRenewsAt         DateTime?
+  planCanceledAt       DateTime?
+
   members         HouseholdMember[]
   accountShares   AccountShare[]
   pact            Pact?

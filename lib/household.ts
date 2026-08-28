@@ -52,6 +52,17 @@ export async function assertMember(userId: string, householdId: string) {
   return null;
 }
 
+/** Billing actions (upgrade, downgrade, manage payment method) are restricted to the household's OWNER. */
+export async function assertOwner(userId: string, householdId: string) {
+  const member = await prisma.householdMember.findFirst({
+    where: { userId, householdId, accepted: true },
+  });
+  if (!member || member.role !== "OWNER") {
+    return NextResponse.json({ error: "Only the household owner can manage billing" }, { status: 403 });
+  }
+  return null;
+}
+
 export async function getOtherMember(householdId: string, selfUserId: string) {
   return prisma.householdMember.findFirst({
     where: { householdId, accepted: true, userId: { not: selfUserId } },
