@@ -60,6 +60,21 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   { slug: "boss-streak-12", name: "Year of Pain", description: "Attack the same debt boss 12 months in a row.", icon: "Flame", xp: 300, category: "savings", tier: 3 },
   { slug: "first-raid-won", name: "Raid Cleared", description: "Defeat a Goal Raid boss before its deadline.", icon: "Swords", xp: 200, category: "savings", tier: 3 },
   { slug: "raid-veteran", name: "Raid Veteran", description: "Win 5 Goal Raids.", icon: "Trophy", xp: 400, category: "savings", tier: 4 },
+
+  // Household HQ — chores
+  { slug: "first-chore", name: "Pulling Weight", description: "Complete your first household chore.", icon: "CheckCircle2", xp: 20, category: "social", tier: 1 },
+  { slug: "chore-streak-7", name: "Reliable", description: "Complete a chore 7 days in a row.", icon: "Flame", xp: 100, category: "social", tier: 2 },
+  { slug: "chore-streak-30", name: "The Backbone", description: "Complete a chore 30 days in a row.", icon: "Flame", xp: 350, category: "social", tier: 4 },
+  { slug: "fifty-chores", name: "Household MVP", description: "Log 50 completed chores.", icon: "ListChecks", xp: 150, category: "social", tier: 2 },
+
+  // Household HQ — the bank (family loans)
+  { slug: "first-household-loan", name: "Open For Business", description: "Issue your first family loan.", icon: "Landmark", xp: 30, category: "savings", tier: 1 },
+  { slug: "loan-paid-off", name: "Clean Slate", description: "Fully pay off a family loan.", icon: "ShieldCheck", xp: 120, category: "savings", tier: 2 },
+
+  // Household HQ — shared goals
+  { slug: "first-household-goal", name: "Shared Vision", description: "Create your first household goal.", icon: "Flag", xp: 30, category: "savings", tier: 1 },
+  { slug: "household-goal-funded", name: "Team Win", description: "Fully fund a household goal together.", icon: "Trophy", xp: 250, category: "savings", tier: 3 },
+  { slug: "essential-fund-rescued", name: "Rescue Mission", description: "Fund an essential goal the household had been neglecting.", icon: "HeartHandshake", xp: 150, category: "savings", tier: 2 },
 ];
 
 export const ACHIEVEMENTS_BY_SLUG: Record<string, AchievementDef> = Object.fromEntries(

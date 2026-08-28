@@ -43,7 +43,7 @@ function LoginInner() {
   }
 
   function fillDemo() {
-    setEmail("demo@financewars.app");
+    setEmail("demo@debtsucker.app");
     setPassword("demo1234");
   }
 
@@ -51,7 +51,7 @@ function LoginInner() {
     <div className="min-h-screen flex items-center justify-center px-6 relative">
       <div className="absolute inset-0 glow-radial opacity-50 pointer-events-none" />
       <div className="relative w-full max-w-sm">
-        <Link href="/" className="block text-center text-[13px] text-white/60 hover:text-white">← Finance Wars</Link>
+        <Link href="/" className="block text-center text-[13px] text-white/60 hover:text-white">← Debt Sucker</Link>
         <h1 className="mt-8 text-3xl font-semibold tracking-tight text-center">Welcome back</h1>
         <p className="mt-2 text-sm text-white/50 text-center">Sign in to your dashboard.</p>
 
@@ -78,7 +78,7 @@ function LoginInner() {
 
         <button onClick={fillDemo} className="w-full text-left card p-4 hover:bg-white/[0.04] transition">
           <div className="text-xs text-white/50">Try demo</div>
-          <div className="text-sm mt-1">demo@financewars.app / demo1234</div>
+          <div className="text-sm mt-1">demo@debtsucker.app / demo1234</div>
         </button>
 
         <form onSubmit={submit} className="mt-4 space-y-3">

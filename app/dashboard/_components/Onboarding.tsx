@@ -64,7 +64,7 @@ export default function Onboarding() {
           {step === 0 && (
             <>
               <Sparkles className="w-7 h-7 text-purple-400" />
-              <h2 className="mt-4 text-2xl font-semibold tracking-tight">Welcome to Finance Wars</h2>
+              <h2 className="mt-4 text-2xl font-semibold tracking-tight">Welcome to Debt Sucker</h2>
               <p className="mt-2 text-sm text-white/60">A calm command center for your money. Let&apos;s set up in under a minute.</p>
               <div className="mt-6 flex gap-2">
                 <button onClick={() => setStep(1)} className="btn-primary">Get started <ArrowRight className="w-4 h-4" /></button>

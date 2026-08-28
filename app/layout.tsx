@@ -24,9 +24,9 @@ const mono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Finance Wars — Take command of your money",
-  description: "A premium personal finance dashboard. Track net worth, budgets, and goals in one beautiful place.",
-  appleWebApp: { capable: true, statusBarStyle: "black-translucent", title: "Finance Wars" },
+  title: "Debt Sucker — Become the bank. Run the household.",
+  description: "The household finance app that's also a game: family loans, chores, and shared goals — with debt, chores, and teamwork all on one scoreboard.",
+  appleWebApp: { capable: true, statusBarStyle: "black-translucent", title: "Debt Sucker" },
   icons: {
     icon: [{ url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" }],
     apple: [{ url: "/icons/icon-192.png", sizes: "192x192" }],

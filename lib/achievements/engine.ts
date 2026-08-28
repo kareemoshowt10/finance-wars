@@ -30,7 +30,13 @@ export type AchievementEvent =
   | { type: "vice-tax-total"; total: number }
   | { type: "debt-ko"; remainingBosses: number }
   | { type: "debt-streak"; months: number }
-  | { type: "raid-won"; totalRaidsWon: number };
+  | { type: "raid-won"; totalRaidsWon: number }
+  | { type: "chore-completed"; streak: number; totalCompletions: number }
+  | { type: "household-loan-created" }
+  | { type: "household-loan-paid-off" }
+  | { type: "household-goal-created" }
+  | { type: "household-goal-funded" }
+  | { type: "essential-fund-rescued" };
 
 async function unlock(userId: string, slug: string) {
   const def = ACHIEVEMENTS_BY_SLUG[slug];
@@ -169,6 +175,27 @@ export async function evaluate(userId: string, event: AchievementEvent) {
       case "raid-won":
         if (!(await alreadyHas(userId, "first-raid-won"))) await unlock(userId, "first-raid-won");
         if (event.totalRaidsWon >= 5 && !(await alreadyHas(userId, "raid-veteran"))) await unlock(userId, "raid-veteran");
+        break;
+      case "chore-completed":
+        if (!(await alreadyHas(userId, "first-chore"))) await unlock(userId, "first-chore");
+        if (event.streak >= 7 && !(await alreadyHas(userId, "chore-streak-7"))) await unlock(userId, "chore-streak-7");
+        if (event.streak >= 30 && !(await alreadyHas(userId, "chore-streak-30"))) await unlock(userId, "chore-streak-30");
+        if (event.totalCompletions >= 50 && !(await alreadyHas(userId, "fifty-chores"))) await unlock(userId, "fifty-chores");
+        break;
+      case "household-loan-created":
+        if (!(await alreadyHas(userId, "first-household-loan"))) await unlock(userId, "first-household-loan");
+        break;
+      case "household-loan-paid-off":
+        if (!(await alreadyHas(userId, "loan-paid-off"))) await unlock(userId, "loan-paid-off");
+        break;
+      case "household-goal-created":
+        if (!(await alreadyHas(userId, "first-household-goal"))) await unlock(userId, "first-household-goal");
+        break;
+      case "household-goal-funded":
+        if (!(await alreadyHas(userId, "household-goal-funded"))) await unlock(userId, "household-goal-funded");
+        break;
+      case "essential-fund-rescued":
+        if (!(await alreadyHas(userId, "essential-fund-rescued"))) await unlock(userId, "essential-fund-rescued");
         break;
     }
   } catch {

@@ -38,7 +38,7 @@ function SignupForm() {
     <div className="min-h-screen flex items-center justify-center px-6 relative">
       <div className="absolute inset-0 glow-radial opacity-50 pointer-events-none" />
       <div className="relative w-full max-w-sm">
-        <Link href="/" className="block text-center text-[13px] text-white/60 hover:text-white">← Finance Wars</Link>
+        <Link href="/" className="block text-center text-[13px] text-white/60 hover:text-white">← Debt Sucker</Link>
         <h1 className="mt-8 text-3xl font-semibold tracking-tight text-center">Create your account</h1>
         <p className="mt-2 text-sm text-white/50 text-center">A premium finance dashboard in under a minute.</p>
         {referralCode && (

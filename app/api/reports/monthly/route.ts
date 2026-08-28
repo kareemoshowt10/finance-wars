@@ -72,7 +72,7 @@ export async function GET(req: NextRequest) {
     React.createElement(
       Page,
       { size: "LETTER", style: styles.page },
-      React.createElement(Text, { style: styles.h1 }, "Finance Wars Monthly Statement"),
+      React.createElement(Text, { style: styles.h1 }, "Debt Sucker Monthly Statement"),
       React.createElement(Text, { style: styles.sub }, `${r.user.name} • ${monthLabel} • ${currency}`),
 
       React.createElement(
@@ -110,7 +110,7 @@ export async function GET(req: NextRequest) {
       React.createElement(
         Text,
         { style: styles.footer },
-        `Generated ${new Date().toLocaleString("en-US")} • Finance Wars`
+        `Generated ${new Date().toLocaleString("en-US")} • Debt Sucker`
       )
     )
   );
@@ -119,7 +119,7 @@ export async function GET(req: NextRequest) {
   return new Response(stream as unknown as ReadableStream, {
     headers: {
       "Content-Type": "application/pdf",
-      "Content-Disposition": `inline; filename="finance-wars-${monthStr}.pdf"`,
+      "Content-Disposition": `inline; filename="debt-sucker-${monthStr}.pdf"`,
     },
   });
 }

@@ -2,9 +2,9 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Finance Wars",
-    short_name: "FinanceWars",
-    description: "A premium personal finance dashboard.",
+    name: "Debt Sucker",
+    short_name: "DebtSucker",
+    description: "Become the bank. Track family loans, chores, and shared goals as one household game.",
     start_url: "/dashboard",
     display: "standalone",
     background_color: "#000000",

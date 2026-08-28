@@ -3,8 +3,8 @@ import Link from "next/link";
 import { BlueprintNav, BlueprintFooter, BlueprintThemeBoundary } from "@/app/_blueprint/BlueprintShell";
 
 export const metadata: Metadata = {
-  title: "Mission — Finance Wars",
-  description: "Finance Wars is the financial tool for serious, transparent couples — built around homeownership, car ownership, and not pretending you both think the same thing about money.",
+  title: "Mission — Debt Sucker",
+  description: "Debt Sucker is the financial tool for serious, transparent couples — built around homeownership, car ownership, and not pretending you both think the same thing about money.",
 };
 
 const PILLARS = [
@@ -61,7 +61,7 @@ export default function MissionPage() {
             A financial tool for serious, transparent <span className="bp-display-italic" style={{ color: "var(--bp-signal)" }}>couples.</span>
           </h1>
           <p className="bp-body mt-8 max-w-2xl">
-            Finance Wars exists because the standard personal finance experience is a single-player spreadsheet,
+            Debt Sucker exists because the standard personal finance experience is a single-player spreadsheet,
             and most people who actually need help are in a relationship. We rebuilt the surface around the two
             decisions that matter most over a lifetime — buying a house, buying a car — and the partner you're
             making them with.

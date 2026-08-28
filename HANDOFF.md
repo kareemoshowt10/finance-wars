@@ -1,17 +1,24 @@
-# Finance Wars — Handoff & Deploy Notes
+# Debt Sucker — Handoff & Deploy Notes
 
-Last updated: 2026-06-15 · Branch: `claude/complete-backend-finance-wars-DSpF7` (mirrored to `main`)
+Last updated: 2026-08-28 · Branch: `claude/debt-sucker-app-design-jili0t`
+
+This app was rebranded from **Finance Wars** to **Debt Sucker** and extended
+with **Household HQ** (chores, family loans, shared goals). See
+[`DEBT_SUCKER.md`](./DEBT_SUCKER.md) for what changed and why. Everything
+below still applies unchanged.
 
 ## Where things stand
 
-Finance Wars is a Next.js (App Router) + Prisma/PostgreSQL personal-finance
-app positioned for **serious, transparent couples** building toward
-homeownership and car ownership. Gamified mechanics (Debt Bosses, Vice Tax,
-Goal Raids, Money Mind) drive engagement; the public site uses the
-**Blueprint** design system (architectural drafting-paper aesthetic).
+Debt Sucker is a Next.js (App Router) + Prisma/PostgreSQL household-finance
+app and game — positioned for **serious, transparent households**: couples
+building toward homeownership and car ownership, and families running chores,
+family loans, and shared goals through the same ledger. Gamified mechanics
+(Debt Bosses, Vice Tax, Goal Raids, Money Mind, Household HQ) drive
+engagement; the public site uses the **Blueprint** design system
+(architectural drafting-paper aesthetic).
 
-- Build: `✓ Compiled successfully`, ~185 routes
-- Tests: 171/171 passing (run `npm install` then `npm test`)
+- Build: `✓ Compiled successfully`, ~190 routes
+- Tests: 216/216 passing (run `npm install` then `npm test`)
 - TypeScript: clean (`npx tsc --noEmit`)
 
 ## Resume on another platform

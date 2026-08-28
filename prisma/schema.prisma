@@ -73,6 +73,12 @@ model User {
   goalRaids    GoalRaid[]
   moneyMindResponses MoneyMindResponse[]
   categoryOverrides CategoryOverride[]
+
+  choreCompletions           ChoreCompletion[]
+  loansLent                  Loan[]                      @relation("LoansLent")
+  loansBorrowed               Loan[]                      @relation("LoansBorrowed")
+  householdGoalContributions HouseholdGoalContribution[]
+  householdGoalVotes         HouseholdGoalVote[]
   capturePatterns   CapturePattern[]
 }
 
@@ -280,6 +286,147 @@ model Household {
   gameSessions    GameSession[]
   goalRaids       GoalRaid[]
   moneyMindRounds MoneyMindRound[]
+
+  chores       Chore[]
+  loans        Loan[]
+  householdGoals HouseholdGoal[]
+}
+
+// ---------------------------------------------------------------------------
+// Debt Sucker: Household HQ
+//
+// Three linked systems that turn running a household into a shared game:
+//   - Chore + ChoreCompletion  → who actually does the dishes, gamified (Crowns + XP)
+//   - Loan + LoanPayment       → "become the bank": track what family members
+//                                 loan each other, for what, with interest if any
+//   - HouseholdGoal + friends  → pool money for shared purchases (elective, e.g. a
+//                                 PS5 or a pool — decided by vote) and essential,
+//                                 easy-to-neglect big-ticket items (e.g. a bathroom
+//                                 remodel) that get flagged when nobody's funding them
+// ---------------------------------------------------------------------------
+
+model Chore {
+  id          String   @id @default(cuid())
+  householdId String
+  name        String
+  emoji       String   @default("🧹")
+  description String?
+  frequency   String   @default("DAILY") // DAILY | WEEKLY | ONEOFF
+  category    String   @default("ESSENTIAL") // ESSENTIAL | ELECTIVE
+  crownValue  Int      @default(10)
+  xpValue     Int      @default(5)
+  active      Boolean  @default(true)
+  createdById String
+  createdAt   DateTime @default(now())
+
+  household   Household         @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  completions ChoreCompletion[]
+
+  @@index([householdId, active])
+}
+
+model ChoreCompletion {
+  id            String   @id @default(cuid())
+  choreId       String
+  householdId   String
+  userId        String
+  note          String?
+  crownsAwarded Int      @default(0)
+  xpAwarded     Int      @default(0)
+  completedAt   DateTime @default(now())
+
+  chore Chore @relation(fields: [choreId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([householdId, completedAt])
+  @@index([userId, completedAt])
+  @@index([choreId, completedAt])
+}
+
+model Loan {
+  id               String    @id @default(cuid())
+  householdId      String
+  lenderUserId     String
+  borrowerUserId   String
+  principal        Float
+  balanceRemaining Float
+  interestRateApr  Float     @default(0)
+  purpose          String
+  category         String    @default("ELECTIVE") // ESSENTIAL | ELECTIVE
+  status           String    @default("ACTIVE") // ACTIVE | PAID | FORGIVEN
+  dueDate          DateTime?
+  lastAccruedAt    DateTime  @default(now())
+  createdAt        DateTime  @default(now())
+
+  household Household     @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  lender    User          @relation("LoansLent", fields: [lenderUserId], references: [id], onDelete: Cascade)
+  borrower  User          @relation("LoansBorrowed", fields: [borrowerUserId], references: [id], onDelete: Cascade)
+  payments  LoanPayment[]
+
+  @@index([householdId, status])
+  @@index([borrowerUserId, status])
+  @@index([lenderUserId, status])
+}
+
+model LoanPayment {
+  id        String   @id @default(cuid())
+  loanId    String
+  amount    Float
+  note      String?
+  createdAt DateTime @default(now())
+
+  loan Loan @relation(fields: [loanId], references: [id], onDelete: Cascade)
+
+  @@index([loanId, createdAt])
+}
+
+model HouseholdGoal {
+  id                 String    @id @default(cuid())
+  householdId        String
+  name               String
+  emoji              String    @default("🎯")
+  description        String?
+  targetAmount       Float
+  currentAmount      Float     @default(0)
+  category           String    @default("ELECTIVE") // ESSENTIAL | ELECTIVE
+  status             String    @default("ACTIVE") // ACTIVE | FUNDED | ARCHIVED
+  deadline           DateTime?
+  createdById        String
+  lastContributionAt DateTime?
+  createdAt          DateTime  @default(now())
+
+  household     Household                   @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  contributions HouseholdGoalContribution[]
+  votes         HouseholdGoalVote[]
+
+  @@index([householdId, status])
+}
+
+model HouseholdGoalContribution {
+  id        String   @id @default(cuid())
+  goalId    String
+  userId    String
+  amount    Float
+  source    String   @default("CASH") // CASH | CROWNS
+  note      String?
+  createdAt DateTime @default(now())
+
+  goal HouseholdGoal @relation(fields: [goalId], references: [id], onDelete: Cascade)
+  user User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([goalId, createdAt])
+}
+
+model HouseholdGoalVote {
+  id        String   @id @default(cuid())
+  goalId    String
+  userId    String
+  createdAt DateTime @default(now())
+
+  goal HouseholdGoal @relation(fields: [goalId], references: [id], onDelete: Cascade)
+  user User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([goalId, userId])
 }
 
 // A short-timeframe, high-intensity goal reframed as a named raid boss with

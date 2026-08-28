@@ -13,7 +13,7 @@ export default function DashboardError({ error, reset }: { error: Error & { dige
         {error?.digest && <div className="mt-3 text-[10px] opacity-40 font-mono">ref: {error.digest}</div>}
         <div className="mt-6 flex items-center justify-center gap-2">
           <button onClick={() => reset()} className="btn-primary"><RefreshCw className="w-4 h-4" />Try again</button>
-          <a href="mailto:support@financewars.app?subject=Report" className="btn-secondary"><Mail className="w-4 h-4" />Report</a>
+          <a href="mailto:support@debtsucker.app?subject=Report" className="btn-secondary"><Mail className="w-4 h-4" />Report</a>
         </div>
       </div>
     </div>

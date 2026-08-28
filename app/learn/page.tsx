@@ -4,10 +4,10 @@ import { BlueprintNav, BlueprintFooter } from "@/app/_blueprint/BlueprintShell";
 import { BlueprintThemeBoundary } from "@/app/_blueprint/BlueprintShell";
 
 export const metadata: Metadata = {
-  title: "Tools & Guides — Finance Wars",
+  title: "Tools & Guides — Debt Sucker",
   description: "Free calculators for couples building toward homeownership and car ownership. Home affordability, mortgage payoff, down payment plans, car affordability, debt payoff. Plus mental-model guides.",
   openGraph: {
-    title: "Free Tools for Serious Couples — Finance Wars",
+    title: "Free Tools for Serious Couples — Debt Sucker",
     description: "Calculators and guides for partners planning the big purchases.",
   },
 };

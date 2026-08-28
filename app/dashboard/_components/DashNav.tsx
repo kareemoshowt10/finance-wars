@@ -7,6 +7,7 @@ import {
   LayoutDashboard, ArrowLeftRight, Wallet, Target, Trophy, Settings, LogOut, Menu, X,
   Sparkles, Repeat, Tag, Bell, PieChart, Activity, CheckCheck, Filter, TrendingUp, FileText, Swords,
   Calendar as CalIcon, LineChart, MessageCircle, Award, Flame, Users, Store,
+  Home, Landmark, HeartHandshake,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import ThemeToggle from "./ThemeToggle";
@@ -17,6 +18,15 @@ const linkGroups: { heading?: string; items: { href: string; label: string; icon
       { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
       { href: "/dashboard/compound", label: "The Compound", icon: Sparkles },
       { href: "/dashboard/calendar", label: "Calendar", icon: CalIcon },
+    ],
+  },
+  {
+    heading: "Household HQ",
+    items: [
+      { href: "/dashboard/household", label: "Overview", icon: Home },
+      { href: "/dashboard/household/chores", label: "Chores", icon: CheckCheck },
+      { href: "/dashboard/household/bank", label: "The Bank", icon: Landmark },
+      { href: "/dashboard/household/goals", label: "Household Goals", icon: HeartHandshake },
     ],
   },
   {
@@ -233,7 +243,7 @@ export default function DashNav({ userName }: { userName: string }) {
   return (
     <>
       <div className="md:hidden sticky top-0 z-40 flex items-center justify-between px-4 h-12 border-b border-black/5 dark:border-white/5 bg-white/70 dark:bg-black/70 backdrop-blur-xl">
-        <Link href="/dashboard" className="text-sm font-semibold tracking-tight">Finance Wars</Link>
+        <Link href="/dashboard" className="text-sm font-semibold tracking-tight">Debt Sucker</Link>
         <div className="flex items-center gap-1">
           {bellMenu}
           <ThemeToggle compact />
@@ -251,7 +261,7 @@ export default function DashNav({ userName }: { userName: string }) {
         )}
       >
         <div className="hidden md:flex items-center justify-between px-5 pt-6 pb-4">
-          <Link href="/" className="text-sm font-semibold tracking-tight">Finance Wars</Link>
+          <Link href="/" className="text-sm font-semibold tracking-tight">Debt Sucker</Link>
           <div className="flex items-center gap-0.5">
             {bellMenu}
             <ThemeToggle compact />

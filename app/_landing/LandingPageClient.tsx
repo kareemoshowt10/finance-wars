@@ -10,6 +10,7 @@ export default function LandingPageClient() {
       <BlueprintNav active={null} />
       <Hero />
       <SeriousAboutWhat />
+      <HouseholdHQ />
       <ToolsForBigPurchases />
       <ForTwo />
       <Mechanics />
@@ -44,25 +45,26 @@ function Hero() {
 
         <div className="grid lg:grid-cols-[1fr_auto] gap-16 items-end">
           <div>
-            <div className="bp-callsign mb-6">FOR PARTNERS BUYING THINGS TOGETHER</div>
+            <div className="bp-callsign mb-6">DEBT SUCKER — FOR HOUSEHOLDS RUNNING A REAL ECONOMY</div>
             <h1 className="bp-display">
-              Buy the house.<br />
-              Buy the car.<br />
-              <span className="bp-display-italic" style={{ color: "var(--bp-signal)" }}>Together.</span>
+              Become the bank.<br />
+              Run the chores.<br />
+              <span className="bp-display-italic" style={{ color: "var(--bp-signal)" }}>Win together.</span>
             </h1>
             <p className="bp-body mt-8 max-w-xl">
-              Finance Wars is the financial tool for serious, transparent couples — the ones moving from
-              renting to owning, from one income to two, from "we should talk about money" to actually
-              doing it. Plan the big purchases together, on the same page, with the same numbers.
+              Debt Sucker is the financial tool for serious, transparent households — couples, roommates,
+              families with kids old enough to do the dishes. Track family loans like a real bank, turn
+              chores into a game everyone wants to win, and pool money for what you're actually saving up
+              for — before "we should talk about money" turns into a fight.
             </p>
 
             <div className="mt-10 flex flex-wrap gap-3">
-              <Link href="/signup" className="bp-btn-primary">Enlist together</Link>
+              <Link href="/signup" className="bp-btn-primary">Enlist your household</Link>
               <Link href="/learn" className="bp-btn-secondary">Run the free tools</Link>
             </div>
 
             <div className="mt-6 bp-callsign">
-              NO CREDIT CARD · NO BANK LOGIN · BOTH PARTNERS WELCOME
+              NO CREDIT CARD · NO BANK LOGIN · THE WHOLE HOUSEHOLD WELCOME
             </div>
           </div>
 
@@ -113,6 +115,47 @@ function SeriousAboutWhat() {
             { eyebrow: "ALIGNED", h: "Agree on the numbers first.", body: "Money Mind asks each of you the same 10 honest questions privately, then reveals the gaps. The fight you'd have in six months — surfaced now, low-stakes." },
             { eyebrow: "ACCOUNTABLE", h: "Big purchases get pre-flight checks.", body: "Set a household threshold. Anything above it pings your partner for approval before it lands on the card. Not surveillance — a pause." },
           ].map((c) => (
+            <div key={c.eyebrow}>
+              <div className="bp-callsign mb-3">{c.eyebrow}</div>
+              <h3 className="bp-h3">{c.h}</h3>
+              <p className="bp-body-sm mt-3">{c.body}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ---------- SECTION 1.5 — HOUSEHOLD HQ ------------------------------------ */
+
+function HouseholdHQ() {
+  const cards = [
+    {
+      eyebrow: "THE BANK",
+      h: "Become the bank.",
+      body: "One person fronts the cash — a phone repair, a concert ticket, rent that's short this month. Track exactly who owes what, why, and whether it's quietly accruing interest.",
+    },
+    {
+      eyebrow: "CHORES & CROWNS",
+      h: "Who does the dishes, made visible.",
+      body: "Every chore pays Crowns and XP. Streaks, a weekly leaderboard, and a running tally of who actually unloads the dishwasher — settled by the scoreboard, not by memory.",
+    },
+    {
+      eyebrow: "HOUSEHOLD GOALS",
+      h: "PS5 vs. the pool — let it play out.",
+      body: "Elective goals compete for votes and dollars. Essential ones — like the bathroom remodel nobody wants to think about — get flagged the moment they've gone quiet.",
+    },
+  ];
+  return (
+    <section className="px-6 py-24 border-b border-[var(--bp-rule)]">
+      <div className="max-w-[1240px] mx-auto">
+        <div className="bp-section-marker">§01.5 — HOUSEHOLD HQ</div>
+        <div className="grid md:grid-cols-[1fr_auto] gap-12 items-end mb-12">
+          <h2 className="bp-h2">The chores, the loans, the "who's paying for what" — one shared scoreboard.</h2>
+        </div>
+        <div className="grid md:grid-cols-3 gap-10">
+          {cards.map((c) => (
             <div key={c.eyebrow}>
               <div className="bp-callsign mb-3">{c.eyebrow}</div>
               <h3 className="bp-h3">{c.h}</h3>
@@ -240,6 +283,8 @@ function Mechanics() {
             { tag: "M.04", h: "Weekly Recap", body: "Every Monday: net flow, biggest hit, what crept up, what improved. The five-minute Monday meeting, automated." },
             { tag: "M.05", h: "Lifestyle Creep Watch", body: "Quarterly delta on every category. Where spending drifted up, with a one-click counter-action." },
             { tag: "M.06", h: "Big Purchase Approvals", body: "Set a threshold. Anything above pings your partner first. A built-in pause, not a permission slip." },
+            { tag: "M.07", h: "Chores & Crowns", body: "Every completed chore pays Crowns and XP. Streaks and a weekly leaderboard turn dishes duty into something worth showing up for." },
+            { tag: "M.08", h: "The Bank", body: "Family loans with a purpose, a balance, and — if you want — interest. No more \"I think you still owe me for that.\"" },
           ].map((c) => (
             <div key={c.tag} className="border-l border-[var(--bp-rule)] pl-5">
               <div className="bp-callsign">{c.tag}</div>
@@ -262,10 +307,10 @@ function FinalCTA() {
         <div className="bp-section-marker">§ END — START</div>
         <div className="grid md:grid-cols-[1fr_auto] gap-12 items-end">
           <h2 className="bp-display" style={{ fontSize: "clamp(2.5rem, 5vw, 4rem)" }}>
-            The house. The car.<br />The future you keep saying you'll plan.
+            The house. The chores.<br />The bathroom you keep saying you'll fix.
           </h2>
           <div className="flex flex-wrap gap-3 shrink-0">
-            <Link href="/signup" className="bp-btn-primary">Enlist together</Link>
+            <Link href="/signup" className="bp-btn-primary">Enlist your household</Link>
             <Link href="/mission" className="bp-btn-secondary">Read mission</Link>
           </div>
         </div>

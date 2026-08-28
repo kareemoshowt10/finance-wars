@@ -13,7 +13,7 @@ export function FamilyNav({ active }: { active?: "mission" | "rules" | "learn" |
       <div className="max-w-[1200px] mx-auto px-6 h-16 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2 text-[#343433] font-semibold text-[15px] tracking-[-0.013em]">
           <span className="w-7 h-7 rounded-full bg-[#ff3e00] inline-flex items-center justify-center text-white text-[13px] font-semibold">F</span>
-          Finance Wars
+          Debt Sucker
         </Link>
         <div className="hidden sm:flex items-center gap-7">
           <Link href="/mission" className={linkCls("mission")}>Mission</Link>
@@ -34,7 +34,7 @@ export function FamilyFooter() {
     <footer className="mt-32 border-t border-[#f2f0ed]">
       <div className="max-w-[1200px] mx-auto px-6 py-12 grid grid-cols-2 sm:grid-cols-4 gap-8 text-[13px] text-[#848281]">
         <div>
-          <div className="text-[#343433] font-medium text-[14px] mb-3">Finance Wars</div>
+          <div className="text-[#343433] font-medium text-[14px] mb-3">Debt Sucker</div>
           <p className="leading-relaxed">A money game you actually want to play.</p>
         </div>
         <div>
@@ -63,7 +63,7 @@ export function FamilyFooter() {
         </div>
       </div>
       <div className="max-w-[1200px] mx-auto px-6 pb-10 text-[12px] text-[#c6c6c6]">
-        © {new Date().getFullYear()} Finance Wars
+        © {new Date().getFullYear()} Debt Sucker
       </div>
     </footer>
   );

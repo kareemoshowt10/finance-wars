@@ -3,8 +3,8 @@ import Link from "next/link";
 import { BlueprintNav, BlueprintFooter, BlueprintThemeBoundary } from "@/app/_blueprint/BlueprintShell";
 
 export const metadata: Metadata = {
-  title: "Rules — Finance Wars",
-  description: "Seven non-negotiable rules for serious couples using Finance Wars. Short. Opinionated. Read before you play.",
+  title: "Rules — Debt Sucker",
+  description: "Seven non-negotiable rules for serious couples using Debt Sucker. Short. Opinionated. Read before you play.",
 };
 
 const RULES = [

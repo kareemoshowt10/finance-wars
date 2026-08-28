@@ -1,6 +1,6 @@
 import { prisma } from "./prisma";
 
-export type Currency = "TP" | "SC" | "SHARD" | "KARMA";
+export type Currency = "TP" | "SC" | "SHARD" | "KARMA" | "CROWNS";
 
 export type WalletReason =
   | "CONFESSION_HONEST"
@@ -17,7 +17,9 @@ export type WalletReason =
   | "STREAK_BONUS"
   | "MARKETPLACE_SPEND"
   | "ADMIN_GRANT"
-  | "DECAY";
+  | "DECAY"
+  | "CHORE_COMPLETED"
+  | "GOAL_CONTRIBUTION";
 
 export type AwardInput = {
   userId: string;
@@ -62,7 +64,7 @@ export async function getBalances(userId: string): Promise<Record<Currency, numb
     where: { userId },
     _sum: { delta: true },
   });
-  const out: Record<Currency, number> = { TP: 0, SC: 0, SHARD: 0, KARMA: 0 };
+  const out: Record<Currency, number> = { TP: 0, SC: 0, SHARD: 0, KARMA: 0, CROWNS: 0 };
   for (const r of rows) {
     const c = r.currency as Currency;
     if (c in out) out[c] = r._sum.delta ?? 0;

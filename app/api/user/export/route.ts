@@ -20,7 +20,7 @@ export async function GET() {
   return new Response(JSON.stringify(data, null, 2), {
     headers: {
       "Content-Type": "application/json",
-      "Content-Disposition": `attachment; filename="finance-wars-export.json"`,
+      "Content-Disposition": `attachment; filename="debt-sucker-export.json"`,
     },
   });
 }

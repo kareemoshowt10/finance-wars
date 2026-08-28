@@ -27,7 +27,7 @@ export default async function CouplesPage() {
             <div className="text-xs uppercase tracking-wider text-rose-500 font-medium">Better together</div>
             <h2 className="mt-2 text-3xl md:text-4xl font-semibold tracking-tight">Money fights end when both partners see the same picture.</h2>
             <p className="mt-4 text-sm text-black/60 dark:text-white/60">
-              40% of partners hide spending. Finance Wars makes that impossible — gently. You keep your own accounts; the household is just an opt-in lens on top.
+              40% of partners hide spending. Debt Sucker makes that impossible — gently. You keep your own accounts; the household is just an opt-in lens on top.
             </p>
             <div className="mt-8 flex gap-3 flex-wrap">
               <Link href="/dashboard/couples/setup" className="inline-flex items-center gap-2 px-5 py-3 rounded-full bg-black text-white dark:bg-white dark:text-black text-sm font-medium hover:opacity-90">

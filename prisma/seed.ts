@@ -2,6 +2,7 @@ import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import { DEFAULT_CATEGORIES } from "../lib/defaults";
 import { ACHIEVEMENTS_BY_SLUG } from "../lib/achievements/catalog";
+import { seedDebtSucker } from "./seedDebtSucker";
 
 const prisma = new PrismaClient();
 
@@ -24,7 +25,7 @@ function dayKey(d: Date): Date {
 }
 
 export async function runSeed() {
-  const email = "demo@financewars.app";
+  const email = "demo@debtsucker.app";
   const password = "demo1234";
   const passwordHash = await bcrypt.hash(password, 10);
 
@@ -243,7 +244,7 @@ export async function runSeed() {
 }
 
 async function seedDuels(demoUserId: string, demoCheckingId: string) {
-  const partnerEmail = "partner@financewars.app";
+  const partnerEmail = "partner@debtsucker.app";
   const partnerPwd = "partner123";
   const passwordHash = await bcrypt.hash(partnerPwd, 10);
   const existing = await prisma.user.findUnique({ where: { email: partnerEmail } });
@@ -858,6 +859,7 @@ async function seedCouples(demoUserId: string, demoCheckingId: string, partnerId
 
   console.log(`Seeded household: ${hh.name}`);
 
+  await seedDebtSucker(prisma, hh.id, demoUserId, partnerId);
   await seedWalletDemo(demoUserId, partnerId, hh.id);
   await seedMarketplace();
 }

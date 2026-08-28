@@ -2,27 +2,27 @@ import type { Metadata } from "next";
 import LandingPageClient from "./_landing/LandingPageClient";
 
 export const metadata: Metadata = {
-  title: "Finance Wars — Track. Save. Compete with your partner.",
-  description: "Finance Wars is a premium personal finance dashboard with head-to-head Duels. Track net worth, run budgets, hit goals, and beat the slump together.",
+  title: "Debt Sucker — Become the bank. Run the household.",
+  description: "Debt Sucker is the household finance app that's also a game: family loans with real accountability, chores that pay Crowns and XP, and shared goals for the PS5, the pool, and the bathroom remodel that keeps getting put off.",
   openGraph: {
-    title: "Finance Wars — Track. Save. Compete.",
-    description: "Sprint head-to-head. Save more. Roast each other.",
+    title: "Debt Sucker — Become the bank. Run the household.",
+    description: "Family loans, chores, and shared goals — one scoreboard for the whole household.",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Finance Wars — Track. Save. Compete.",
-    description: "A premium personal finance dashboard with Duels.",
+    title: "Debt Sucker — Become the bank. Run the household.",
+    description: "A household finance app that's also a game: loans, chores, and shared goals.",
   },
 };
 
 const jsonLd = {
   "@context": "https://schema.org",
   "@type": "SoftwareApplication",
-  name: "Finance Wars",
+  name: "Debt Sucker",
   applicationCategory: "FinanceApplication",
   operatingSystem: "Web",
-  description: "Personal finance dashboard with head-to-head Duels. Track net worth, budgets, goals, and savings sprints with a partner.",
+  description: "Household finance app and game. Track family loans, chores, and shared goals — with net worth, budgets, and savings tools underneath it all.",
   offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
   aggregateRating: { "@type": "AggregateRating", ratingValue: "4.9", reviewCount: "128" },
 };

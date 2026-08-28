@@ -40,7 +40,7 @@ export default function CapturePage() {
       <div className="max-w-md mx-auto px-4 pt-6 pb-24">
         {/* Header: streak is the reward for showing up. */}
         <header className="flex items-center justify-between">
-          <div className="text-sm font-semibold tracking-tight">Finance Wars</div>
+          <div className="text-sm font-semibold tracking-tight">Debt Sucker</div>
           <div className="flex items-center gap-3">
             {streak != null && streak > 0 && (
               <span className="text-xs inline-flex items-center gap-1 text-orange-500 font-medium">

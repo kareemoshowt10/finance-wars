@@ -67,7 +67,7 @@ describe("wallet", () => {
   });
 
   it("computeKarma floors at 0 even with negative TP", () => {
-    const k = computeKarma({ TP: -100, SC: 0, SHARD: 0, KARMA: 0 });
+    const k = computeKarma({ TP: -100, SC: 0, SHARD: 0, KARMA: 0, CROWNS: 0 });
     expect(k).toBe(0);
   });
 

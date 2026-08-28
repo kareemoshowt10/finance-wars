@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 const spec = {
   openapi: "3.1.0",
   info: {
-    title: "Finance Wars API",
+    title: "Debt Sucker API",
     version: "1.0.0",
     description: "Personal finance API. Auth via session cookie (browser) or bearer API token.",
   },

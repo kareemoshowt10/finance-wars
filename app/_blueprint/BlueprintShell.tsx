@@ -27,7 +27,7 @@ export function BlueprintNav({ active }: { active?: "mission" | "rules" | "tools
       <div className="max-w-[1240px] mx-auto px-6 h-14 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-3">
           <span className="w-6 h-6 border border-[var(--bp-ink)] rotate-45" />
-          <span className="bp-fig text-[13px]">FINANCEWARS / 01</span>
+          <span className="bp-fig text-[13px]">DEBT SUCKER / 01</span>
         </Link>
         <div className="hidden sm:flex items-center gap-7">
           <Link href="/mission" className={linkCls("mission")}>Mission</Link>
