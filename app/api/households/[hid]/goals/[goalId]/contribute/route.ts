@@ -6,6 +6,7 @@ import { bad, ok } from "@/lib/api";
 import { assertMember, getHouseholdMembers } from "@/lib/household";
 import { getBalance, award } from "@/lib/wallet";
 import { isNeglected, CROWN_VALUE_USD } from "@/lib/householdGoals";
+import { maybeAwardDailyBonus } from "@/lib/dailyEngagement";
 import { evaluate } from "@/lib/achievements/engine";
 import { log } from "@/lib/audit";
 
@@ -96,5 +97,7 @@ export async function POST(req: NextRequest, { params }: { params: { hid: string
     await evaluate(r.user.id, { type: "essential-fund-rescued" });
   }
 
-  return ok({ contribution, currentAmount: newTotal, justFunded });
+  const bonusAwarded = await maybeAwardDailyBonus(params.hid, r.user.id);
+
+  return ok({ contribution, currentAmount: newTotal, justFunded, bonusAwarded });
 }

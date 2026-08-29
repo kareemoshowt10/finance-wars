@@ -36,7 +36,10 @@ export type AchievementEvent =
   | { type: "household-loan-paid-off" }
   | { type: "household-goal-created" }
   | { type: "household-goal-funded" }
-  | { type: "essential-fund-rescued" };
+  | { type: "essential-fund-rescued" }
+  | { type: "cheer-sent" }
+  | { type: "household-streak"; current: number }
+  | { type: "daily-objectives-complete"; totalDays: number };
 
 async function unlock(userId: string, slug: string) {
   const def = ACHIEVEMENTS_BY_SLUG[slug];
@@ -196,6 +199,17 @@ export async function evaluate(userId: string, event: AchievementEvent) {
         break;
       case "essential-fund-rescued":
         if (!(await alreadyHas(userId, "essential-fund-rescued"))) await unlock(userId, "essential-fund-rescued");
+        break;
+      case "cheer-sent":
+        if (!(await alreadyHas(userId, "first-cheer"))) await unlock(userId, "first-cheer");
+        break;
+      case "household-streak":
+        if (event.current >= 7 && !(await alreadyHas(userId, "household-streak-7"))) await unlock(userId, "household-streak-7");
+        if (event.current >= 30 && !(await alreadyHas(userId, "household-streak-30"))) await unlock(userId, "household-streak-30");
+        break;
+      case "daily-objectives-complete":
+        if (!(await alreadyHas(userId, "first-perfect-day"))) await unlock(userId, "first-perfect-day");
+        if (event.totalDays >= 7 && !(await alreadyHas(userId, "perfect-week"))) await unlock(userId, "perfect-week");
         break;
     }
   } catch {

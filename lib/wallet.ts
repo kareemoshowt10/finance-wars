@@ -19,7 +19,8 @@ export type WalletReason =
   | "ADMIN_GRANT"
   | "DECAY"
   | "CHORE_COMPLETED"
-  | "GOAL_CONTRIBUTION";
+  | "GOAL_CONTRIBUTION"
+  | "DAILY_BONUS";
 
 export type AwardInput = {
   userId: string;

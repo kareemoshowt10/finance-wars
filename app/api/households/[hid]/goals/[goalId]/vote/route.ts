@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { resolveRequestUser } from "@/lib/auth";
 import { bad, ok } from "@/lib/api";
 import { assertMember } from "@/lib/household";
+import { maybeAwardDailyBonus } from "@/lib/dailyEngagement";
 import { log } from "@/lib/audit";
 
 export const dynamic = "force-dynamic";
@@ -29,5 +30,6 @@ export async function POST(req: NextRequest, { params }: { params: { hid: string
 
   await prisma.householdGoalVote.create({ data: { goalId: goal.id, userId: r.user.id } });
   await log(r.user.id, "vote", { entity: "HouseholdGoal", entityId: goal.id, req });
-  return ok({ voted: true });
+  const bonusAwarded = await maybeAwardDailyBonus(params.hid, r.user.id);
+  return ok({ voted: true, bonusAwarded });
 }

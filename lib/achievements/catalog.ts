@@ -75,6 +75,13 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   { slug: "first-household-goal", name: "Shared Vision", description: "Create your first household goal.", icon: "Flag", xp: 30, category: "savings", tier: 1 },
   { slug: "household-goal-funded", name: "Team Win", description: "Fully fund a household goal together.", icon: "Trophy", xp: 250, category: "savings", tier: 3 },
   { slug: "essential-fund-rescued", name: "Rescue Mission", description: "Fund an essential goal the household had been neglecting.", icon: "HeartHandshake", xp: 150, category: "savings", tier: 2 },
+
+  // Household HQ — daily engagement
+  { slug: "first-cheer", name: "Team Player", description: "Send your first cheer to a household member.", icon: "PartyPopper", xp: 20, category: "social", tier: 1 },
+  { slug: "household-streak-7", name: "In Rhythm", description: "Keep the household's chore streak alive for 7 days.", icon: "Flame", xp: 100, category: "social", tier: 2 },
+  { slug: "household-streak-30", name: "Unstoppable Household", description: "Keep the household's chore streak alive for 30 days.", icon: "Flame", xp: 400, category: "social", tier: 4 },
+  { slug: "first-perfect-day", name: "Perfect Day", description: "Clear all 3 Daily Objectives in one day.", icon: "Sparkles", xp: 30, category: "social", tier: 1 },
+  { slug: "perfect-week", name: "Perfect Week", description: "Clear all 3 Daily Objectives on 7 different days.", icon: "Trophy", xp: 200, category: "social", tier: 3 },
 ];
 
 export const ACHIEVEMENTS_BY_SLUG: Record<string, AchievementDef> = Object.fromEntries(

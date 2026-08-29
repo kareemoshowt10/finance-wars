@@ -79,6 +79,8 @@ model User {
   loansBorrowed               Loan[]                      @relation("LoansBorrowed")
   householdGoalContributions HouseholdGoalContribution[]
   householdGoalVotes         HouseholdGoalVote[]
+  cheersSent                 HouseholdCheer[]            @relation("CheersSent")
+  cheersReceived             HouseholdCheer[]            @relation("CheersReceived")
   capturePatterns   CapturePattern[]
 }
 
@@ -301,6 +303,7 @@ model Household {
   chores       Chore[]
   loans        Loan[]
   householdGoals HouseholdGoal[]
+  cheers       HouseholdCheer[]
 }
 
 // ---------------------------------------------------------------------------
@@ -438,6 +441,26 @@ model HouseholdGoalVote {
   user User          @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([goalId, userId])
+}
+
+// Daily engagement: a lightweight reaction between household members —
+// "thanks for doing the dishes," "nice streak" — something to do even on a
+// day with no chores due. Also one of the three Daily Objectives.
+model HouseholdCheer {
+  id          String   @id @default(cuid())
+  householdId String
+  fromUserId  String
+  toUserId    String
+  emoji       String   @default("👏")
+  message     String?
+  createdAt   DateTime @default(now())
+
+  household Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  from      User      @relation("CheersSent", fields: [fromUserId], references: [id], onDelete: Cascade)
+  to        User      @relation("CheersReceived", fields: [toUserId], references: [id], onDelete: Cascade)
+
+  @@index([householdId, createdAt])
+  @@index([toUserId, createdAt])
 }
 
 // A short-timeframe, high-intensity goal reframed as a named raid boss with

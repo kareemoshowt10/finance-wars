@@ -84,8 +84,9 @@ export default function ChoresView({ hid, meId }: { hid: string; meId: string })
       const res = await fetch(`/api/households/${hid}/chores/${choreId}/complete`, { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" });
       const data = await res.json();
       if (res.ok) {
-        setFlash(`+${chores.find((c) => c.id === choreId)?.crownValue ?? 0} Crowns${data.streak > 1 ? ` · ${data.streak}-day streak` : ""}`);
-        setTimeout(() => setFlash(null), 2500);
+        const bonus = data.bonusAwarded ? " · 🎉 Daily objectives complete! +15 Crowns, +10 XP" : "";
+        setFlash(`+${chores.find((c) => c.id === choreId)?.crownValue ?? 0} Crowns${data.streak > 1 ? ` · ${data.streak}-day streak` : ""}${bonus}`);
+        setTimeout(() => setFlash(null), bonus ? 4000 : 2500);
         await Promise.all([load(), loadLeaderboard()]);
       }
     } finally {

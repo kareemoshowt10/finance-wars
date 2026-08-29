@@ -51,6 +51,38 @@ Crowns earned from chores can be spent directly into a Household Goal
 (10 Crowns = $1 of contribution) via `/api/households/[hid]/goals/[id]/contribute`,
 so the two systems reinforce each other: do the chores, fund the goal.
 
+## Daily engagement: a reason to open the app every day
+
+Four mechanics, layered on top of Household HQ, aimed squarely at daily
+active use rather than "opens when a chore happens to be due":
+
+1. **Household Streak** — not per-user. Consecutive days with at least one
+   chore completion from *anyone* in the house. Breaks if nobody does
+   anything, which puts social pressure on the group instead of just one
+   person's habit. Computed on the fly from `ChoreCompletion` history
+   (`lib/dailyEngagement.ts: getHouseholdStreak`), no new columns needed.
+2. **Daily Objectives** — three small per-person quests that reset daily:
+   do a chore, check in on a goal (vote or contribute), cheer someone.
+   Clearing all three pays a one-time bonus (+15 Crowns, +10 XP) the moment
+   the third one lands — awarded from inside whichever route completes it
+   (`lib/dailyEngagement.ts: maybeAwardDailyBonus`), not a separate "claim"
+   step. Each objective's "done" state is derived from existing tables
+   (today's `ChoreCompletion` / `HouseholdGoalContribution` / vote / cheer),
+   so there's no new completion-tracking table either.
+3. **Cheer** (`HouseholdCheer`) — a one-tap reaction between household
+   members. Gives people something to do on a day with no chores due, and
+   it's the social/teamwork mechanic from the product brief made concrete.
+4. **At-risk nudge** (`/api/cron/household-nudge`, daily) — if a household
+   has an active streak and nobody's logged a chore yet today, everyone
+   gets one notification. Dedupes per household per day via `Notification`'s
+   `(userId, key)` unique constraint, same pattern used everywhere else.
+
+All of it surfaces in one **Today** panel at the top of
+`/dashboard/household` (`TodayPanel.tsx`) — the streak flame, the 3
+objectives with checkmarks, a "send a cheer" button, and a small recent-
+cheers feed. New achievements (`first-cheer`, `household-streak-7/30`,
+`first-perfect-day`, `perfect-week`) reward the same behavior a second way.
+
 ## Business model: three plans, gating what's already built
 
 The path to a real business here is the straightforward one: charge for

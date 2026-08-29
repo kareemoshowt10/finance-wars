@@ -6,6 +6,7 @@ import { bad, ok } from "@/lib/api";
 import { assertMember, getHouseholdMembers } from "@/lib/household";
 import { award } from "@/lib/wallet";
 import { computeStreak } from "@/lib/chores";
+import { getHouseholdStreak, maybeAwardDailyBonus } from "@/lib/dailyEngagement";
 import { evaluate } from "@/lib/achievements/engine";
 import { log } from "@/lib/audit";
 
@@ -69,6 +70,10 @@ export async function POST(req: NextRequest, { params }: { params: { hid: string
 
   await evaluate(r.user.id, { type: "chore-completed", streak, totalCompletions });
 
+  const householdStreak = await getHouseholdStreak(params.hid);
+  await evaluate(r.user.id, { type: "household-streak", current: householdStreak.current });
+  const bonusAwarded = await maybeAwardDailyBonus(params.hid, r.user.id);
+
   const doer = members.find((m) => m.userId === r.user.id);
   await Promise.all(
     members
@@ -86,5 +91,5 @@ export async function POST(req: NextRequest, { params }: { params: { hid: string
       )
   );
 
-  return ok({ completion, streak, totalCompletions });
+  return ok({ completion, streak, totalCompletions, householdStreak, bonusAwarded });
 }

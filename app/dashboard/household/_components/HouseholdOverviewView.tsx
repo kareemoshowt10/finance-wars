@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Home, CheckCheck, Landmark, HeartHandshake, ArrowRight, AlertTriangle, Crown, Flame } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
+import TodayPanel from "./TodayPanel";
 
 type Member = { userId: string; name: string };
 type Pulse = {
@@ -44,6 +45,8 @@ export default function HouseholdOverviewView({ hid, householdName, meId, curren
           {householdName} — chores, the bank, and shared goals, all in one scoreboard.
         </p>
       </header>
+
+      <TodayPanel hid={hid} meId={meId} members={data.members} />
 
       {data.goals.neglectedEssentials.length > 0 && (
         <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-5 flex items-start gap-3">

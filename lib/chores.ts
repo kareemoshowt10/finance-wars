@@ -55,6 +55,29 @@ export function computeStreak(
   return streak;
 }
 
+/**
+ * Longest-ever run of consecutive days with at least one completion,
+ * anywhere in the given dates — the household's all-time streak record,
+ * as opposed to computeStreak's "current streak as of now". Pure history
+ * scan, so it's stable even if the streak has since broken.
+ */
+export function longestStreakEver(completedAt: Date[]): number {
+  if (completedAt.length === 0) return 0;
+  const days = Array.from(new Set(completedAt.map((d) => startOfDay(d).getTime()))).sort((a, b) => a - b);
+
+  let longest = 1;
+  let run = 1;
+  for (let i = 1; i < days.length; i++) {
+    if (days[i] - days[i - 1] === 86400000) {
+      run++;
+    } else {
+      run = 1;
+    }
+    longest = Math.max(longest, run);
+  }
+  return longest;
+}
+
 export type ChoreCompletionRecord = {
   userId: string;
   crownsAwarded: number;

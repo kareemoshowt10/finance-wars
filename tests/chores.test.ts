@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { computeStreak, buildLeaderboard, mostFrequentDoer, isChoreDue } from "@/lib/chores";
+import { computeStreak, buildLeaderboard, mostFrequentDoer, isChoreDue, longestStreakEver } from "@/lib/chores";
 
 const day = (n: number) => new Date(2026, 0, n, 9, 0, 0);
 
@@ -73,5 +73,28 @@ describe("chores", () => {
   it("isChoreDue for ONEOFF is only true before it's ever been done", () => {
     expect(isChoreDue("ONEOFF", null)).toBe(true);
     expect(isChoreDue("ONEOFF", day(1))).toBe(false);
+  });
+
+  describe("longestStreakEver — the household's all-time record", () => {
+    it("finds the longest run even if it's not the most recent one", () => {
+      // 1-2-3 (run of 3), gap, 10-11 (run of 2)
+      const dates = [day(1), day(2), day(3), day(10), day(11)];
+      expect(longestStreakEver(dates)).toBe(3);
+    });
+
+    it("is stable even after the streak has since broken", () => {
+      const dates = [day(1), day(2), day(3), day(4), day(5), day(20)];
+      expect(longestStreakEver(dates)).toBe(5);
+    });
+
+    it("ignores duplicate completions on the same day", () => {
+      const dates = [day(1), new Date(2026, 0, 1, 20, 0, 0), day(2)];
+      expect(longestStreakEver(dates)).toBe(2);
+    });
+
+    it("is 0 for no history and 1 for a single day", () => {
+      expect(longestStreakEver([])).toBe(0);
+      expect(longestStreakEver([day(5)])).toBe(1);
+    });
   });
 });
