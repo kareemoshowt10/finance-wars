@@ -173,7 +173,7 @@ export default function DashNav({ userName }: { userName: string }) {
     <div className="relative">
       <button
         onClick={() => setBellOpen((o) => !o)}
-        className="relative p-2 text-black/60 dark:text-white/60 hover:text-black dark:hover:text-white"
+        className="relative tap-target text-black/60 dark:text-white/60 hover:text-black dark:hover:text-white"
         aria-label="Notifications"
       >
         <Bell className="w-4 h-4" />
@@ -243,22 +243,29 @@ export default function DashNav({ userName }: { userName: string }) {
 
   return (
     <>
-      <div className="md:hidden sticky top-0 z-40 flex items-center justify-between px-4 h-12 border-b border-black/5 dark:border-white/5 bg-white/70 dark:bg-black/70 backdrop-blur-xl">
+      <div className="md:hidden sticky top-0 z-40 flex items-center justify-between px-4 h-12 pt-safe border-b border-black/5 dark:border-white/5 bg-white/70 dark:bg-black/70 backdrop-blur-xl">
         <Link href="/dashboard" className="text-sm font-semibold tracking-tight">Debt Sucker</Link>
         <div className="flex items-center gap-1">
           {bellMenu}
           <ThemeToggle compact />
-          <button onClick={() => setOpen((o) => !o)} className="p-2 -mr-2">
+          <button onClick={() => setOpen((o) => !o)} className="tap-target -mr-2.5" aria-label={open ? "Close menu" : "Open menu"}>
             {open ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
         </div>
       </div>
 
+      {/* Backdrop: sits above the top bar and the mobile tab bar (both z-40)
+          so the open drawer reads as one modal layer instead of overlapping
+          page chrome, and a tap outside it closes it. */}
+      {open && (
+        <div className="md:hidden fixed inset-0 z-[45] bg-black/50" onClick={() => setOpen(false)} aria-hidden="true" />
+      )}
+
       <aside
         className={cn(
-          "fixed md:fixed inset-y-0 left-0 z-30 w-60 border-r border-black/5 dark:border-white/5 bg-white/80 dark:bg-black/80 backdrop-blur-xl flex-col",
+          "fixed md:fixed inset-y-0 left-0 w-60 border-r border-black/5 dark:border-white/5 bg-white/80 dark:bg-black/80 backdrop-blur-xl flex-col md-pt-safe",
           "transition-transform md:translate-x-0",
-          open ? "translate-x-0 flex" : "-translate-x-full hidden md:flex"
+          open ? "z-50 translate-x-0 flex" : "z-30 -translate-x-full hidden md:flex"
         )}
       >
         <div className="hidden md:flex items-center justify-between px-5 pt-6 pb-4">
@@ -338,7 +345,7 @@ export default function DashNav({ userName }: { userName: string }) {
             </div>
           ))}
         </nav>
-        <div className="p-3 border-t border-black/5 dark:border-white/5">
+        <div className="p-3 pb-safe border-t border-black/5 dark:border-white/5">
           <button onClick={logout} className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-black/60 dark:text-white/60 hover:text-black dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5">
             <LogOut className="w-4 h-4" />
             Log out

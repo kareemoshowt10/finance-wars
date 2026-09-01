@@ -136,6 +136,50 @@ html:not(.dark) .btn-ghost:hover { color: black; background: rgba(0,0,0,0.04); }
 }
 .btn-danger:hover { background: rgba(239,68,68,0.25); }
 
+/* --- Mobile: safe-area insets + bottom tab bar + bottom-sheet modals --- */
+
+.pt-safe { padding-top: env(safe-area-inset-top); }
+.pb-safe { padding-bottom: env(safe-area-inset-bottom); }
+/* Same as pt-safe, but only from the md breakpoint up — for the desktop
+   sidebar header, which (unlike the mobile drawer) isn't already covered by
+   a separately-safe-area-padded top bar. Hand-rolled because Tailwind
+   doesn't generate responsive variants for arbitrary custom classes. */
+@media (min-width: 768px) {
+  .md-pt-safe { padding-top: env(safe-area-inset-top); }
+}
+/* Tab bar content height (56px) + the home-indicator inset, used to keep
+   page content from sitting underneath the fixed mobile tab bar. */
+.pb-tabbar { padding-bottom: calc(56px + env(safe-area-inset-bottom)); }
+
+.tap-target {
+  min-width: 44px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Modal.tsx: a centered dialog everywhere by default, but on narrow
+   viewports it behaves like a native bottom sheet — full-width, anchored to
+   the bottom edge, rounded only on top, sliding up on open. */
+.modal-sheet-shape { border-radius: 20px 20px 0 0; }
+@media (min-width: 640px) {
+  .modal-sheet-shape { border-radius: 16px; }
+}
+
+@keyframes sheetUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+@keyframes modalPop {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
+}
+.modal-anim { animation: sheetUp 0.3s cubic-bezier(0.32, 0.72, 0, 1); }
+@media (min-width: 640px) {
+  .modal-anim { animation: modalPop 0.15s ease-out; }
+}
+
 @keyframes fadeUp {
   from { opacity: 0; transform: translateY(20px); }
   to { opacity: 1; transform: translateY(0); }

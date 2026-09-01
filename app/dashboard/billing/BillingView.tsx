@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { CreditCard, Check, PartyPopper, FlaskConical, Users, CheckCheck, Landmark, HeartHandshake } from "lucide-react";
 import type { Plan, PlanId } from "@/lib/plans";
+import { SkeletonCards } from "../_components/Skeleton";
 
 type PlanData = {
   planId: PlanId;
@@ -87,7 +88,7 @@ export default function BillingView({ hid, householdName }: { hid: string; house
     }
   }
 
-  if (loading) return <div className="text-black/40 dark:text-white/40 text-sm">Loading…</div>;
+  if (loading) return <SkeletonCards count={3} />;
   if (!data) return null;
 
   return (

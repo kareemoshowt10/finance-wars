@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { Landmark, Plus } from "lucide-react";
 import Modal from "../../_components/Modal";
 import UpgradeNotice, { isUpgradeError } from "../_components/UpgradeNotice";
+import { SkeletonCards } from "../../_components/Skeleton";
 import { formatCurrency, formatCurrencyFull, formatDate } from "@/lib/utils";
 import { loanProgress } from "@/lib/loans";
 
@@ -86,7 +87,7 @@ export default function BankView({ hid, meId, currency, members }: { hid: string
       )}
 
       {loading ? (
-        <div className="text-black/40 dark:text-white/40 text-sm">Loading…</div>
+        <SkeletonCards count={3} />
       ) : loans.length === 0 ? (
         <div className="card p-12 text-center">
           <div className="text-black/60 dark:text-white/60">No loans yet. The bank is open for business.</div>
@@ -123,7 +124,7 @@ export default function BankView({ hid, meId, currency, members }: { hid: string
                 </div>
                 {loan.status === "ACTIVE" && (
                   <div className="mt-3 flex justify-end">
-                    <button onClick={() => setPayingLoan(loan)} className="btn-ghost text-sm">Record a payment</button>
+                    <button onClick={() => setPayingLoan(loan)} className="btn-secondary !py-2 !px-4 text-sm">Record a payment</button>
                   </div>
                 )}
               </div>

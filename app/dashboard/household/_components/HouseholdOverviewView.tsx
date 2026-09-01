@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Home, CheckCheck, Landmark, HeartHandshake, ArrowRight, AlertTriangle, Crown, Flame } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 import TodayPanel from "./TodayPanel";
+import { SkeletonOverview } from "../../_components/Skeleton";
 
 type Member = { userId: string; name: string };
 type Pulse = {
@@ -30,7 +31,7 @@ export default function HouseholdOverviewView({ hid, householdName, meId, curren
       .finally(() => setLoading(false));
   }, [hid]);
 
-  if (loading) return <div className="text-black/40 dark:text-white/40 text-sm">Loading…</div>;
+  if (loading) return <SkeletonOverview />;
   if (!data) return null;
 
   const nameOf = (userId: string) => data.members.find((m) => m.userId === userId)?.name || "Member";

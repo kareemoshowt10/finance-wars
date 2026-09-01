@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { Flame, Check, Circle, PartyPopper, Sparkles } from "lucide-react";
 import Modal from "../../_components/Modal";
+import { haptic, celebrationHaptic } from "@/lib/haptics";
 
 type Member = { userId: string; name: string };
 type ObjectiveStatus = { id: string; label: string; description: string; icon: string; done: boolean };
@@ -41,6 +42,9 @@ export default function TodayPanel({ hid, meId, members }: { hid: string; meId: 
     if (res?.bonusAwarded) {
       setFlash("🎉 Daily objectives complete! +15 Crowns, +10 XP");
       setTimeout(() => setFlash(null), 3500);
+      celebrationHaptic();
+    } else {
+      haptic();
     }
     await Promise.all([loadDaily(), loadCheers()]);
   }
@@ -100,7 +104,7 @@ export default function TodayPanel({ hid, meId, members }: { hid: string; meId: 
       )}
 
       <div className="mt-4">
-        <button onClick={() => setShowCheer(true)} className="btn-ghost text-sm"><PartyPopper className="w-3.5 h-3.5" /> Send a cheer</button>
+        <button onClick={() => setShowCheer(true)} className="btn-secondary !py-2 !px-4 text-sm"><PartyPopper className="w-3.5 h-3.5" /> Send a cheer</button>
       </div>
 
       {showCheer && (

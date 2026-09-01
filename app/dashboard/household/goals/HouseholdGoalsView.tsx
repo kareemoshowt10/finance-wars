@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { HeartHandshake, Plus, ThumbsUp, AlertTriangle, PartyPopper } from "lucide-react";
 import Modal from "../../_components/Modal";
 import UpgradeNotice, { isUpgradeError } from "../_components/UpgradeNotice";
+import { SkeletonCards } from "../../_components/Skeleton";
 import { formatCurrency, formatDate } from "@/lib/utils";
 
 type Goal = {
@@ -70,7 +71,7 @@ export default function HouseholdGoalsView({ hid, meId, currency }: { hid: strin
       </header>
 
       {loading ? (
-        <div className="text-black/40 dark:text-white/40 text-sm">Loading…</div>
+        <SkeletonCards count={3} />
       ) : (
         <>
           <section>
@@ -155,7 +156,7 @@ function GoalCard({ g, currency, meId, onVote, onContribute, topPick }: { g: Goa
         <div className={`h-full rounded-full ${g.neglected ? "bg-amber-500" : "bg-gradient-to-r from-indigo-500 to-purple-500"}`} style={{ width: `${pct}%` }} />
       </div>
       <div className="mt-3 flex justify-end">
-        <button onClick={onContribute} className="btn-ghost text-sm">Contribute</button>
+        <button onClick={onContribute} className="btn-secondary !py-2 !px-4 text-sm">Contribute</button>
       </div>
     </div>
   );

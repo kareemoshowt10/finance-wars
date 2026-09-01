@@ -3,7 +3,9 @@ import { useEffect, useMemo, useState } from "react";
 import { CheckCheck, Plus, Crown, Flame, Sparkles, Lock } from "lucide-react";
 import Modal from "../../_components/Modal";
 import UpgradeNotice, { isUpgradeError } from "../_components/UpgradeNotice";
+import { SkeletonCards } from "../../_components/Skeleton";
 import { isChoreDue, computeStreak } from "@/lib/chores";
+import { haptic, celebrationHaptic } from "@/lib/haptics";
 
 type Chore = {
   id: string;
@@ -87,6 +89,8 @@ export default function ChoresView({ hid, meId }: { hid: string; meId: string })
         const bonus = data.bonusAwarded ? " · 🎉 Daily objectives complete! +15 Crowns, +10 XP" : "";
         setFlash(`+${chores.find((c) => c.id === choreId)?.crownValue ?? 0} Crowns${data.streak > 1 ? ` · ${data.streak}-day streak` : ""}${bonus}`);
         setTimeout(() => setFlash(null), bonus ? 4000 : 2500);
+        if (data.bonusAwarded) celebrationHaptic();
+        else haptic();
         await Promise.all([load(), loadLeaderboard()]);
       }
     } finally {
@@ -121,7 +125,7 @@ export default function ChoresView({ hid, meId }: { hid: string; meId: string })
       )}
 
       {loading ? (
-        <div className="text-black/40 dark:text-white/40 text-sm">Loading…</div>
+        <SkeletonCards count={3} />
       ) : chores.length === 0 ? (
         <div className="card p-12 text-center">
           <div className="text-black/60 dark:text-white/60">No chores tracked yet.</div>

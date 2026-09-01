@@ -35,6 +35,9 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: "#000000",
+  // Lets the app draw under the notch/home-indicator so env(safe-area-inset-*)
+  // resolves to real values instead of 0 — needed for the mobile tab bar.
+  viewportFit: "cover",
 };
 
 const themeScript = `
