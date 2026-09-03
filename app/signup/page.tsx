@@ -66,16 +66,16 @@ function SignupForm() {
 
         <form onSubmit={submit} className="space-y-3">
           <div>
-            <label className="text-xs text-white/50">Name</label>
-            <input className="input mt-1" required value={name} onChange={(e) => setName(e.target.value)} />
+            <label htmlFor="signup-name" className="text-xs text-white/50">Name</label>
+            <input id="signup-name" className="input mt-1" autoComplete="name" required value={name} onChange={(e) => setName(e.target.value)} />
           </div>
           <div>
-            <label className="text-xs text-white/50">Email</label>
-            <input className="input mt-1" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
+            <label htmlFor="signup-email" className="text-xs text-white/50">Email</label>
+            <input id="signup-email" className="input mt-1" type="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
           </div>
           <div>
-            <label className="text-xs text-white/50">Password</label>
-            <input className="input mt-1" type="password" required minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} />
+            <label htmlFor="signup-password" className="text-xs text-white/50">Password</label>
+            <input id="signup-password" className="input mt-1" type="password" autoComplete="new-password" required minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} />
           </div>
           {error && <div className="text-sm text-red-400">{error}</div>}
           <button disabled={loading} className="btn-primary w-full justify-center">

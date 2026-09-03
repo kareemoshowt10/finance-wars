@@ -1,6 +1,6 @@
 # Debt Sucker — Handoff & Deploy Notes
 
-Last updated: 2026-08-28 · Branch: `claude/debt-sucker-app-design-jili0t`
+Last updated: 2026-09-03 · Branch: `claude/debt-sucker-app-design-jili0t`
 
 This app was rebranded from **Finance Wars** to **Debt Sucker** and extended
 with **Household HQ** (chores, family loans, shared goals). See
@@ -18,8 +18,10 @@ engagement; the public site uses the **Blueprint** design system
 (architectural drafting-paper aesthetic).
 
 - Build: `✓ Compiled successfully`, ~190 routes
-- Tests: 216/216 passing (run `npm install` then `npm test`)
+- Tests: 290/290 passing (`npm test`)
+- End-to-end: 45/45 checks passing (`npm run test:e2e`, needs a running server)
 - TypeScript: clean (`npx tsc --noEmit`)
+- Lint: clean (`npm run lint`) — see `.eslintrc.README.md` for the two rule decisions
 
 ## Resume on another platform
 
@@ -39,20 +41,80 @@ npm run dev
 | `JWT_SECRET` | **Required in production** — app throws on boot if unset |
 | `CRON_SECRET` | Bearer token Vercel cron jobs send; gate for `/api/cron/*` |
 | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | Optional — Google OAuth sign-in |
-| `NEXT_PUBLIC_APP_URL` | Recommended — used to derive OAuth redirect, share URLs |
+| `NEXT_PUBLIC_APP_URL` | Recommended — canonical origin for OAuth redirects, share links, sitemap and OG tags |
+| `STRIPE_SECRET_KEY` etc. | **Required to charge anyone.** Without it billing runs in dev mode: every paid plan upgrades for free. See `.env.example` |
+| `SEED_TOKEN` | Leave unset in production — it's the only gate on `/api/admin/seed` |
+
+The server prints a configuration report at boot if any of the above is
+missing in production (`lib/launchChecks.ts` via `instrumentation.ts`), so a
+half-configured deploy announces itself in the logs instead of quietly
+behaving like a development build.
 
 ## Deploy (Vercel)
 
 1. Import the GitHub repo, point at `main`.
 2. Set the env vars above.
 3. Build command is already in `package.json`:
-   `prisma generate && prisma db push --accept-data-loss && next build`
-   (On first deploy this creates all tables. Switch to `prisma migrate deploy`
-   once you adopt migrations.)
+   `prisma generate && prisma migrate deploy && next build`
+   On a fresh database this applies `prisma/migrations/0_init` and creates
+   every table. Schema changes ship as new migrations from then on
+   (`npx prisma migrate dev --name whatever` locally, commit the generated
+   folder, deploy) — nothing destructive runs against production.
+
+   **Baselining an existing database.** If your database was created by the
+   old `prisma db push` build, its tables already exist and `migrate deploy`
+   would try to create them again. Tell Prisma the initial migration is
+   already in place, once, before the next deploy:
+
+   ```
+   DATABASE_URL=<your production url> npx prisma migrate resolve --applied 0_init
+   ```
+
+   Confirm there's nothing left over first — this should print no SQL:
+
+   ```
+   npx prisma migrate diff --from-url "$DATABASE_URL" \
+     --to-schema-datamodel prisma/schema.prisma --script
+   ```
+
+   If it *does* print SQL, your live database has drifted from the schema;
+   review that SQL and apply it deliberately rather than letting a build do
+   it. `npm run db:push` remains available for throwaway local databases.
 4. Cron schedules are declared in `vercel.json` (11 jobs) and activate
    automatically on Vercel. `/api/cron/household-nudge` runs hourly on
    purpose: it fans out to each household's *own* 8pm rather than one fixed
    UTC hour, so it needs a chance to look at every zone.
+
+## Pre-launch checklist
+
+Run through this once before pointing real users at it.
+
+1. **Database.** If the database already exists from an earlier `db push`
+   build, baseline it (see step 3 above) before the first deploy on the new
+   build command. On a brand-new database there's nothing to do.
+2. **Environment.** Set every var in the table above. Deploy, then read the
+   first lines of the server log: a clean boot prints nothing from
+   `launchChecks`; anything else names exactly what's missing and what it
+   breaks.
+3. **Billing.** Confirm `/dashboard/billing` does *not* show the blue "Dev
+   mode" banner. If it does, Stripe isn't connected and every upgrade is
+   free. Then run one real checkout end to end and confirm the webhook
+   updates `Household.plan`.
+4. **Crons.** `vercel.json` declares 11 jobs; Vercel's Hobby tier caps
+   scheduled jobs, so check your plan covers them — `household-nudge` in
+   particular must run hourly to reach every timezone's 8pm.
+5. **Smoke test the deploy.** `BASE_URL=https://your-domain npm run test:e2e`
+   drives a real browser through signup, household creation, chores, the
+   invite flow, loans, goals, billing and the mobile layout. It creates
+   throwaway accounts, so point it at staging unless you're happy with test
+   rows in production.
+6. **Monitoring.** Point an uptime check at `/api/health` — it returns 503
+   with `database: "down"` when Postgres is unreachable, and 200 otherwise,
+   so the two failure modes page differently.
+7. **Search & social.** `/robots.txt` and `/sitemap.xml` are generated from
+   `NEXT_PUBLIC_APP_URL`; confirm they show your real domain, then submit the
+   sitemap. Check a shared link unfurls with the card from
+   `app/opengraph-image.tsx`.
 
 ## Architecture quick map
 
@@ -71,7 +133,23 @@ npm run dev
 
 ## Recently shipped (newest first)
 
-1. **Capture Engine + The Compound** — the app's new center of gravity
+1. **Launch hardening** — deploys now run `prisma migrate deploy` against a
+   real `0_init` migration instead of `db push --accept-data-loss`; error
+   boundaries (`app/error.tsx`, `app/global-error.tsx`) replace Next's bare
+   "Application error"; a boot-time configuration report
+   (`lib/launchChecks.ts`) names anything missing in production; `robots.ts`,
+   `sitemap.ts`, a generated `opengraph-image.tsx` and `/api/health` cover the
+   public surface; ESLint is configured and clean; 106 form fields across the
+   dashboard had labels that weren't associated with their inputs — now wired
+   (`htmlFor`/`id`, or `role="group"` for button pickers). Plus an end-to-end
+   launch smoke test (`npm run test:e2e`, 45 checks).
+2. **Household HQ: timezones, dialogs, instant chore logging** — per-household
+   `timezone` drives every day boundary (`lib/time.ts`, day-key arithmetic
+   rather than timestamp math, so DST can't break a streak); the nudge cron
+   runs hourly and fires at each household's own 8pm; `Modal` got a focus
+   trap, Escape-to-close and proper dialog semantics; completing a chore
+   updates the card, streak and leaderboard optimistically.
+3. **Capture Engine + The Compound** — the app's new center of gravity
    (spec + Supabase reference schema in `docs/capture-engine/`). Sub-5-second
    income/expense logging: `QuickCapture` component (dashboard overview +
    standalone phone-first `/capture` page), keyword categorizer with
@@ -85,18 +163,24 @@ npm run dev
    and the clan view (household shared-only visibility). APIs:
    `/api/capture`, `/api/capture/correct`, `/api/capture/patterns`,
    `/api/compound`.
-2. Blueprint design system + homeowner/car-owner toolkit
+4. Blueprint design system + homeowner/car-owner toolkit
    (`/tools/home-affordability`, `/down-payment`, `/mortgage`,
    `/car-affordability`) with `lib/bigPurchase.ts` + 19 tests.
-2. Lifestyle Inflation Detector (`/dashboard/inflation`, `/api/inflation`).
-3. Goal Raid lifecycle (victories, deadline warnings, achievements,
+5. Lifestyle Inflation Detector (`/dashboard/inflation`, `/api/inflation`).
+6. Goal Raid lifecycle (victories, deadline warnings, achievements,
    `/api/cron/raids`).
-4. Goal Raids + Money Mind couples alignment game.
-5. Weekly Recap, interest accrual, security hardening, Google OAuth.
+7. Goal Raids + Money Mind couples alignment game.
+8. Weekly Recap, interest accrual, security hardening, Google OAuth.
 
 ## Known follow-ups / ideas
 
-- Adopt `prisma migrate` instead of `db push` before real users.
+- `react-hooks/exhaustive-deps` warns in ~18 dashboard components — the
+  `useEffect(() => { load(); }, [id])` pattern. Correct today, but worth
+  moving to `useCallback` so the rule can be trusted. See
+  `.eslintrc.README.md`.
+- ~35 `<label>` elements remain without an explicit `htmlFor`. Most are
+  wrapping labels (implicit association, already fine); a handful are button
+  pickers that want `role="group"` like the cheer picker now has.
 - In-memory rate limiting (`lib/ratelimit.ts`) is per-instance — move to a
   shared store (Upstash/Redis) for multi-region.
 - Family theme files in `app/_family/*` are unused — delete if not A/B testing.

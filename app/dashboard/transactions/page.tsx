@@ -400,28 +400,28 @@ function TxModal({ tx, accounts, onClose, onSaved }:
           <button type="button" onClick={() => setType("income")} className={`px-3 py-2 rounded-lg text-sm border ${type === "income" ? "bg-black/10 dark:bg-white/10 border-black/30 dark:border-white/30" : "border-black/10 dark:border-white/10 text-black/60 dark:text-white/60"}`}>Income</button>
         </div>
         <div>
-          <label className="text-xs text-black/50 dark:text-white/50">Amount</label>
-          <input className="input mt-1" type="number" step="0.01" required value={amount} onChange={(e) => setAmount(e.target.value)} />
+          <label htmlFor="transactions-amount" className="text-xs text-black/50 dark:text-white/50">Amount</label>
+          <input id="transactions-amount" className="input mt-1" type="number" step="0.01" required value={amount} onChange={(e) => setAmount(e.target.value)} />
         </div>
         <div>
-          <label className="text-xs text-black/50 dark:text-white/50">Account</label>
-          <select className="input mt-1" value={accountId} onChange={(e) => setAccountId(e.target.value)}>
+          <label htmlFor="transactions-account" className="text-xs text-black/50 dark:text-white/50">Account</label>
+          <select id="transactions-account" className="input mt-1" value={accountId} onChange={(e) => setAccountId(e.target.value)}>
             {accounts.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
           </select>
         </div>
         <div>
-          <label className="text-xs text-black/50 dark:text-white/50">Category</label>
-          <select className="input mt-1" value={category} onChange={(e) => setCategory(e.target.value)}>
+          <label htmlFor="transactions-category" className="text-xs text-black/50 dark:text-white/50">Category</label>
+          <select id="transactions-category" className="input mt-1" value={category} onChange={(e) => setCategory(e.target.value)}>
             {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
           </select>
         </div>
         <div>
-          <label className="text-xs text-black/50 dark:text-white/50">Description</label>
-          <input className="input mt-1" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="What was it for?" />
+          <label htmlFor="transactions-description" className="text-xs text-black/50 dark:text-white/50">Description</label>
+          <input id="transactions-description" className="input mt-1" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="What was it for?" />
         </div>
         <div>
-          <label className="text-xs text-black/50 dark:text-white/50">Date</label>
-          <input className="input mt-1" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+          <label htmlFor="transactions-date" className="text-xs text-black/50 dark:text-white/50">Date</label>
+          <input id="transactions-date" className="input mt-1" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
         </div>
         {error && <div className="text-sm text-red-400">{error}</div>}
         <div className="flex justify-end gap-2 pt-2">

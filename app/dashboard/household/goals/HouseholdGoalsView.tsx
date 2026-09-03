@@ -202,34 +202,34 @@ function NewGoalModal({ hid, onClose, onSaved }: { hid: string; onClose: () => v
       <form onSubmit={submit} className="space-y-3">
         <div className="grid grid-cols-[64px_1fr] gap-3">
           <div>
-            <label className="text-xs text-black/50 dark:text-white/50">Emoji</label>
-            <input className="input mt-1 text-center" maxLength={4} value={emoji} onChange={(e) => setEmoji(e.target.value)} />
+            <label htmlFor="householdgoalsview-emoji" className="text-xs text-black/50 dark:text-white/50">Emoji</label>
+            <input id="householdgoalsview-emoji" className="input mt-1 text-center" maxLength={4} value={emoji} onChange={(e) => setEmoji(e.target.value)} />
           </div>
           <div>
-            <label className="text-xs text-black/50 dark:text-white/50">Name</label>
-            <input className="input mt-1" required placeholder="PS5" value={name} onChange={(e) => setName(e.target.value)} />
+            <label htmlFor="householdgoalsview-name" className="text-xs text-black/50 dark:text-white/50">Name</label>
+            <input id="householdgoalsview-name" className="input mt-1" required placeholder="PS5" value={name} onChange={(e) => setName(e.target.value)} />
           </div>
         </div>
         <div>
-          <label className="text-xs text-black/50 dark:text-white/50">Description (optional)</label>
-          <input className="input mt-1" value={description} onChange={(e) => setDescription(e.target.value)} />
+          <label htmlFor="householdgoalsview-description-optional" className="text-xs text-black/50 dark:text-white/50">Description (optional)</label>
+          <input id="householdgoalsview-description-optional" className="input mt-1" value={description} onChange={(e) => setDescription(e.target.value)} />
         </div>
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="text-xs text-black/50 dark:text-white/50">Target amount</label>
-            <input className="input mt-1" type="number" step="0.01" required value={targetAmount} onChange={(e) => setTarget(e.target.value)} />
+            <label htmlFor="householdgoalsview-target-amount" className="text-xs text-black/50 dark:text-white/50">Target amount</label>
+            <input id="householdgoalsview-target-amount" className="input mt-1" type="number" step="0.01" required value={targetAmount} onChange={(e) => setTarget(e.target.value)} />
           </div>
           <div>
-            <label className="text-xs text-black/50 dark:text-white/50">Category</label>
-            <select className="input mt-1" value={category} onChange={(e) => setCategory(e.target.value as typeof category)}>
+            <label htmlFor="householdgoalsview-category" className="text-xs text-black/50 dark:text-white/50">Category</label>
+            <select id="householdgoalsview-category" className="input mt-1" value={category} onChange={(e) => setCategory(e.target.value as typeof category)}>
               <option value="ELECTIVE">Elective (fun, competes for votes)</option>
               <option value="ESSENTIAL">Essential (gets flagged if neglected)</option>
             </select>
           </div>
         </div>
         <div>
-          <label className="text-xs text-black/50 dark:text-white/50">Target date (optional)</label>
-          <input className="input mt-1" type="date" value={deadline} onChange={(e) => setDeadline(e.target.value)} />
+          <label htmlFor="householdgoalsview-target-date-optional" className="text-xs text-black/50 dark:text-white/50">Target date (optional)</label>
+          <input id="householdgoalsview-target-date-optional" className="input mt-1" type="date" value={deadline} onChange={(e) => setDeadline(e.target.value)} />
         </div>
         {error && (upgrade ? <UpgradeNotice message={error} /> : <div className="text-sm text-red-400">{error}</div>)}
         <div className="flex justify-end gap-2 pt-2">
@@ -284,13 +284,13 @@ function ContributeModal({ hid, goal, currency, onClose, onSaved }: { hid: strin
         </div>
         {source === "CASH" ? (
           <div>
-            <label className="text-xs text-black/50 dark:text-white/50">Amount</label>
-            <input className="input mt-1" type="number" step="0.01" value={amount} onChange={(e) => setAmount(e.target.value)} />
+            <label htmlFor="householdgoalsview-amount" className="text-xs text-black/50 dark:text-white/50">Amount</label>
+            <input id="householdgoalsview-amount" className="input mt-1" type="number" step="0.01" value={amount} onChange={(e) => setAmount(e.target.value)} />
           </div>
         ) : (
           <div>
-            <label className="text-xs text-black/50 dark:text-white/50">Crowns to spend (10 Crowns = $1)</label>
-            <input className="input mt-1" type="number" min={1} value={crowns} onChange={(e) => setCrowns(e.target.value)} />
+            <label htmlFor="householdgoalsview-crowns-to-spend-10-crowns-1" className="text-xs text-black/50 dark:text-white/50">Crowns to spend (10 Crowns = $1)</label>
+            <input id="householdgoalsview-crowns-to-spend-10-crowns-1" className="input mt-1" type="number" min={1} value={crowns} onChange={(e) => setCrowns(e.target.value)} />
           </div>
         )}
         {error && <div className="text-sm text-red-400">{error}</div>}

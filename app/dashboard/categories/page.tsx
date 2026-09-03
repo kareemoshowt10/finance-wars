@@ -90,8 +90,8 @@ function CatModal({ cat, onClose, onSaved }: { cat: Cat | null; onClose: () => v
     <Modal onClose={onClose} title={cat ? "Edit category" : "New category"} wide>
       <form onSubmit={submit} className="space-y-4">
         <div>
-          <label className="text-xs text-black/50 dark:text-white/50">Name</label>
-          <input className="input mt-1" value={name} onChange={(e) => setName(e.target.value)} required />
+          <label htmlFor="categories-name" className="text-xs text-black/50 dark:text-white/50">Name</label>
+          <input id="categories-name" className="input mt-1" value={name} onChange={(e) => setName(e.target.value)} required />
         </div>
         <div className="grid grid-cols-2 gap-2">
           <button type="button" onClick={() => setKind("EXPENSE")} className={`px-3 py-2 rounded-lg text-sm border ${kind === "EXPENSE" ? "bg-black/10 dark:bg-white/10 border-black/30 dark:border-white/30" : "border-black/10 dark:border-white/10"}`}>Expense</button>

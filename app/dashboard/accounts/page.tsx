@@ -178,12 +178,12 @@ function AccountModal({ acct, onClose, onSaved }: { acct: Acct | null; onClose: 
     <Modal onClose={onClose} title={acct ? "Edit account" : "New account"}>
       <form onSubmit={submit} className="space-y-3">
         <div>
-          <label className="text-xs text-black/50 dark:text-white/50">Name</label>
-          <input className="input mt-1" required value={name} onChange={(e) => setName(e.target.value)} />
+          <label htmlFor="accounts-name" className="text-xs text-black/50 dark:text-white/50">Name</label>
+          <input id="accounts-name" className="input mt-1" required value={name} onChange={(e) => setName(e.target.value)} />
         </div>
         <div>
-          <label className="text-xs text-black/50 dark:text-white/50">Type</label>
-          <select className="input mt-1" value={type} onChange={(e) => setType(e.target.value as AccountType)}>
+          <label htmlFor="accounts-type" className="text-xs text-black/50 dark:text-white/50">Type</label>
+          <select id="accounts-type" className="input mt-1" value={type} onChange={(e) => setType(e.target.value as AccountType)}>
             {ACCOUNT_TYPES.map((t) => <option key={t} value={t}>{ACCOUNT_TYPE_LABELS[t]}</option>)}
           </select>
         </div>
@@ -193,8 +193,8 @@ function AccountModal({ acct, onClose, onSaved }: { acct: Acct | null; onClose: 
         </div>
         {isDebt && (
           <div>
-            <label className="text-xs text-black/50 dark:text-white/50">APR % (optional — powers debt strategy)</label>
-            <input className="input mt-1" type="number" step="0.01" min="0" max="100" placeholder="e.g. 24.99" value={apr} onChange={(e) => setApr(e.target.value)} />
+            <label htmlFor="accounts-apr-optional-powers-debt-strategy" className="text-xs text-black/50 dark:text-white/50">APR % (optional — powers debt strategy)</label>
+            <input id="accounts-apr-optional-powers-debt-strategy" className="input mt-1" type="number" step="0.01" min="0" max="100" placeholder="e.g. 24.99" value={apr} onChange={(e) => setApr(e.target.value)} />
           </div>
         )}
         {error && <div className="text-sm text-red-400">{error}</div>}

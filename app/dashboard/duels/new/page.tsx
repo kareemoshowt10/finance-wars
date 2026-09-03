@@ -156,19 +156,19 @@ export default function NewDuelPage() {
               </div>
               <h2 className="text-lg font-medium">Goal & target</h2>
               <div className="space-y-2">
-                <label className="text-xs uppercase tracking-[0.15em] text-black/50 dark:text-white/50">Link an existing goal</label>
-                <select value={goalId} onChange={(e) => setGoalId(e.target.value)} className="input">
+                <label htmlFor="new-link-an-existing-goal" className="text-xs uppercase tracking-[0.15em] text-black/50 dark:text-white/50">Link an existing goal</label>
+                <select id="new-link-an-existing-goal" value={goalId} onChange={(e) => setGoalId(e.target.value)} className="input">
                   <option value="">— none —</option>
                   {goals.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}
                 </select>
               </div>
               <div className="space-y-2">
-                <label className="text-xs uppercase tracking-[0.15em] text-black/50 dark:text-white/50">Title</label>
-                <input value={title} onChange={(e) => setTitle(e.target.value)} className="input" placeholder="Hawaii Sprint" />
+                <label htmlFor="new-title" className="text-xs uppercase tracking-[0.15em] text-black/50 dark:text-white/50">Title</label>
+                <input id="new-title" value={title} onChange={(e) => setTitle(e.target.value)} className="input" placeholder="Hawaii Sprint" />
               </div>
               <div className="space-y-2">
-                <label className="text-xs uppercase tracking-[0.15em] text-black/50 dark:text-white/50">Target ($)</label>
-                <input type="number" value={targetAmount} onChange={(e) => setTargetAmount(Number(e.target.value))} className="input" />
+                <label htmlFor="new-target" className="text-xs uppercase tracking-[0.15em] text-black/50 dark:text-white/50">Target ($)</label>
+                <input id="new-target" type="number" value={targetAmount} onChange={(e) => setTargetAmount(Number(e.target.value))} className="input" />
               </div>
             </>
           )}
@@ -190,12 +190,12 @@ export default function NewDuelPage() {
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-2">
-                  <label className="text-xs uppercase tracking-[0.15em] text-black/50 dark:text-white/50">Start</label>
-                  <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="input" />
+                  <label htmlFor="new-start" className="text-xs uppercase tracking-[0.15em] text-black/50 dark:text-white/50">Start</label>
+                  <input id="new-start" type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="input" />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-xs uppercase tracking-[0.15em] text-black/50 dark:text-white/50">End</label>
-                  <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="input" />
+                  <label htmlFor="new-end" className="text-xs uppercase tracking-[0.15em] text-black/50 dark:text-white/50">End</label>
+                  <input id="new-end" type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="input" />
                 </div>
               </div>
               <div className="text-sm text-black/60 dark:text-white/60">{sprintsFit} sprint{sprintsFit === 1 ? "" : "s"} will fit.</div>
@@ -206,8 +206,8 @@ export default function NewDuelPage() {
             <>
               <h2 className="text-lg font-medium">Stake</h2>
               <div className="space-y-2">
-                <label className="text-xs uppercase tracking-[0.15em] text-black/50 dark:text-white/50">Loser must…</label>
-                <input value={stakeText} onChange={(e) => setStakeText(e.target.value)} className="input" placeholder="Plan the next vacation" />
+                <label htmlFor="new-loser-must" className="text-xs uppercase tracking-[0.15em] text-black/50 dark:text-white/50">Loser must…</label>
+                <input id="new-loser-must" value={stakeText} onChange={(e) => setStakeText(e.target.value)} className="input" placeholder="Plan the next vacation" />
               </div>
               <label className="flex items-center gap-2 text-sm cursor-pointer">
                 <input type="checkbox" checked={autoPenaltyEnabled} onChange={(e) => setAutoPenaltyEnabled(e.target.checked)} />
@@ -217,17 +217,17 @@ export default function NewDuelPage() {
                 <div className="space-y-3 pl-6 border-l-2 border-indigo-500/40">
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-2">
-                      <label className="text-xs uppercase tracking-[0.15em] text-black/50 dark:text-white/50">Stake $</label>
-                      <input type="number" value={stakeAmount} onChange={(e) => setStakeAmount(Number(e.target.value))} className="input" />
+                      <label htmlFor="new-stake" className="text-xs uppercase tracking-[0.15em] text-black/50 dark:text-white/50">Stake $</label>
+                      <input id="new-stake" type="number" value={stakeAmount} onChange={(e) => setStakeAmount(Number(e.target.value))} className="input" />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-xs uppercase tracking-[0.15em] text-black/50 dark:text-white/50">% cap of balance</label>
-                      <input type="number" value={stakePercentCap} onChange={(e) => setStakePercentCap(Number(e.target.value))} className="input" />
+                      <label htmlFor="new-cap-of-balance" className="text-xs uppercase tracking-[0.15em] text-black/50 dark:text-white/50">% cap of balance</label>
+                      <input id="new-cap-of-balance" type="number" value={stakePercentCap} onChange={(e) => setStakePercentCap(Number(e.target.value))} className="input" />
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <label className="text-xs uppercase tracking-[0.15em] text-black/50 dark:text-white/50">Your stake account</label>
-                    <select value={stakeAccountId} onChange={(e) => setStakeAccountId(e.target.value)} className="input">
+                    <label htmlFor="new-your-stake-account" className="text-xs uppercase tracking-[0.15em] text-black/50 dark:text-white/50">Your stake account</label>
+                    <select id="new-your-stake-account" value={stakeAccountId} onChange={(e) => setStakeAccountId(e.target.value)} className="input">
                       <option value="">— select —</option>
                       {accounts.map((a) => <option key={a.id} value={a.id}>{a.name} (${a.balance.toFixed(0)})</option>)}
                     </select>
@@ -250,8 +250,8 @@ export default function NewDuelPage() {
               </div>
               {mode === "invite" ? (
                 <div className="space-y-2">
-                  <label className="text-xs uppercase tracking-[0.15em] text-black/50 dark:text-white/50">Email</label>
-                  <input type="email" value={inviteEmail} onChange={(e) => setInviteEmail(e.target.value)} className="input" placeholder="partner@email.com" />
+                  <label htmlFor="new-email" className="text-xs uppercase tracking-[0.15em] text-black/50 dark:text-white/50">Email</label>
+                  <input id="new-email" type="email" value={inviteEmail} onChange={(e) => setInviteEmail(e.target.value)} className="input" placeholder="partner@email.com" />
                 </div>
               ) : (
                 <div className="space-y-3">

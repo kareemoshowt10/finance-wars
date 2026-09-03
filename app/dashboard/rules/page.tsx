@@ -200,29 +200,29 @@ function RuleModal({ rule, accounts, cats, onClose, onSaved }: {
     <Modal title={rule ? "Edit rule" : "New rule"} onClose={onClose}>
       <div className="space-y-3">
         <div>
-          <label className="text-xs text-black/50 dark:text-white/50">Name</label>
-          <input className="input" value={name} onChange={(e) => setName(e.target.value)} placeholder="Spotify subscriptions" />
+          <label htmlFor="rules-name" className="text-xs text-black/50 dark:text-white/50">Name</label>
+          <input id="rules-name" className="input" value={name} onChange={(e) => setName(e.target.value)} placeholder="Spotify subscriptions" />
         </div>
         <div>
-          <label className="text-xs text-black/50 dark:text-white/50">Pattern (case-insensitive substring on description)</label>
-          <input className="input" value={pattern} onChange={(e) => setPattern(e.target.value)} placeholder="spotify" />
+          <label htmlFor="rules-pattern-case-insensitive-substring-on-description" className="text-xs text-black/50 dark:text-white/50">Pattern (case-insensitive substring on description)</label>
+          <input id="rules-pattern-case-insensitive-substring-on-description" className="input" value={pattern} onChange={(e) => setPattern(e.target.value)} placeholder="spotify" />
         </div>
         <div>
-          <label className="text-xs text-black/50 dark:text-white/50">Category</label>
-          <select className="input" value={categoryOut} onChange={(e) => setCategoryOut(e.target.value)}>
+          <label htmlFor="rules-category" className="text-xs text-black/50 dark:text-white/50">Category</label>
+          <select id="rules-category" className="input" value={categoryOut} onChange={(e) => setCategoryOut(e.target.value)}>
             {cats.map((c) => <option key={c.id} value={c.name}>{c.name}</option>)}
           </select>
         </div>
         <div>
-          <label className="text-xs text-black/50 dark:text-white/50">Account (optional)</label>
-          <select className="input" value={accountId} onChange={(e) => setAccountId(e.target.value)}>
+          <label htmlFor="rules-account-optional" className="text-xs text-black/50 dark:text-white/50">Account (optional)</label>
+          <select id="rules-account-optional" className="input" value={accountId} onChange={(e) => setAccountId(e.target.value)}>
             <option value="">Any account</option>
             {accounts.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
           </select>
         </div>
         <div>
-          <label className="text-xs text-black/50 dark:text-white/50">Auto-tag (optional)</label>
-          <input className="input" value={autoTag} onChange={(e) => setAutoTag(e.target.value)} placeholder="streaming" />
+          <label htmlFor="rules-auto-tag-optional" className="text-xs text-black/50 dark:text-white/50">Auto-tag (optional)</label>
+          <input id="rules-auto-tag-optional" className="input" value={autoTag} onChange={(e) => setAutoTag(e.target.value)} placeholder="streaming" />
         </div>
         <label className="flex items-center gap-2 text-sm">
           <input type="checkbox" checked={active} onChange={(e) => setActive(e.target.checked)} />

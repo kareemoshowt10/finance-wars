@@ -2,6 +2,7 @@ import "./globals.css";
 import type { Metadata, Viewport } from "next";
 import { Inter, Fraunces, Bricolage_Grotesque, JetBrains_Mono } from "next/font/google";
 import PWARegister from "./dashboard/_components/PWARegister";
+import { siteUrl } from "@/lib/siteUrl";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
 const fraunces = Fraunces({
@@ -23,14 +24,30 @@ const mono = JetBrains_Mono({
   display: "swap",
 });
 
+const TITLE = "Debt Sucker — Become the bank. Run the household.";
+const DESCRIPTION =
+  "The household finance app that's also a game: family loans, chores, and shared goals — with debt, chores, and teamwork all on one scoreboard.";
+
 export const metadata: Metadata = {
-  title: "Debt Sucker — Become the bank. Run the household.",
-  description: "The household finance app that's also a game: family loans, chores, and shared goals — with debt, chores, and teamwork all on one scoreboard.",
+  // Makes every relative URL below (and app/opengraph-image.tsx) resolve to an
+  // absolute one, which is the only kind link unfurlers accept.
+  metadataBase: new URL(siteUrl()),
+  title: TITLE,
+  description: DESCRIPTION,
+  applicationName: "Debt Sucker",
   appleWebApp: { capable: true, statusBarStyle: "black-translucent", title: "Debt Sucker" },
   icons: {
     icon: [{ url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" }],
     apple: [{ url: "/icons/icon-192.png", sizes: "192x192" }],
   },
+  openGraph: {
+    type: "website",
+    siteName: "Debt Sucker",
+    title: TITLE,
+    description: DESCRIPTION,
+    url: "/",
+  },
+  twitter: { card: "summary_large_image", title: TITLE, description: DESCRIPTION },
 };
 
 export const viewport: Viewport = {

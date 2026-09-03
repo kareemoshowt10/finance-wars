@@ -83,12 +83,12 @@ function LoginInner() {
 
         <form onSubmit={submit} className="mt-4 space-y-3">
           <div>
-            <label className="text-xs text-white/50">Email</label>
-            <input className="input mt-1" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
+            <label htmlFor="login-email" className="text-xs text-white/50">Email</label>
+            <input id="login-email" className="input mt-1" type="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
           </div>
           <div>
-            <label className="text-xs text-white/50">Password</label>
-            <input className="input mt-1" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} />
+            <label htmlFor="login-password" className="text-xs text-white/50">Password</label>
+            <input id="login-password" className="input mt-1" type="password" autoComplete="current-password" required value={password} onChange={(e) => setPassword(e.target.value)} />
           </div>
           {error && <div className="text-sm text-red-400">{error}</div>}
           <button disabled={loading} className="btn-primary w-full justify-center">

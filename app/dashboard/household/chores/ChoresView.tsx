@@ -310,30 +310,30 @@ function NewChoreModal({ hid, onClose, onSaved }: { hid: string; onClose: () => 
       <form onSubmit={submit} className="space-y-3">
         <div className="grid grid-cols-[64px_1fr] gap-3">
           <div>
-            <label className="text-xs text-black/50 dark:text-white/50">Emoji</label>
-            <input className="input mt-1 text-center" maxLength={4} value={emoji} onChange={(e) => setEmoji(e.target.value)} />
+            <label htmlFor="choresview-emoji" className="text-xs text-black/50 dark:text-white/50">Emoji</label>
+            <input id="choresview-emoji" className="input mt-1 text-center" maxLength={4} value={emoji} onChange={(e) => setEmoji(e.target.value)} />
           </div>
           <div>
-            <label className="text-xs text-black/50 dark:text-white/50">Name</label>
-            <input className="input mt-1" required placeholder="Dishes" value={name} onChange={(e) => setName(e.target.value)} />
+            <label htmlFor="choresview-name" className="text-xs text-black/50 dark:text-white/50">Name</label>
+            <input id="choresview-name" className="input mt-1" required placeholder="Dishes" value={name} onChange={(e) => setName(e.target.value)} />
           </div>
         </div>
         <div>
-          <label className="text-xs text-black/50 dark:text-white/50">Description (optional)</label>
-          <input className="input mt-1" value={description} onChange={(e) => setDescription(e.target.value)} />
+          <label htmlFor="choresview-description-optional" className="text-xs text-black/50 dark:text-white/50">Description (optional)</label>
+          <input id="choresview-description-optional" className="input mt-1" value={description} onChange={(e) => setDescription(e.target.value)} />
         </div>
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="text-xs text-black/50 dark:text-white/50">Frequency</label>
-            <select className="input mt-1" value={frequency} onChange={(e) => setFrequency(e.target.value as typeof frequency)}>
+            <label htmlFor="choresview-frequency" className="text-xs text-black/50 dark:text-white/50">Frequency</label>
+            <select id="choresview-frequency" className="input mt-1" value={frequency} onChange={(e) => setFrequency(e.target.value as typeof frequency)}>
               <option value="DAILY">Daily</option>
               <option value="WEEKLY">Weekly</option>
               <option value="ONEOFF">One-off</option>
             </select>
           </div>
           <div>
-            <label className="text-xs text-black/50 dark:text-white/50">Category</label>
-            <select className="input mt-1" value={category} onChange={(e) => setCategory(e.target.value as typeof category)}>
+            <label htmlFor="choresview-category" className="text-xs text-black/50 dark:text-white/50">Category</label>
+            <select id="choresview-category" className="input mt-1" value={category} onChange={(e) => setCategory(e.target.value as typeof category)}>
               <option value="ESSENTIAL">Essential</option>
               <option value="ELECTIVE">Elective</option>
             </select>
@@ -341,12 +341,12 @@ function NewChoreModal({ hid, onClose, onSaved }: { hid: string; onClose: () => 
         </div>
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="text-xs text-black/50 dark:text-white/50">Crowns</label>
-            <input className="input mt-1" type="number" min={1} value={crownValue} onChange={(e) => setCrownValue(e.target.value)} />
+            <label htmlFor="choresview-crowns" className="text-xs text-black/50 dark:text-white/50">Crowns</label>
+            <input id="choresview-crowns" className="input mt-1" type="number" min={1} value={crownValue} onChange={(e) => setCrownValue(e.target.value)} />
           </div>
           <div>
-            <label className="text-xs text-black/50 dark:text-white/50">XP</label>
-            <input className="input mt-1" type="number" min={0} value={xpValue} onChange={(e) => setXpValue(e.target.value)} />
+            <label htmlFor="choresview-xp" className="text-xs text-black/50 dark:text-white/50">XP</label>
+            <input id="choresview-xp" className="input mt-1" type="number" min={0} value={xpValue} onChange={(e) => setXpValue(e.target.value)} />
           </div>
         </div>
         {error && (upgrade ? <UpgradeNotice message={error} /> : <div className="text-sm text-red-400">{error}</div>)}

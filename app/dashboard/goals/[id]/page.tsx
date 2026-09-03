@@ -123,20 +123,20 @@ export default function GoalDetailPage() {
         <Modal title="Add contribution" onClose={() => setOpen(false)}>
           <div className="space-y-3">
             <div>
-              <label className="text-xs text-black/50 dark:text-white/50">Amount</label>
-              <input className="input" type="number" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="100" />
+              <label htmlFor="id-amount" className="text-xs text-black/50 dark:text-white/50">Amount</label>
+              <input id="id-amount" className="input" type="number" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="100" />
             </div>
             <div>
-              <label className="text-xs text-black/50 dark:text-white/50">Date</label>
-              <input className="input" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+              <label htmlFor="id-date" className="text-xs text-black/50 dark:text-white/50">Date</label>
+              <input id="id-date" className="input" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
             </div>
             <div>
-              <label className="text-xs text-black/50 dark:text-white/50">Note (optional)</label>
-              <input className="input" value={note} onChange={(e) => setNote(e.target.value)} />
+              <label htmlFor="id-note-optional" className="text-xs text-black/50 dark:text-white/50">Note (optional)</label>
+              <input id="id-note-optional" className="input" value={note} onChange={(e) => setNote(e.target.value)} />
             </div>
             <div>
-              <label className="text-xs text-black/50 dark:text-white/50">Link transaction (optional)</label>
-              <select className="input" value={txId} onChange={(e) => setTxId(e.target.value)}>
+              <label htmlFor="id-link-transaction-optional" className="text-xs text-black/50 dark:text-white/50">Link transaction (optional)</label>
+              <select id="id-link-transaction-optional" className="input" value={txId} onChange={(e) => setTxId(e.target.value)}>
                 <option value="">None</option>
                 {txs.map((t) => <option key={t.id} value={t.id}>{formatDate(t.date)} · {t.description} · {formatCurrency(t.amount, currency)}</option>)}
               </select>

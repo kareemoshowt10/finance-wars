@@ -4,13 +4,15 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "prisma generate && prisma db push --accept-data-loss && next build",
+    "build": "prisma generate && prisma migrate deploy && next build",
     "start": "next start",
     "lint": "next lint",
     "postinstall": "prisma generate",
     "db:seed": "tsx prisma/seed.ts",
     "db:reset": "prisma migrate reset --force",
+    "db:push": "prisma db push",
     "test": "vitest run",
+    "test:e2e": "node tests/e2e/launch.mjs",
     "gen-icons": "tsx scripts/gen-icons.ts"
   },
   "prisma": {

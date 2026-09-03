@@ -190,23 +190,23 @@ function HoldingModal({ holding, accounts, onClose, onSaved }: {
     <Modal onClose={onClose} title={holding ? "Edit holding" : "New holding"}>
       <form onSubmit={submit} className="space-y-3">
         <div>
-          <label className="text-xs text-black/50 dark:text-white/50">Account</label>
-          <select className="input mt-1" value={accountId} onChange={(e) => setAccountId(e.target.value)}>
+          <label htmlFor="portfolio-account" className="text-xs text-black/50 dark:text-white/50">Account</label>
+          <select id="portfolio-account" className="input mt-1" value={accountId} onChange={(e) => setAccountId(e.target.value)}>
             {accounts.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
           </select>
         </div>
         <div>
-          <label className="text-xs text-black/50 dark:text-white/50">Symbol</label>
-          <input className="input mt-1 uppercase" value={symbol} onChange={(e) => setSymbol(e.target.value.toUpperCase())} placeholder="AAPL" />
+          <label htmlFor="portfolio-symbol" className="text-xs text-black/50 dark:text-white/50">Symbol</label>
+          <input id="portfolio-symbol" className="input mt-1 uppercase" value={symbol} onChange={(e) => setSymbol(e.target.value.toUpperCase())} placeholder="AAPL" />
         </div>
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="text-xs text-black/50 dark:text-white/50">Shares</label>
-            <input className="input mt-1" type="number" step="0.0001" value={shares} onChange={(e) => setShares(e.target.value)} />
+            <label htmlFor="portfolio-shares" className="text-xs text-black/50 dark:text-white/50">Shares</label>
+            <input id="portfolio-shares" className="input mt-1" type="number" step="0.0001" value={shares} onChange={(e) => setShares(e.target.value)} />
           </div>
           <div>
-            <label className="text-xs text-black/50 dark:text-white/50">Cost basis</label>
-            <input className="input mt-1" type="number" step="0.01" value={costBasis} onChange={(e) => setCostBasis(e.target.value)} />
+            <label htmlFor="portfolio-cost-basis" className="text-xs text-black/50 dark:text-white/50">Cost basis</label>
+            <input id="portfolio-cost-basis" className="input mt-1" type="number" step="0.01" value={costBasis} onChange={(e) => setCostBasis(e.target.value)} />
           </div>
         </div>
         {err && <div className="text-sm text-rose-500">{err}</div>}

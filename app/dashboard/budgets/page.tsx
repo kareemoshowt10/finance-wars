@@ -117,14 +117,14 @@ function BudgetModal({ budget, month, onClose, onSaved }: { budget: Budget | nul
     <Modal onClose={onClose} title={budget ? "Edit budget" : "New budget"}>
       <form onSubmit={submit} className="space-y-3">
         <div>
-          <label className="text-xs text-black/50 dark:text-white/50">Category</label>
-          <select className="input mt-1" value={category} onChange={(e) => setCategory(e.target.value)} disabled={!!budget}>
+          <label htmlFor="budgets-category" className="text-xs text-black/50 dark:text-white/50">Category</label>
+          <select id="budgets-category" className="input mt-1" value={category} onChange={(e) => setCategory(e.target.value)} disabled={!!budget}>
             {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
           </select>
         </div>
         <div>
-          <label className="text-xs text-black/50 dark:text-white/50">Monthly limit</label>
-          <input className="input mt-1" type="number" step="0.01" value={limit} onChange={(e) => setLimit(e.target.value)} required />
+          <label htmlFor="budgets-monthly-limit" className="text-xs text-black/50 dark:text-white/50">Monthly limit</label>
+          <input id="budgets-monthly-limit" className="input mt-1" type="number" step="0.01" value={limit} onChange={(e) => setLimit(e.target.value)} required />
         </div>
         {error && <div className="text-sm text-red-400">{error}</div>}
         <div className="flex justify-end gap-2 pt-2">

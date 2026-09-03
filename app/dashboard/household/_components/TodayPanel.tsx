@@ -135,19 +135,21 @@ function CheerModal({ members, onClose, onSend }: { members: Member[]; onClose: 
     <Modal onClose={onClose} title="Send a cheer">
       <div className="space-y-4">
         <div>
-          <label className="text-xs text-black/50 dark:text-white/50">To</label>
-          <select className="input mt-1" value={toUserId} onChange={(e) => setToUserId(e.target.value)}>
+          <label htmlFor="todaypanel-to" className="text-xs text-black/50 dark:text-white/50">To</label>
+          <select id="todaypanel-to" className="input mt-1" value={toUserId} onChange={(e) => setToUserId(e.target.value)}>
             {members.map((m) => <option key={m.userId} value={m.userId}>{m.name}</option>)}
           </select>
         </div>
         <div>
-          <label className="text-xs text-black/50 dark:text-white/50">Emoji</label>
-          <div className="mt-2 flex gap-2 flex-wrap">
+          <span id="cheer-emoji-label" className="text-xs text-black/50 dark:text-white/50">Emoji</span>
+          <div role="group" aria-labelledby="cheer-emoji-label" className="mt-2 flex gap-2 flex-wrap">
             {CHEER_EMOJI.map((e) => (
               <button
                 key={e}
                 type="button"
                 onClick={() => setEmoji(e)}
+                aria-pressed={emoji === e}
+                aria-label={`Cheer with ${e}`}
                 className={`text-xl w-11 h-11 rounded-full flex items-center justify-center transition ${emoji === e ? "bg-indigo-500/20 ring-2 ring-indigo-500" : "bg-black/5 dark:bg-white/5"}`}
               >
                 {e}

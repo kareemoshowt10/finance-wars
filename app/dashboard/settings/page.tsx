@@ -116,22 +116,22 @@ export default function SettingsPage() {
         <h2 className="text-sm font-semibold uppercase tracking-wider text-black/60 dark:text-white/60">Profile</h2>
         <form onSubmit={saveProfile} className="mt-4 space-y-3">
           <div>
-            <label className="text-xs text-black/50 dark:text-white/50">Name</label>
-            <input className="input mt-1" value={name} onChange={(e) => setName(e.target.value)} required />
+            <label htmlFor="settings-name" className="text-xs text-black/50 dark:text-white/50">Name</label>
+            <input id="settings-name" className="input mt-1" value={name} onChange={(e) => setName(e.target.value)} required />
           </div>
           <div>
-            <label className="text-xs text-black/50 dark:text-white/50">Email</label>
-            <input className="input mt-1" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+            <label htmlFor="settings-email" className="text-xs text-black/50 dark:text-white/50">Email</label>
+            <input id="settings-email" className="input mt-1" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
           </div>
           {email !== origEmail && (
             <div>
-              <label className="text-xs text-black/50 dark:text-white/50">Current password (required to change email)</label>
-              <input className="input mt-1" type="password" value={profilePw} onChange={(e) => setProfilePw(e.target.value)} />
+              <label htmlFor="settings-current-password-required-to-change-email" className="text-xs text-black/50 dark:text-white/50">Current password (required to change email)</label>
+              <input id="settings-current-password-required-to-change-email" className="input mt-1" type="password" value={profilePw} onChange={(e) => setProfilePw(e.target.value)} />
             </div>
           )}
           <div>
-            <label className="text-xs text-black/50 dark:text-white/50">Currency</label>
-            <select className="input mt-1" value={currency} onChange={(e) => setCurrency(e.target.value)}>
+            <label htmlFor="settings-currency" className="text-xs text-black/50 dark:text-white/50">Currency</label>
+            <select id="settings-currency" className="input mt-1" value={currency} onChange={(e) => setCurrency(e.target.value)}>
               {CURRENCIES.map((c) => <option key={c} value={c}>{c}</option>)}
             </select>
           </div>
@@ -346,8 +346,8 @@ function DuelPreferencesSection() {
           <input type="checkbox" checked={notify} onChange={(e) => setNotify(e.target.checked)} className="w-4 h-4 accent-indigo-500" />
         </label>
         <div>
-          <label className="text-xs text-black/50 dark:text-white/50">Default stake account</label>
-          <select className="input mt-1" value={stakeAccountId} onChange={(e) => setStakeAccountId(e.target.value)}>
+          <label htmlFor="settings-default-stake-account" className="text-xs text-black/50 dark:text-white/50">Default stake account</label>
+          <select id="settings-default-stake-account" className="input mt-1" value={stakeAccountId} onChange={(e) => setStakeAccountId(e.target.value)}>
             <option value="">— none —</option>
             {accounts.map((a) => <option key={a.id} value={a.id}>{a.name} ({a.type})</option>)}
           </select>

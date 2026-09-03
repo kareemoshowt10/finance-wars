@@ -183,23 +183,23 @@ function NewLoanModal({ hid, members, interestAllowed, onClose, onSaved }: { hid
     <Modal onClose={onClose} title="Issue a loan">
       <form onSubmit={submit} className="space-y-3">
         <div>
-          <label className="text-xs text-black/50 dark:text-white/50">Borrower</label>
-          <select className="input mt-1" value={borrowerUserId} onChange={(e) => setBorrower(e.target.value)}>
+          <label htmlFor="bankview-borrower" className="text-xs text-black/50 dark:text-white/50">Borrower</label>
+          <select id="bankview-borrower" className="input mt-1" value={borrowerUserId} onChange={(e) => setBorrower(e.target.value)}>
             {members.map((m) => <option key={m.userId} value={m.userId}>{m.name}</option>)}
           </select>
         </div>
         <div>
-          <label className="text-xs text-black/50 dark:text-white/50">What's it for?</label>
-          <input className="input mt-1" required placeholder="New headset" value={purpose} onChange={(e) => setPurpose(e.target.value)} />
+          <label htmlFor="bankview-what-s-it-for" className="text-xs text-black/50 dark:text-white/50">What's it for?</label>
+          <input id="bankview-what-s-it-for" className="input mt-1" required placeholder="New headset" value={purpose} onChange={(e) => setPurpose(e.target.value)} />
         </div>
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="text-xs text-black/50 dark:text-white/50">Amount</label>
-            <input className="input mt-1" type="number" step="0.01" required value={principal} onChange={(e) => setPrincipal(e.target.value)} />
+            <label htmlFor="bankview-amount" className="text-xs text-black/50 dark:text-white/50">Amount</label>
+            <input id="bankview-amount" className="input mt-1" type="number" step="0.01" required value={principal} onChange={(e) => setPrincipal(e.target.value)} />
           </div>
           <div>
-            <label className="text-xs text-black/50 dark:text-white/50">Category</label>
-            <select className="input mt-1" value={category} onChange={(e) => setCategory(e.target.value as typeof category)}>
+            <label htmlFor="bankview-category" className="text-xs text-black/50 dark:text-white/50">Category</label>
+            <select id="bankview-category" className="input mt-1" value={category} onChange={(e) => setCategory(e.target.value as typeof category)}>
               <option value="ELECTIVE">Elective</option>
               <option value="ESSENTIAL">Essential</option>
             </select>
@@ -207,10 +207,11 @@ function NewLoanModal({ hid, members, interestAllowed, onClose, onSaved }: { hid
         </div>
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="text-xs text-black/50 dark:text-white/50 flex items-center gap-1">
+            <label htmlFor="bankview-interest-apr" className="text-xs text-black/50 dark:text-white/50 flex items-center gap-1">
               Interest (APR %, optional) {!interestAllowed && <span className="text-indigo-500">— Household HQ</span>}
             </label>
             <input
+              id="bankview-interest-apr"
               className="input mt-1 disabled:opacity-50"
               type="number"
               step="0.1"
@@ -222,8 +223,8 @@ function NewLoanModal({ hid, members, interestAllowed, onClose, onSaved }: { hid
             />
           </div>
           <div>
-            <label className="text-xs text-black/50 dark:text-white/50">Due date (optional)</label>
-            <input className="input mt-1" type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
+            <label htmlFor="bankview-due-date-optional" className="text-xs text-black/50 dark:text-white/50">Due date (optional)</label>
+            <input id="bankview-due-date-optional" className="input mt-1" type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
           </div>
         </div>
         {error && (upgrade ? <UpgradeNotice message={error} /> : <div className="text-sm text-red-400">{error}</div>)}
@@ -266,12 +267,12 @@ function PaymentModal({ hid, loan, currency, onClose, onSaved }: { hid: string; 
       <form onSubmit={submit} className="space-y-3">
         <div className="text-sm text-black/60 dark:text-white/60">Balance remaining: {formatCurrencyFull(loan.balanceRemaining, currency)}</div>
         <div>
-          <label className="text-xs text-black/50 dark:text-white/50">Amount</label>
-          <input className="input mt-1" type="number" step="0.01" required value={amount} onChange={(e) => setAmount(e.target.value)} />
+          <label htmlFor="bankview-amount-2" className="text-xs text-black/50 dark:text-white/50">Amount</label>
+          <input id="bankview-amount-2" className="input mt-1" type="number" step="0.01" required value={amount} onChange={(e) => setAmount(e.target.value)} />
         </div>
         <div>
-          <label className="text-xs text-black/50 dark:text-white/50">Note (optional)</label>
-          <input className="input mt-1" value={note} onChange={(e) => setNote(e.target.value)} />
+          <label htmlFor="bankview-note-optional" className="text-xs text-black/50 dark:text-white/50">Note (optional)</label>
+          <input id="bankview-note-optional" className="input mt-1" value={note} onChange={(e) => setNote(e.target.value)} />
         </div>
         {error && <div className="text-sm text-red-400">{error}</div>}
         <div className="flex justify-end gap-2 pt-2">

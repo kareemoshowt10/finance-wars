@@ -144,22 +144,22 @@ function GoalModal({ goal, onClose, onSaved }: { goal: Goal | null; onClose: () 
     <Modal onClose={onClose} title={goal ? "Edit goal" : "New goal"}>
       <form onSubmit={submit} className="space-y-3">
         <div>
-          <label className="text-xs text-black/50 dark:text-white/50">Name</label>
-          <input className="input mt-1" required value={name} onChange={(e) => setName(e.target.value)} />
+          <label htmlFor="goals-name" className="text-xs text-black/50 dark:text-white/50">Name</label>
+          <input id="goals-name" className="input mt-1" required value={name} onChange={(e) => setName(e.target.value)} />
         </div>
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="text-xs text-black/50 dark:text-white/50">Target</label>
-            <input className="input mt-1" type="number" step="0.01" required value={targetAmount} onChange={(e) => setTarget(e.target.value)} />
+            <label htmlFor="goals-target" className="text-xs text-black/50 dark:text-white/50">Target</label>
+            <input id="goals-target" className="input mt-1" type="number" step="0.01" required value={targetAmount} onChange={(e) => setTarget(e.target.value)} />
           </div>
           <div>
-            <label className="text-xs text-black/50 dark:text-white/50">Current</label>
-            <input className="input mt-1" type="number" step="0.01" value={currentAmount} onChange={(e) => setCurrent(e.target.value)} />
+            <label htmlFor="goals-current" className="text-xs text-black/50 dark:text-white/50">Current</label>
+            <input id="goals-current" className="input mt-1" type="number" step="0.01" value={currentAmount} onChange={(e) => setCurrent(e.target.value)} />
           </div>
         </div>
         <div>
-          <label className="text-xs text-black/50 dark:text-white/50">Deadline</label>
-          <input className="input mt-1" type="date" required value={deadline} onChange={(e) => setDeadline(e.target.value)} />
+          <label htmlFor="goals-deadline" className="text-xs text-black/50 dark:text-white/50">Deadline</label>
+          <input id="goals-deadline" className="input mt-1" type="date" required value={deadline} onChange={(e) => setDeadline(e.target.value)} />
         </div>
         {error && <div className="text-sm text-red-400">{error}</div>}
         <div className="flex justify-end gap-2 pt-2">
