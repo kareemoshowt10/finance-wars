@@ -49,8 +49,10 @@ npm run dev
    `prisma generate && prisma db push --accept-data-loss && next build`
    (On first deploy this creates all tables. Switch to `prisma migrate deploy`
    once you adopt migrations.)
-4. Cron schedules are declared in `vercel.json` (9 jobs) and activate
-   automatically on Vercel.
+4. Cron schedules are declared in `vercel.json` (11 jobs) and activate
+   automatically on Vercel. `/api/cron/household-nudge` runs hourly on
+   purpose: it fans out to each household's *own* 8pm rather than one fixed
+   UTC hour, so it needs a chance to look at every zone.
 
 ## Architecture quick map
 

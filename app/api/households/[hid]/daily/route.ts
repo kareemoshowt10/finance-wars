@@ -2,7 +2,7 @@ import { NextRequest } from "next/server";
 import { resolveRequestUser } from "@/lib/auth";
 import { bad, ok } from "@/lib/api";
 import { assertMember } from "@/lib/household";
-import { getHouseholdStreak, getDailyObjectiveStatuses, hasBonusToday } from "@/lib/dailyEngagement";
+import { getHouseholdStreak, getDailyObjectiveStatuses, hasBonusToday, householdTimeZone } from "@/lib/dailyEngagement";
 
 export const dynamic = "force-dynamic";
 
@@ -13,11 +13,15 @@ export async function GET(req: NextRequest, { params }: { params: { hid: string 
   const fb = await assertMember(r.user.id, params.hid);
   if (fb) return fb;
 
+  // Resolved once and threaded through, so the three reads below don't each
+  // re-fetch the household row.
+  const timezone = await householdTimeZone(params.hid);
+  const now = new Date();
   const [streak, objectives, bonusClaimedToday] = await Promise.all([
-    getHouseholdStreak(params.hid),
-    getDailyObjectiveStatuses(params.hid, r.user.id),
-    hasBonusToday(r.user.id, params.hid),
+    getHouseholdStreak(params.hid, now, timezone),
+    getDailyObjectiveStatuses(params.hid, r.user.id, now, timezone),
+    hasBonusToday(r.user.id, params.hid, now, timezone),
   ]);
 
-  return ok({ streak, objectives, bonusClaimedToday });
+  return ok({ streak, objectives, bonusClaimedToday, timezone });
 }

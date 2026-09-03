@@ -1,5 +1,12 @@
 import { describe, it, expect } from "vitest";
-import { computeStreak, buildLeaderboard, mostFrequentDoer, isChoreDue, longestStreakEver } from "@/lib/chores";
+import {
+  computeStreak,
+  buildLeaderboard,
+  mostFrequentDoer,
+  isChoreDue,
+  longestStreakEver,
+  applyCompletionToLeaderboard,
+} from "@/lib/chores";
 
 const day = (n: number) => new Date(2026, 0, n, 9, 0, 0);
 
@@ -95,6 +102,52 @@ describe("chores", () => {
     it("is 0 for no history and 1 for a single day", () => {
       expect(longestStreakEver([])).toBe(0);
       expect(longestStreakEver([day(5)])).toBe(1);
+    });
+  });
+  describe("applyCompletionToLeaderboard — the optimistic bump", () => {
+    const board = [
+      { userId: "a", name: "Ada", completions: 5, crowns: 50, xp: 25, rank: 1 },
+      { userId: "b", name: "Ben", completions: 4, crowns: 40, xp: 20, rank: 2 },
+    ];
+
+    it("adds the completion to the right member and leaves the others alone", () => {
+      const next = applyCompletionToLeaderboard(board, "b", "Ben", 10, 5);
+      expect(next.find((e) => e.userId === "b")).toMatchObject({ completions: 5, crowns: 50, xp: 25 });
+      expect(next.find((e) => e.userId === "a")).toMatchObject({ completions: 5, crowns: 50, xp: 25 });
+    });
+
+    it("re-ranks the same way buildLeaderboard does", () => {
+      // Ben ties Ada on completions (5) but the tie-break is Crowns, and a
+      // 20-Crown chore puts him ahead.
+      const next = applyCompletionToLeaderboard(board, "b", "Ben", 20, 5);
+      expect(next.map((e) => e.userId)).toEqual(["b", "a"]);
+      expect(next.map((e) => e.rank)).toEqual([1, 2]);
+    });
+
+    it("agrees with a full rebuild over the same completions", () => {
+      const members = [
+        { userId: "a", name: "Ada" },
+        { userId: "b", name: "Ben" },
+      ];
+      const history = [
+        { userId: "a", crownsAwarded: 10, xpAwarded: 5, completedAt: day(1) },
+        { userId: "b", crownsAwarded: 30, xpAwarded: 5, completedAt: day(1) },
+      ];
+      const rebuilt = buildLeaderboard([...history, { userId: "a", crownsAwarded: 40, xpAwarded: 9, completedAt: day(2) }], members);
+      const bumped = applyCompletionToLeaderboard(buildLeaderboard(history, members), "a", "Ada", 40, 9);
+      expect(bumped).toEqual(rebuilt);
+    });
+
+    it("seats a member who has no row on the board yet", () => {
+      const next = applyCompletionToLeaderboard(board, "c", "Cy", 10, 5);
+      expect(next).toHaveLength(3);
+      expect(next.find((e) => e.userId === "c")).toMatchObject({ name: "Cy", completions: 1, crowns: 10, xp: 5, rank: 3 });
+    });
+
+    it("does not mutate the board it was handed", () => {
+      const snapshot = JSON.parse(JSON.stringify(board));
+      applyCompletionToLeaderboard(board, "b", "Ben", 10, 5);
+      expect(board).toEqual(snapshot);
     });
   });
 });

@@ -72,16 +72,45 @@ active use rather than "opens when a chore happens to be due":
 3. **Cheer** (`HouseholdCheer`) — a one-tap reaction between household
    members. Gives people something to do on a day with no chores due, and
    it's the social/teamwork mechanic from the product brief made concrete.
-4. **At-risk nudge** (`/api/cron/household-nudge`, daily) — if a household
-   has an active streak and nobody's logged a chore yet today, everyone
-   gets one notification. Dedupes per household per day via `Notification`'s
-   `(userId, key)` unique constraint, same pattern used everywhere else.
+4. **At-risk nudge** (`/api/cron/household-nudge`) — if a household has an
+   active streak and nobody's logged a chore yet today, everyone gets one
+   notification. The cron runs *hourly* and each household is nudged at 8pm
+   **in its own timezone**, so a "do one before midnight" warning actually
+   arrives with a few hours left rather than at lunchtime. Dedupes per
+   household per local day via `Notification`'s `(userId, key)` unique
+   constraint, same pattern used everywhere else.
 
 All of it surfaces in one **Today** panel at the top of
 `/dashboard/household` (`TodayPanel.tsx`) — the streak flame, the 3
 objectives with checkmarks, a "send a cheer" button, and a small recent-
-cheers feed. New achievements (`first-cheer`, `household-streak-7/30`,
-`first-perfect-day`, `perfect-week`) reward the same behavior a second way.
+cheers feed. Logging a chore is **optimistic**: the card flips to Done, the
+streak ticks and the leaderboard re-ranks on the tap itself (client-side via
+`applyCompletionToLeaderboard`, which shares its sort with the server's
+`buildLeaderboard`), then reconciles against the server response — or rolls
+the completion back out and says why, if the write failed. New achievements
+(`first-cheer`, `household-streak-7/30`, `first-perfect-day`, `perfect-week`)
+reward the same behavior a second way.
+
+### Whose midnight?
+
+A streak is a claim about days, so the app has to know *whose* day. Every
+household has a `timezone` (`Household.timezone`, default `UTC`), set from
+the small "Day ends at midnight in …" control under the Today panel, and
+every day boundary in Household HQ is computed against it: the household
+streak, whether a chore reads as due today, whether a daily objective is
+cleared, and when the evening nudge fires.
+
+The primitives live in `lib/time.ts` and work on **day keys** (`"2026-09-03"`
+strings in the household's zone) rather than timestamp arithmetic, because
+adding 86,400,000ms across a DST transition lands on the wrong day and
+quietly breaks a streak. `dayKey`, `addDays`, `daysBetween` and friends are
+pure and unit-tested against Los Angeles' spring-forward and fall-back
+boundaries, Tokyo, and invalid zone names (which fall back to UTC rather
+than throwing). `lib/chores.ts` and `lib/dailyEngagement.ts` take an optional
+`timeZone` and thread it down; API routes resolve it once per request via
+`householdTimeZone(hid)` and hand it to every helper, and the chores view
+gets it in the payload so client-side "due" and streak math agrees with the
+server's.
 
 ## Business model: three plans, gating what's already built
 

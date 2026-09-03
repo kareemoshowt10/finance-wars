@@ -5,6 +5,7 @@ import { resolveRequestUser } from "@/lib/auth";
 import { bad, ok } from "@/lib/api";
 import { assertMember, getHouseholdMembers } from "@/lib/household";
 import { assertWithinLimit } from "@/lib/planEnforcement";
+import { householdTimeZone } from "@/lib/dailyEngagement";
 import { log } from "@/lib/audit";
 
 export const dynamic = "force-dynamic";
@@ -26,7 +27,8 @@ export async function GET(req: NextRequest, { params }: { params: { hid: string 
   if (fb) return fb;
 
   const since = new Date(Date.now() - 30 * 86400000);
-  const [chores, completions, members] = await Promise.all([
+  const [timezone, chores, completions, members] = await Promise.all([
+    householdTimeZone(params.hid),
     prisma.chore.findMany({
       where: { householdId: params.hid, active: true },
       orderBy: { createdAt: "asc" },
@@ -39,6 +41,9 @@ export async function GET(req: NextRequest, { params }: { params: { hid: string 
   ]);
 
   return ok({
+    // The client re-derives "due today" and streaks locally, so it needs the
+    // same day boundaries the server uses.
+    timezone,
     chores,
     completions,
     members: members

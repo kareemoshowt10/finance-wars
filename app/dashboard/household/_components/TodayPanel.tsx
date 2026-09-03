@@ -3,10 +3,11 @@ import { useEffect, useState } from "react";
 import { Flame, Check, Circle, PartyPopper, Sparkles } from "lucide-react";
 import Modal from "../../_components/Modal";
 import { haptic, celebrationHaptic } from "@/lib/haptics";
+import TimezoneSetting from "./TimezoneSetting";
 
 type Member = { userId: string; name: string };
 type ObjectiveStatus = { id: string; label: string; description: string; icon: string; done: boolean };
-type Daily = { streak: { current: number; longest: number }; objectives: ObjectiveStatus[]; bonusClaimedToday: boolean };
+type Daily = { streak: { current: number; longest: number }; objectives: ObjectiveStatus[]; bonusClaimedToday: boolean; timezone: string };
 type Cheer = { id: string; emoji: string; message: string | null; createdAt: string; from: { id: string; name: string }; to: { id: string; name: string } };
 
 const CHEER_EMOJI = ["👏", "🙌", "❤️", "🔥", "🎉", "💪"];
@@ -90,6 +91,10 @@ export default function TodayPanel({ hid, meId, members }: { hid: string; meId: 
           <PartyPopper className="w-3.5 h-3.5" /> Daily bonus claimed — great day.
         </div>
       )}
+
+      <div className="mt-3">
+        <TimezoneSetting hid={hid} timezone={daily.timezone} onSaved={loadDaily} />
+      </div>
 
       {cheers.length > 0 && (
         <div className="mt-5 pt-4 border-t border-black/5 dark:border-white/10 space-y-1.5">

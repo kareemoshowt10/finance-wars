@@ -4,6 +4,7 @@ import { resolveRequestUser } from "@/lib/auth";
 import { bad, ok } from "@/lib/api";
 import { assertMember, getHouseholdMembers } from "@/lib/household";
 import { buildLeaderboard, isChoreDue } from "@/lib/chores";
+import { householdTimeZone } from "@/lib/dailyEngagement";
 import { summarizeBankPosition } from "@/lib/loans";
 import { goalProgressPct, isNeglected, rankCompetingGoals } from "@/lib/householdGoals";
 
@@ -20,6 +21,7 @@ export async function GET(req: NextRequest, { params }: { params: { hid: string 
   const fb = await assertMember(r.user.id, params.hid);
   if (fb) return fb;
 
+  const timezone = await householdTimeZone(params.hid);
   const since7d = new Date(Date.now() - 7 * 86400000);
   const [members, chores, weekCompletions, loans, goals] = await Promise.all([
     getHouseholdMembers(params.hid),
@@ -44,7 +46,8 @@ export async function GET(req: NextRequest, { params }: { params: { hid: string 
     const cur = lastByChore.get(c.choreId);
     if (!cur || c.completedAt > cur) lastByChore.set(c.choreId, c.completedAt);
   }
-  const dueToday = chores.filter((c) => isChoreDue(c.frequency, lastByChore.get(c.id) ?? null));
+  const now = new Date();
+  const dueToday = chores.filter((c) => isChoreDue(c.frequency, lastByChore.get(c.id) ?? null, now, timezone));
 
   const leaderboard = buildLeaderboard(weekCompletions, memberList).slice(0, 5);
 

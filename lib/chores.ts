@@ -5,21 +5,10 @@
 // framework/DB-free so they're trivial to unit test; the API routes wire
 // these to Prisma.
 
+import { dayKey, weekStartKey, addDays, daysBetween } from "./time";
+
 export type ChoreFrequency = "DAILY" | "WEEKLY" | "ONEOFF";
 export type ChoreCategory = "ESSENTIAL" | "ELECTIVE";
-
-export function startOfDay(d: Date): Date {
-  const x = new Date(d);
-  x.setHours(0, 0, 0, 0);
-  return x;
-}
-
-export function startOfWeek(d: Date): Date {
-  const x = startOfDay(d);
-  const day = x.getDay(); // 0 = Sunday
-  x.setDate(x.getDate() - day);
-  return x;
-}
 
 /**
  * Current streak of consecutive periods (days for DAILY chores, weeks for
@@ -31,26 +20,29 @@ export function startOfWeek(d: Date): Date {
 export function computeStreak(
   completedAt: Date[],
   frequency: string,
-  now: Date = new Date()
+  now: Date = new Date(),
+  timeZone?: string
 ): number {
   if (frequency === "ONEOFF" || completedAt.length === 0) return 0;
 
-  const bucket = frequency === "DAILY" ? startOfDay : startOfWeek;
-  const step = frequency === "DAILY" ? 86400000 : 7 * 86400000;
+  const weekly = frequency !== "DAILY";
+  const step = weekly ? -7 : -1;
+  const bucketOf = (d: Date) => {
+    const key = dayKey(d, timeZone);
+    return weekly ? weekStartKey(key) : key;
+  };
 
-  const days = new Set(completedAt.map((d) => bucket(d).getTime()));
-  const currentBucket = bucket(now).getTime();
-
-  let streak = 0;
-  let cursor = currentBucket;
+  const logged = new Set(completedAt.map(bucketOf));
+  let cursor = bucketOf(now);
   // If nothing logged yet for the current bucket, start counting from the
   // previous one instead — the streak isn't broken until a full period is
   // skipped entirely.
-  if (!days.has(cursor)) cursor -= step;
+  if (!logged.has(cursor)) cursor = addDays(cursor, step);
 
-  while (days.has(cursor)) {
+  let streak = 0;
+  while (logged.has(cursor)) {
     streak++;
-    cursor -= step;
+    cursor = addDays(cursor, step);
   }
   return streak;
 }
@@ -61,14 +53,15 @@ export function computeStreak(
  * as opposed to computeStreak's "current streak as of now". Pure history
  * scan, so it's stable even if the streak has since broken.
  */
-export function longestStreakEver(completedAt: Date[]): number {
+export function longestStreakEver(completedAt: Date[], timeZone?: string): number {
   if (completedAt.length === 0) return 0;
-  const days = Array.from(new Set(completedAt.map((d) => startOfDay(d).getTime()))).sort((a, b) => a - b);
+  // "YYYY-MM-DD" sorts lexicographically the same as chronologically.
+  const days = Array.from(new Set(completedAt.map((d) => dayKey(d, timeZone)))).sort();
 
   let longest = 1;
   let run = 1;
   for (let i = 1; i < days.length; i++) {
-    if (days[i] - days[i - 1] === 86400000) {
+    if (daysBetween(days[i - 1], days[i]) === 1) {
       run++;
     } else {
       run = 1;
@@ -111,10 +104,38 @@ export function buildLeaderboard(
     byUser.set(c.userId, entry);
   }
 
-  return Array.from(byUser.entries())
-    .map(([userId, v]) => ({ userId, ...v }))
+  return rankEntries(Array.from(byUser.entries()).map(([userId, v]) => ({ userId, ...v, rank: 0 })));
+}
+
+/** Most chores logged wins; Crowns break the tie. */
+function rankEntries(entries: LeaderboardEntry[]): LeaderboardEntry[] {
+  return [...entries]
     .sort((a, b) => b.completions - a.completions || b.crowns - a.crowns)
     .map((entry, i) => ({ ...entry, rank: i + 1 }));
+}
+
+/**
+ * Fold one freshly logged completion into an already-aggregated leaderboard,
+ * re-sorting by the same rule buildLeaderboard uses. The chores view calls this
+ * the moment someone taps "Mark done" so they climb the board immediately,
+ * rather than a network round trip later.
+ */
+export function applyCompletionToLeaderboard(
+  entries: LeaderboardEntry[],
+  userId: string,
+  name: string,
+  crowns: number,
+  xp: number
+): LeaderboardEntry[] {
+  const known = entries.some((e) => e.userId === userId);
+  const next = known
+    ? entries.map((e) =>
+        e.userId === userId
+          ? { ...e, completions: e.completions + 1, crowns: e.crowns + crowns, xp: e.xp + xp }
+          : e
+      )
+    : [...entries, { userId, name, completions: 1, crowns, xp, rank: 0 }];
+  return rankEntries(next);
 }
 
 /** Count of completions for a single chore, per user — e.g. "who does the dishes most". */
@@ -136,10 +157,14 @@ export function mostFrequentDoer(
 export function isChoreDue(
   frequency: string,
   lastCompletedAt: Date | null,
-  now: Date = new Date()
+  now: Date = new Date(),
+  timeZone?: string
 ): boolean {
   if (frequency === "ONEOFF") return lastCompletedAt === null;
-  const bucket = frequency === "DAILY" ? startOfDay : startOfWeek;
   if (!lastCompletedAt) return true;
-  return bucket(lastCompletedAt).getTime() !== bucket(now).getTime();
+  const bucketOf = (d: Date) => {
+    const key = dayKey(d, timeZone);
+    return frequency === "DAILY" ? key : weekStartKey(key);
+  };
+  return bucketOf(lastCompletedAt) !== bucketOf(now);
 }

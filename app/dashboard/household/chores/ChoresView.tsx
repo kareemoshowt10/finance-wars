@@ -1,10 +1,10 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
-import { CheckCheck, Plus, Crown, Flame, Sparkles, Lock } from "lucide-react";
+import { CheckCheck, Plus, Crown, Flame, Sparkles, Lock, AlertCircle } from "lucide-react";
 import Modal from "../../_components/Modal";
 import UpgradeNotice, { isUpgradeError } from "../_components/UpgradeNotice";
 import { SkeletonCards } from "../../_components/Skeleton";
-import { isChoreDue, computeStreak } from "@/lib/chores";
+import { isChoreDue, computeStreak, applyCompletionToLeaderboard } from "@/lib/chores";
 import { haptic, celebrationHaptic } from "@/lib/haptics";
 
 type Chore = {
@@ -39,7 +39,8 @@ export default function ChoresView({ hid, meId }: { hid: string; meId: string })
   const [loading, setLoading] = useState(true);
   const [showNew, setShowNew] = useState(false);
   const [completing, setCompleting] = useState<string | null>(null);
-  const [flash, setFlash] = useState<string | null>(null);
+  const [flash, setFlash] = useState<{ text: string; tone: "good" | "bad" } | null>(null);
+  const [timezone, setTimezone] = useState<string | undefined>(undefined);
   const [choreLimit, setChoreLimit] = useState<number | null>(null);
   const [fullHistory, setFullHistory] = useState(true);
 
@@ -48,6 +49,7 @@ export default function ChoresView({ hid, meId }: { hid: string; meId: string })
     setChores(data.chores || []);
     setCompletions(data.completions || []);
     setMembers(data.members || []);
+    setTimezone(data.timezone);
     setLoading(false);
   }
   async function loadPlan() {
@@ -76,29 +78,62 @@ export default function ChoresView({ hid, meId }: { hid: string; meId: string })
   }, [completions]);
 
   const myStreak = useMemo(
-    () => computeStreak(completions.filter((c) => c.userId === meId).map((c) => new Date(c.completedAt)), "DAILY"),
-    [completions, meId]
+    () => computeStreak(completions.filter((c) => c.userId === meId).map((c) => new Date(c.completedAt)), "DAILY", new Date(), timezone),
+    [completions, meId, timezone]
   );
 
-  async function complete(choreId: string) {
-    setCompleting(choreId);
-    try {
-      const res = await fetch(`/api/households/${hid}/chores/${choreId}/complete`, { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" });
-      const data = await res.json();
-      if (res.ok) {
-        const bonus = data.bonusAwarded ? " · 🎉 Daily objectives complete! +15 Crowns, +10 XP" : "";
-        setFlash(`+${chores.find((c) => c.id === choreId)?.crownValue ?? 0} Crowns${data.streak > 1 ? ` · ${data.streak}-day streak` : ""}${bonus}`);
-        setTimeout(() => setFlash(null), bonus ? 4000 : 2500);
-        if (data.bonusAwarded) celebrationHaptic();
-        else haptic();
-        await Promise.all([load(), loadLeaderboard()]);
-      }
-    } finally {
-      setCompleting(null);
-    }
+  function say(text: string, tone: "good" | "bad" = "good", ms = 2500) {
+    setFlash({ text, tone });
+    setTimeout(() => setFlash(null), ms);
   }
 
   const nameOf = (userId: string) => members.find((m) => m.userId === userId)?.name || "Member";
+
+  /**
+   * Optimistic: the card flips to Done, the streak ticks and the leaderboard
+   * re-ranks on the tap itself, then the server confirms in the background. A
+   * chore takes half a second to log and the reward should feel that immediate;
+   * if the POST fails we pull the provisional completion back out and say so.
+   */
+  async function complete(choreId: string) {
+    const chore = chores.find((c) => c.id === choreId);
+    if (!chore || completing === choreId) return;
+
+    const provisionalId = `pending-${choreId}-${Date.now()}`;
+    setCompletions((cs) => [
+      { id: provisionalId, choreId, userId: meId, completedAt: new Date().toISOString(), crownsAwarded: chore.crownValue, xpAwarded: chore.xpValue },
+      ...cs,
+    ]);
+    setLeaderboard((lb) => applyCompletionToLeaderboard(lb, meId, nameOf(meId), chore.crownValue, chore.xpValue));
+    setCompleting(choreId);
+    haptic();
+
+    // Only the write itself is allowed to trigger a rollback — a hiccup in the
+    // refetch below must not un-do a completion the server actually accepted.
+    let failure: string | null = null;
+    try {
+      const res = await fetch(`/api/households/${hid}/chores/${choreId}/complete`, { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) {
+        const bonus = data.bonusAwarded ? " · 🎉 Daily objectives complete! +15 Crowns, +10 XP" : "";
+        say(`+${chore.crownValue} Crowns${data.streak > 1 ? ` · ${data.streak}-day streak` : ""}${bonus}`, "good", bonus ? 4000 : 2500);
+        if (data.bonusAwarded) celebrationHaptic();
+      } else {
+        failure = data.error || "Couldn't log that chore";
+      }
+    } catch {
+      failure = "Couldn't log that chore — check your connection.";
+    }
+
+    if (failure) {
+      setCompletions((cs) => cs.filter((c) => c.id !== provisionalId));
+      say(failure, "bad", 3500);
+    }
+    // Reconcile either way: the server owns the real completion id, the real
+    // streak, and everyone else's rows, which may have moved meanwhile.
+    await Promise.all([load(), loadLeaderboard()]).catch(() => {});
+    setCompleting(null);
+  }
 
   return (
     <div className="space-y-8">
@@ -119,8 +154,16 @@ export default function ChoresView({ hid, meId }: { hid: string; meId: string })
       </header>
 
       {flash && (
-        <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-2.5 text-sm text-emerald-600 dark:text-emerald-400 flex items-center gap-2">
-          <Sparkles className="w-4 h-4" /> {flash}
+        <div
+          role="status"
+          aria-live="polite"
+          className={`rounded-xl border px-4 py-2.5 text-sm flex items-center gap-2 ${
+            flash.tone === "good"
+              ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+              : "border-red-500/30 bg-red-500/10 text-red-600 dark:text-red-400"
+          }`}
+        >
+          {flash.tone === "good" ? <Sparkles className="w-4 h-4 shrink-0" /> : <AlertCircle className="w-4 h-4 shrink-0" />} {flash.text}
         </div>
       )}
 
@@ -134,7 +177,7 @@ export default function ChoresView({ hid, meId }: { hid: string; meId: string })
       ) : (
         <div className="grid md:grid-cols-2 gap-3">
           {chores.map((c) => {
-            const due = isChoreDue(c.frequency, lastDoneAt.get(c.id) ?? null);
+            const due = isChoreDue(c.frequency, lastDoneAt.get(c.id) ?? null, new Date(), timezone);
             const leader = perChore.find((p) => p.choreId === c.id)?.doneBy[0];
             return (
               <div key={c.id} className="card p-5 flex items-start justify-between gap-4">
@@ -166,9 +209,9 @@ export default function ChoresView({ hid, meId }: { hid: string; meId: string })
                 <button
                   onClick={() => complete(c.id)}
                   disabled={completing === c.id}
-                  className={`shrink-0 px-4 py-2 rounded-full text-sm font-medium transition ${due ? "bg-black text-white dark:bg-white dark:text-black hover:opacity-90" : "bg-black/5 dark:bg-white/5 text-black/40 dark:text-white/40"}`}
+                  className={`shrink-0 px-4 py-2 rounded-full text-sm font-medium transition ${due ? "bg-black text-white dark:bg-white dark:text-black hover:opacity-90" : "bg-black/5 dark:bg-white/5 text-black/40 dark:text-white/40"} ${completing === c.id ? "opacity-50" : ""}`}
                 >
-                  {completing === c.id ? "…" : due ? "Mark done" : "Done again"}
+                  {due ? "Mark done" : "Done again"}
                 </button>
               </div>
             );
@@ -185,7 +228,7 @@ export default function ChoresView({ hid, meId }: { hid: string; meId: string })
               return (
                 <button
                   key={rg.id}
-                  onClick={() => (locked ? setFlash("Full history is a Rhythm+ feature.") : setRange(rg.id))}
+                  onClick={() => (locked ? say("Full history is a Rhythm+ feature.", "bad", 3000) : setRange(rg.id))}
                   title={locked ? "Upgrade to Rhythm for full history" : undefined}
                   className={`px-3 py-1 rounded-full text-xs transition flex items-center gap-1 ${range === rg.id ? "bg-white dark:bg-black shadow-sm font-medium" : "text-black/50 dark:text-white/50"} ${locked ? "opacity-60" : ""}`}
                 >

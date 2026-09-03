@@ -275,6 +275,12 @@ model Household {
   pactSignedAt  DateTime?
   createdAt     DateTime  @default(now())
 
+  // The zone the household actually lives in. Every "today" in Household HQ
+  // — the shared streak, whether a chore is due, when Daily Objectives reset,
+  // when the at-risk nudge fires — is computed against this rather than the
+  // server clock, which is UTC in production. See lib/time.ts.
+  timezone String @default("UTC")
+
   // Billing — see lib/plans.ts for the plan catalog and lib/billing.ts for
   // the Stripe integration. "free" is the default for every household that
   // predates billing.

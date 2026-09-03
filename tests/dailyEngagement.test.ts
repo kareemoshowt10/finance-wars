@@ -10,6 +10,7 @@ const walletEntryCount = vi.fn();
 const walletEntryCreate = vi.fn();
 const userUpdate = vi.fn();
 const notificationCreate = vi.fn();
+const householdFindUnique = vi.fn();
 
 vi.mock("@/lib/prisma", () => ({
   prisma: {
@@ -27,6 +28,7 @@ vi.mock("@/lib/prisma", () => ({
     },
     user: { update: (...a: unknown[]) => userUpdate(...a) },
     notification: { create: (...a: unknown[]) => notificationCreate(...a) },
+    household: { findUnique: (...a: unknown[]) => householdFindUnique(...a) },
   },
 }));
 
@@ -51,6 +53,7 @@ beforeEach(() => {
   walletEntryCreate.mockReset().mockResolvedValue({ id: "w1" });
   userUpdate.mockReset().mockResolvedValue({});
   notificationCreate.mockReset().mockResolvedValue({});
+  householdFindUnique.mockReset().mockResolvedValue({ timezone: "UTC" });
 });
 
 const day = (n: number) => new Date(2026, 0, n, 12, 0, 0);
@@ -78,6 +81,55 @@ describe("dailyEngagement", () => {
     expect(statuses.find((s) => s.id === "chore")?.done).toBe(true);
     expect(statuses.find((s) => s.id === "goal_checkin")?.done).toBe(true);
     expect(statuses.find((s) => s.id === "cheer")?.done).toBe(false);
+  });
+
+  describe("timezone awareness", () => {
+    it("scopes the household streak to the household's own zone", async () => {
+      // Three consecutive LA evenings. In UTC each of these lands on the
+      // *following* calendar day, but they're still 3 consecutive local days.
+      choreCompletionFindMany.mockResolvedValue([
+        { completedAt: new Date("2026-01-06T02:00:00Z") }, // Jan 5, 6pm LA
+        { completedAt: new Date("2026-01-07T02:00:00Z") }, // Jan 6, 6pm LA
+        { completedAt: new Date("2026-01-08T02:00:00Z") }, // Jan 7, 6pm LA
+      ]);
+      householdFindUnique.mockResolvedValue({ timezone: "America/Los_Angeles" });
+
+      const streak = await getHouseholdStreak("hh1", new Date("2026-01-08T03:00:00Z"));
+      expect(streak).toEqual({ current: 3, longest: 3 });
+    });
+
+    it("counts a late-evening local chore as today, not tomorrow", async () => {
+      // 2026-01-06T02:00Z is 6pm on Jan 5 in LA. Asked "was there activity
+      // today?" at 7pm on Jan 5 local, the answer must be yes — which means
+      // the query floor has to be LA midnight (08:00Z), not UTC midnight.
+      householdFindUnique.mockResolvedValue({ timezone: "America/Los_Angeles" });
+      choreCompletionCount.mockResolvedValue(1);
+
+      await hasHouseholdActivityToday("hh1", new Date("2026-01-06T03:00:00Z"));
+
+      const where = choreCompletionCount.mock.calls[0][0].where;
+      expect(where.completedAt.gte.toISOString()).toBe("2026-01-05T08:00:00.000Z");
+    });
+
+    it("falls back to UTC when the stored zone is unusable", async () => {
+      householdFindUnique.mockResolvedValue({ timezone: "Mars/Olympus" });
+      choreCompletionCount.mockResolvedValue(0);
+
+      await hasHouseholdActivityToday("hh1", new Date("2026-01-06T03:00:00Z"));
+
+      const where = choreCompletionCount.mock.calls[0][0].where;
+      expect(where.completedAt.gte.toISOString()).toBe("2026-01-06T00:00:00.000Z");
+    });
+
+    it("resets the daily bonus at local midnight, so the ref id is zone-scoped", async () => {
+      householdFindUnique.mockResolvedValue({ timezone: "America/Los_Angeles" });
+      walletEntryFindFirst.mockResolvedValue(null);
+
+      // 6pm Jan 5 in LA — still the 5th locally, already the 6th in UTC.
+      await hasBonusToday("u1", "hh1", new Date("2026-01-06T02:00:00Z"));
+
+      expect(walletEntryFindFirst.mock.calls[0][0].where.refId).toBe("hh1:2026-01-05");
+    });
   });
 
   it("hasBonusToday checks for an existing DAILY_BONUS wallet entry", async () => {
