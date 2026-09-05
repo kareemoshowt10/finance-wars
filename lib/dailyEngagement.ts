@@ -113,6 +113,33 @@ export async function maybeAwardDailyBonus(householdId: string, userId: string, 
   if (!allObjectivesDone(statuses)) return false;
 
   const refId = bonusRefId(householdId, now, tz);
+
+  // Claim the day's bonus before paying it.
+  //
+  // The hasBonusToday() check above is check-then-act, and the third objective
+  // can land twice at once — two cheers sent in the same instant, a retried
+  // request, two tabs. Both callers passed the check and both paid out, so the
+  // household earned +30 Crowns and +20 XP for one day's objectives.
+  //
+  // Notification's (userId, key) unique constraint is the mutex: exactly one
+  // racing caller wins this insert, and the loser returns before awarding
+  // anything. No new schema — the keyed notification already existed for
+  // deduping the message itself.
+  try {
+    await prisma.notification.create({
+      data: {
+        userId,
+        kind: "DAILY_OBJECTIVES_COMPLETE",
+        title: "🎉 Daily objectives complete!",
+        body: `+${DAILY_BONUS_CROWNS} Crowns, +${DAILY_BONUS_XP} XP`,
+        link: "/dashboard/household",
+        key: `daily-bonus:${refId}`,
+      },
+    });
+  } catch {
+    return false; // someone else already claimed today's bonus
+  }
+
   await Promise.all([
     award({
       userId,
@@ -124,18 +151,6 @@ export async function maybeAwardDailyBonus(householdId: string, userId: string, 
       householdId,
     }),
     prisma.user.update({ where: { id: userId }, data: { xp: { increment: DAILY_BONUS_XP } } }),
-    prisma.notification
-      .create({
-        data: {
-          userId,
-          kind: "DAILY_OBJECTIVES_COMPLETE",
-          title: "🎉 Daily objectives complete!",
-          body: `+${DAILY_BONUS_CROWNS} Crowns, +${DAILY_BONUS_XP} XP`,
-          link: "/dashboard/household",
-          key: `daily-bonus:${refId}`,
-        },
-      })
-      .catch(() => null),
   ]);
 
   const totalDays = await prisma.walletEntry.count({ where: { userId, currency: "CROWNS", reason: "DAILY_BONUS" } });

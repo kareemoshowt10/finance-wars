@@ -56,22 +56,44 @@ export async function POST(req: NextRequest, { params }: { params: { hid: string
 
   const wasNeglected = isNeglected(goal);
   const now = new Date();
-  const newTotal = Math.round((goal.currentAmount + amount) * 100) / 100;
-  const justFunded = goal.currentAmount < goal.targetAmount && newTotal >= goal.targetAmount;
 
-  const [contribution] = await prisma.$transaction([
+  // Atomic increment, not read-modify-write.
+  //
+  // Two people funding the same goal in the same moment — which is the normal
+  // case, not the exotic one — both read the same currentAmount, both computed
+  // a total from it, and the second write silently discarded the first
+  // person's money. `increment` makes the addition happen inside the database,
+  // so every contribution lands.
+  const [contribution, updated] = await prisma.$transaction([
     prisma.householdGoalContribution.create({
       data: { goalId: goal.id, userId: r.user.id, amount, source: parsed.data.source, note: parsed.data.note },
     }),
     prisma.householdGoal.update({
       where: { id: goal.id },
       data: {
-        currentAmount: newTotal,
+        currentAmount: { increment: amount },
         lastContributionAt: now,
-        status: justFunded ? "FUNDED" : undefined,
       },
     }),
   ]);
+
+  // Round the running total back to cents after the atomic add, so float
+  // addition can't drift over hundreds of contributions.
+  const newTotal = Math.round(updated.currentAmount * 100) / 100;
+
+  // Flip to FUNDED under a status guard, so that when the contribution that
+  // crosses the target races another, exactly one of them owns the transition
+  // and the "fully funded" notifications go out once.
+  let justFunded = false;
+  if (newTotal >= updated.targetAmount) {
+    const flip = await prisma.householdGoal.updateMany({
+      where: { id: goal.id, status: "ACTIVE" },
+      data: { status: "FUNDED", currentAmount: newTotal },
+    });
+    justFunded = flip.count === 1;
+  } else if (newTotal !== updated.currentAmount) {
+    await prisma.householdGoal.update({ where: { id: goal.id }, data: { currentAmount: newTotal } });
+  }
 
   await log(r.user.id, "contribute", { entity: "HouseholdGoal", entityId: goal.id, meta: { amount }, req });
 

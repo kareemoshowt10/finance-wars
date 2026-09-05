@@ -1,0 +1,129 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Never a real secret — CI runs against a throwaway database in a container
+  # that is destroyed with the job.
+  JWT_SECRET: ci-test-secret-not-used-anywhere-real
+  CRON_SECRET: ci-cron-secret
+  NEXT_PUBLIC_APP_URL: http://localhost:3000
+
+jobs:
+  # Fast feedback: no database, so this fails in under a minute when someone
+  # breaks a type or a pure function.
+  check:
+    name: Types, lint, unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx prisma generate
+      - name: Typecheck
+        run: npx tsc --noEmit
+      - name: Lint
+        run: npm run lint
+      - name: Unit tests
+        run: npm test
+
+  integration:
+    name: Integration tests (real Postgres)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: debtsucker
+          POSTGRES_PASSWORD: debtsucker
+          POSTGRES_DB: debtsucker
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U debtsucker"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    env:
+      TEST_DATABASE_URL: postgresql://debtsucker:debtsucker@localhost:5432/debtsucker_test
+      DATABASE_URL: postgresql://debtsucker:debtsucker@localhost:5432/debtsucker_test
+      DIRECT_URL: postgresql://debtsucker:debtsucker@localhost:5432/debtsucker_test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx prisma generate
+      - name: Integration tests
+        run: npm run test:integration
+
+  e2e:
+    name: Build and end-to-end
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: debtsucker
+          POSTGRES_PASSWORD: debtsucker
+          POSTGRES_DB: debtsucker
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U debtsucker"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    env:
+      DATABASE_URL: postgresql://debtsucker:debtsucker@localhost:5432/debtsucker
+      DIRECT_URL: postgresql://debtsucker:debtsucker@localhost:5432/debtsucker
+      BASE_URL: http://localhost:3000
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Install Chromium for Playwright
+        run: npx playwright install --with-deps chromium
+
+      # This is also the migration test: `npm run build` runs
+      # `prisma migrate deploy`, so a migration that doesn't apply cleanly to an
+      # empty database fails here rather than in production.
+      - name: Build (applies migrations)
+        run: npm run build
+
+      - name: Start the production server
+        run: |
+          npm start &
+          for i in $(seq 1 60); do
+            if curl -sf http://localhost:3000/api/health > /dev/null; then
+              echo "server up after ${i}s"; exit 0
+            fi
+            sleep 1
+          done
+          echo "server never became healthy"; exit 1
+
+      - name: End-to-end suite
+        run: npm run test:e2e
+
+      - name: Upload screenshots on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-screenshots
+          path: tests/e2e/screenshots/
+          if-no-files-found: ignore
+          retention-days: 7

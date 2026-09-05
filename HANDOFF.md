@@ -18,10 +18,15 @@ engagement; the public site uses the **Blueprint** design system
 (architectural drafting-paper aesthetic).
 
 - Build: `✓ Compiled successfully`, ~190 routes
-- Tests: 290/290 passing (`npm test`)
-- End-to-end: 45/45 checks passing (`npm run test:e2e`, needs a running server)
+- Unit tests: 290/290 (`npm test`, ~4s, no dependencies)
+- Integration tests: 144/144 (`npm run test:integration`, needs Postgres)
+- End-to-end: 45/45 checks (`npm run test:e2e`, needs a running server)
 - TypeScript: clean (`npx tsc --noEmit`)
 - Lint: clean (`npm run lint`) — see `.eslintrc.README.md` for the two rule decisions
+- CI: `.github/workflows/ci.yml` runs all of the above on every push
+
+See [`TESTING.md`](./TESTING.md) for what each suite covers and how to add to
+them.
 
 ## Resume on another platform
 
@@ -85,6 +90,25 @@ behaving like a development build.
    purpose: it fans out to each household's *own* 8pm rather than one fixed
    UTC hour, so it needs a chance to look at every zone.
 
+## Continuous integration
+
+`.github/workflows/ci.yml`, three jobs on every push and pull request:
+
+| Job | What it does | Needs |
+|---|---|---|
+| `check` | typecheck, lint, unit tests | nothing — fails in under a minute |
+| `integration` | 144 tests against a real Postgres service container | Postgres 16 |
+| `e2e` | `npm run build`, start the server, drive Chromium through 45 checks | Postgres 16 + Playwright |
+
+The `e2e` job's build step doubles as the migration test: `npm run build` runs
+`prisma migrate deploy` against an empty database, so a migration that doesn't
+apply cleanly fails in CI rather than in production. Screenshots are uploaded
+as an artifact when the E2E job fails.
+
+Nothing in CI needs a secret. The database lives in a container that dies with
+the job, and `JWT_SECRET`/`CRON_SECRET` are literal throwaway strings in the
+workflow file.
+
 ## Pre-launch checklist
 
 Run through this once before pointing real users at it.
@@ -133,7 +157,15 @@ Run through this once before pointing real users at it.
 
 ## Recently shipped (newest first)
 
-1. **Launch hardening** — deploys now run `prisma migrate deploy` against a
+1. **Full-scale testing** — an integration suite (144 tests) on a real
+   Postgres, covering the money paths, the Stripe webhook, every household
+   route's permission boundary, plan limits, a 12-member household with two
+   years of history, and genuine concurrency; plus CI running all three suites
+   on every push. It found and fixed two real concurrency bugs in money code:
+   goal contributions lost money under parallel writes (read-modify-write
+   instead of an atomic increment), and the daily bonus paid twice when the
+   third objective landed twice at once. See `TESTING.md`.
+2. **Launch hardening** — deploys now run `prisma migrate deploy` against a
    real `0_init` migration instead of `db push --accept-data-loss`; error
    boundaries (`app/error.tsx`, `app/global-error.tsx`) replace Next's bare
    "Application error"; a boot-time configuration report
@@ -143,13 +175,13 @@ Run through this once before pointing real users at it.
    dashboard had labels that weren't associated with their inputs — now wired
    (`htmlFor`/`id`, or `role="group"` for button pickers). Plus an end-to-end
    launch smoke test (`npm run test:e2e`, 45 checks).
-2. **Household HQ: timezones, dialogs, instant chore logging** — per-household
+3. **Household HQ: timezones, dialogs, instant chore logging** — per-household
    `timezone` drives every day boundary (`lib/time.ts`, day-key arithmetic
    rather than timestamp math, so DST can't break a streak); the nudge cron
    runs hourly and fires at each household's own 8pm; `Modal` got a focus
    trap, Escape-to-close and proper dialog semantics; completing a chore
    updates the card, streak and leaderboard optimistically.
-3. **Capture Engine + The Compound** — the app's new center of gravity
+4. **Capture Engine + The Compound** — the app's new center of gravity
    (spec + Supabase reference schema in `docs/capture-engine/`). Sub-5-second
    income/expense logging: `QuickCapture` component (dashboard overview +
    standalone phone-first `/capture` page), keyword categorizer with
@@ -163,17 +195,25 @@ Run through this once before pointing real users at it.
    and the clan view (household shared-only visibility). APIs:
    `/api/capture`, `/api/capture/correct`, `/api/capture/patterns`,
    `/api/compound`.
-4. Blueprint design system + homeowner/car-owner toolkit
+5. Blueprint design system + homeowner/car-owner toolkit
    (`/tools/home-affordability`, `/down-payment`, `/mortgage`,
    `/car-affordability`) with `lib/bigPurchase.ts` + 19 tests.
-5. Lifestyle Inflation Detector (`/dashboard/inflation`, `/api/inflation`).
-6. Goal Raid lifecycle (victories, deadline warnings, achievements,
+6. Lifestyle Inflation Detector (`/dashboard/inflation`, `/api/inflation`).
+7. Goal Raid lifecycle (victories, deadline warnings, achievements,
    `/api/cron/raids`).
-7. Goal Raids + Money Mind couples alignment game.
-8. Weekly Recap, interest accrual, security hardening, Google OAuth.
+8. Goal Raids + Money Mind couples alignment game.
+9. Weekly Recap, interest accrual, security hardening, Google OAuth.
 
 ## Known follow-ups / ideas
 
+- Two validation conventions coexist: 41 routes use `lib/validate`'s
+  `parseBody` (422 + per-field messages), 28 use a bare `safeParse` (400, no
+  detail). Both are fine; being both means a client can't write one error
+  handler. Worth unifying on the 422 shape.
+- The untested `lib/` modules are down from 27 to the ones with no money or
+  auth exposure (`moneyDate`, `weeklyRecap`, `lifestyleInflation`,
+  `debtBoss`, `purchaseReview`, `referrals`, `goalRaidLifecycle`). The
+  integration harness is there when they're worth covering.
 - `react-hooks/exhaustive-deps` warns in ~18 dashboard components — the
   `useEffect(() => { load(); }, [id])` pattern. Correct today, but worth
   moving to `useCallback` so the rule can be trusted. See
